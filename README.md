@@ -4,9 +4,11 @@
 [![License: Apache-2.0](https://img.shields.io/badge/License-Apache_2.0-blue.svg)](LICENSE)
 ![Python 3.10+](https://img.shields.io/badge/python-3.10%2B-blue)
 
+**English** · [中文](README.zh.md)
+
 A toolchain that turns robot vendor materials (URDF, SDK, manuals) into a queryable, agent-ready ontology — and ships first-party ontologies for specific robots.
 
-**Docs:** [Quickstart](docs/QUICKSTART.md) · [Specification](docs/SPEC.md) · [MCP integration](docs/MCP.md) · [Agent-Readiness Levels](docs/ARL.md) · [Capability layer](docs/CAPABILITY_LAYER.md) · [Data sources](SOURCES.md)
+**Docs:** [Quickstart](docs/QUICKSTART.md) · [Specification](docs/SPEC.md) · [MCP integration](docs/MCP.md) · [Agent-Readiness Levels](docs/ARL.md) · [Capability layer](docs/CAPABILITY_LAYER.md) · [Data sources](SOURCES.md) · [中文文档](docs/zh/)
 
 ```
 vendor materials ──► [ roboonto importers ] ──► YAML ontology ──► [ api ] ──► your agent / runtime

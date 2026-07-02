@@ -2,6 +2,7 @@
 
 > Version 0.3 · Normative source: [`roboonto/core/meta-schema.yaml`](../roboonto/core/meta-schema.yaml)
 > (the YAML is authoritative; this document explains it)
+> 中文版: [zh/SPEC.md](zh/SPEC.md)
 
 RoboOnto is a machine-readable specification language for robots. A **pack**
 (`robots/<robot>/`) describes one robot: what it is made of, how to talk to

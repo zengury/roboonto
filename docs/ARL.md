@@ -2,6 +2,8 @@
 
 *How ready is this robot to be driven by an AI agent?*
 
+> 中文版: [zh/ARL.md](zh/ARL.md)
+
 ARL is a four-level index computed from a pack's reproducible readiness
 checks. The scoring rules are open (`roboonto/framework/profiles/`), the
 tooling is open (`roboonto readiness`), and anyone can recompute a level

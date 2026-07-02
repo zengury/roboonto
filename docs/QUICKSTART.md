@@ -1,5 +1,7 @@
 # Quickstart
 
+> 中文版: [zh/QUICKSTART.md](zh/QUICKSTART.md)
+
 Get from zero to an agent-queryable robot ontology in five minutes.
 
 ## Install
