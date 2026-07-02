@@ -35,6 +35,12 @@ vendor materials ──► [ roboonto importers ] ──► YAML ontology ──
 ## Install
 
 ```sh
+pip install roboonto
+```
+
+Robot packs (G1, X2, …) live in this repo — clone for full ontologies and examples:
+
+```sh
 git clone https://github.com/zengury/roboonto
 cd roboonto
 pip install -e .
