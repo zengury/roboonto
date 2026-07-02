@@ -1,0 +1,26 @@
+# AgiBot X2 Ontology — Entry
+# Load this file with roboonto.engine.loader.
+
+robot:
+  id: agibot_x2
+  vendor: AgiBot
+  model: X2 Ultra (旗舰版)
+  firmware_version: "0.8"
+  roboonto_version: "0.3.0"
+  ros2_version: Humble
+  description: |
+    智元 X2 Ultra 旗舰版人形机器人。30 主动 DOF,三套计算单元
+    (PC1 运控 / PC2 开发 / PC3 交互),激光雷达 + RGBD + 双目 + 交互 + 后视相机,
+    可选 OmniPicker 夹爪 / OmniHand 灵巧手。
+
+includes:
+  - standard_mappings.yaml
+  - hardware.yaml
+  - kinematics.yaml
+  - behaviors.yaml
+  - events.yaml
+  - interfaces.yaml
+  - capabilities.yaml
+  - actions.yaml
+  - derived_links.yaml
+  - capability_boundary.yaml

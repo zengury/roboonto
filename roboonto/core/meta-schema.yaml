@@ -1,0 +1,233 @@
+# RoboOnto Meta-Schema v0.1
+#
+# 这是"定义 schema 的 schema",规定了在 roboonto 里写什么叫合法。
+# 跨机器人通用,属于 roboonto 语言本身。
+#
+# 对应关系:
+#   meta-schema.yaml         = roboonto 的 "语法书"
+#   core-object-types.yaml   = roboonto 的 "常用词汇表"
+#   robots/<X>/ontology.yaml = 用这门语言写出的某台机器人的 "百科全书"
+
+roboonto_version: "0.1"
+
+# ============================================================
+# 1. ObjectType —— 静态名词
+# ============================================================
+# 一个 ObjectType 声明世界里存在某种"东西",以及这类东西有哪些属性。
+# 对应 Palantir 的 Object Type。
+
+object_type_schema:
+  required:
+    - id                    # 全局唯一标识,如 "Joint", "Topic"
+    - category              # hardware | software | interface | behavior | event | frame | meta
+    - description           # 人类可读的简述
+  optional:
+    - extends               # 继承自另一个 ObjectType
+    - properties            # 该类对象的属性定义
+    - identifying_property  # 哪个属性用作实例 id,默认 "id"
+    - constraints           # 该类对象自身必须满足的约束
+    - sources_hint          # 典型数据源(URDF/SDK doc/ROS2 introspect)
+
+# 示例:
+#   object_types:
+#     - id: Joint
+#       category: hardware
+#       description: 单自由度旋转或平移关节
+#       properties:
+#         id:                { type: string, unique: true }
+#         dof_axis:          { type: enum, values: [pitch, roll, yaw, prismatic] }
+#         position_limit:    { type: range, unit: rad }
+#         velocity_limit:    { type: float, unit: rad/s }
+#         torque_peak:       { type: float, unit: Nm }
+#         parent_link:       { type: ref, target: Link }
+#         child_link:        { type: ref, target: Link }
+#       sources_hint:
+#         - urdf: "robot/joint"
+#         - doc_section:   "§1.7 关节活动范围"
+
+
+# ============================================================
+# 2. Property —— 属性的类型系统
+# ============================================================
+property_type_schema:
+  primitive_types:
+    - string
+    - int
+    - float
+    - bool
+    - enum              # 需要配合 values: [...]
+    - range             # {min, max, unit}
+    - vector3           # {x, y, z}
+    - quaternion        # {x, y, z, w}
+  reference_types:
+    - ref               # 指向另一个对象实例,必须配合 target: <ObjectType>
+    - ref_list          # 多个引用
+  metadata_fields:
+    - unit              # SI 优先,如 "m/s", "Nm", "Hz"
+    - required          # bool, 默认 false
+    - unique            # bool, 默认 false
+    - default           # 默认值
+    - source            # 该值的出处(grounding,见 §4)
+
+
+# ============================================================
+# 3. LinkType —— 关系
+# ============================================================
+# 对应 Palantir 的 Link Type。关系是有方向、有类型、有基数的。
+link_type_schema:
+  required:
+    - id                # "controls", "depends_on", "publishes", ...
+    - source            # 源端 ObjectType
+    - target            # 目标端 ObjectType
+    - cardinality       # one_to_one | one_to_many | many_to_many
+  optional:
+    - inverse_id        # 反向关系的名字(可选),如 controls <-> controlled_by
+    - description
+    - constraints       # 关系实例必须满足的约束
+
+
+# ============================================================
+# 4. ActionType —— 动词(kinetic 层,roboonto 的核心差异化)
+# ============================================================
+# Action 声明一个 agent 可以调用的"动作",以及它的合法性条件。
+# 这是 roboonto 区别于一般知识图谱的关键。
+#
+# 重要纪律:
+#   - precondition 只能写"对 ontology 的查询谓词"
+#   - action_validator 在 runtime 时被注入实际状态,完成求值
+#   - roboonto 自己不存储状态,也不代替 agent 执行 action
+action_type_schema:
+  required:
+    - id                          # "set_mc_action", "set_forward_velocity"
+    - description
+    - invoker                     # 执行入口,见下文
+    - parameters                  # 参数 schema
+    - affects                     # 受影响的 Hardware/Software 列表(ref_list)
+  optional:
+    - preconditions               # 表达式列表,全为 true 才允许执行
+    - param_constraints           # 参数约束(range/enum/cross-param)
+    - postconditions              # 预期副作用(供 agent 做因果推理)
+    - side_effects                # 可能触发的 Event 列表
+    - rollback                    # 对应的回滚 Action(ref)
+    - safety_class                # INFO | CONFIG | MOTION | POWER | IRREVERSIBLE
+    - priority_integration        # 是否参与某个优先级仲裁体系
+    - required_input_source       # 是否必须先注册输入源
+    - idempotent                  # bool
+    - estimated_duration_ms
+
+  invoker_schema:
+    oneof:
+      - type: ros2_topic
+        name: string              # "/aima/mc/locomotion/velocity"
+        msg_type: ref(MsgSchema)
+      - type: ros2_service
+        name: string
+        srv_type: ref(SrvSchema)
+      - type: cli                 # 来自 sdk2cli manifest
+        command: string
+        manifest_ref: string      # sdk2cli 注册表中的 id
+      - type: compound            # 由多个 sub-action 组合
+        sequence: [ref(ActionType)]
+
+  parameter_schema:
+    - name
+    - type                        # 同 property_type_schema
+    - unit
+    - required
+    - constraints                 # 该参数自身的约束列表
+
+  constraint_expression:
+    # precondition DSL,初版支持这些谓词
+    # 完整规范见 spec/constraint-dsl.md
+    supported_predicates:
+      - eq / ne / lt / gt / le / ge
+      - in / not_in
+      - exists / not_exists
+      - has_link / has_object
+      - "@state.X"                # 对 runtime 状态的引用(由 validator 注入)
+      - "@ontology.X"             # 对 ontology 的查询
+    example: |
+      preconditions:
+        - expr: '@state.mc_action == "LOCOMOTION_DEFAULT"'
+          error: "机器人必须处于走跑模式才能调用此 Action"
+        - expr: '@state.registered_input_sources contains params.source'
+          error: "必须先注册输入源"
+
+
+# ============================================================
+# 5. Source —— Grounding(可追溯)
+# ============================================================
+# 每个属性值、每个对象实例都可以有 source 标注,指向原始资料。
+# 这让 ontology 的每一条断言都可审计、可 diff、可更新。
+source_schema:
+  required:
+    - type                        # document | urdf | ros2_introspect | sdk2cli | manual
+    - locator                     # 具体定位(章节/文件路径/节点名/introspect 快照 id)
+  optional:
+    - extractor                   # 由哪个 importer 产生,含版本号
+    - extracted_at                # ISO timestamp
+    - confidence                  # 0-1, importer 的置信度(LLM 抽取时有意义)
+    - notes                       # 自由文本,冲突备注等
+
+  example: |
+    source:
+      type: document
+      locator: "aimdk.docx#§5.1.2/table/启动门限"
+      extractor: "aimdk_doc@0.1"
+      extracted_at: "2026-04-24T11:30:00Z"
+      confidence: 0.95
+
+
+# ============================================================
+# 6. 命名与标识约定
+# ============================================================
+naming_conventions:
+  object_type_ids: PascalCase      # Joint, Topic, Action
+  object_instance_ids: snake_case  # left_arm_j4, pmu_state_topic
+  link_type_ids: snake_case        # controls, depends_on, publishes
+  action_type_ids: snake_case      # set_forward_velocity, arm_to_home
+  namespaces: dotted               # agibot.x2.hardware.left_arm.j4
+  units: SI_preferred              # "m/s", "rad", "Nm", "Hz"; 非 SI 必须标注
+
+instance_id_global_format: "<robot_id>.<category>.<dotted_path>"
+  # 例: agibot_x2.hardware.left_arm.j4
+  #     agibot_x2.interface.pmu_state
+  #     agibot_x2.action.set_forward_velocity
+
+
+# ============================================================
+# 7. 文件组织
+# ============================================================
+file_organization:
+  ontology_entry: ontology.yaml
+  entry_shape: |
+    robot:
+      id: agibot_x2
+      vendor: AgiBot
+      model: X2 Ultra
+      firmware_version: "0.8"
+      roboonto_version: "0.1"
+    includes:
+      - hardware.yaml
+      - interfaces.yaml
+      - behaviors.yaml
+      - actions.yaml
+      - events.yaml
+  shard_file_shape: |
+    # 每个分片文件顶层必须是这四个键之一的组合
+    object_types: [...]     # 可选,通常在 spec/ 里统一定义
+    objects: [...]          # 实例
+    links: [...]            # 实例关系
+    actions: [...]          # Action 实例
+
+
+# ============================================================
+# 8. Validation Rules(引擎的校验责任)
+# ============================================================
+validation_rules:
+  - all_refs_resolve              # 所有 ref 指向的目标必须存在
+  - no_duplicate_ids              # 同一 category 下 id 不可重复
+  - constraint_expressions_parse  # precondition DSL 可解析
+  - source_coverage_hint          # warn: 没有 source 的字段 > X%
+  - unit_consistency              # 同名属性的 unit 必须一致
+  - cross_source_conflict         # 同一属性多源冲突时报告(不自动合并)

@@ -1,0 +1,372 @@
+# AgiBot X2 — Capability Layer
+# Component/Sensor -> provides Capability -> exposed_via Topic/Service/Action
+# Capability -> satisfies ServiceRequirement
+
+objects:
+  # Software components/providers
+  - type: SoftwareComponent
+    id: agibot_x2.sw.motion_controller
+    properties:
+      name_human: Motion controller
+      component_kind: control
+      runs_on: agibot_x2.hw.compute.pc1
+      implementation: MC controller / AimDK motion services
+      lifecycle: managed
+      standard_mappings:
+        - {standard: RoSO, term: Component}
+        - {standard: IEEE 1872.2/AuR, term: AutonomousSystem}
+    source: {type: derived, locator: "aimdk.docx#§5.1"}
+
+  - type: SoftwareComponent
+    id: agibot_x2.sw.hal_sensor
+    properties:
+      name_human: HAL sensor publisher
+      component_kind: middleware
+      runs_on: agibot_x2.hw.compute.pc2
+      implementation: hal_sensor_orin
+      lifecycle: managed
+      standard_mappings:
+        - {standard: RoSO, term: Component}
+    source: {type: derived, locator: "interfaces.yaml sensor topics"}
+
+  - type: SoftwareComponent
+    id: agibot_x2.sw.interaction_audio
+    properties:
+      name_human: Interaction audio stack
+      component_kind: ui
+      runs_on: agibot_x2.hw.compute.pc3
+      implementation: AimDK TTS/media services
+      lifecycle: managed
+      standard_mappings:
+        - {standard: RoSO, term: Component}
+    source: {type: derived, locator: "aimdk.docx#§5.2.1"}
+
+  - type: SoftwareComponent
+    id: agibot_x2.sw.power_monitor
+    properties:
+      name_human: Power monitor
+      component_kind: diagnostics
+      runs_on: agibot_x2.hw.compute.pc2
+      implementation: PMU/BMS state publisher
+      lifecycle: managed
+      standard_mappings:
+        - {standard: RoSO, term: Component}
+    source: {type: derived, locator: "aimdk.docx#§5.4.2"}
+
+  # Capabilities
+  - type: Capability
+    id: agibot_x2.cap.mode_management
+    properties:
+      name_human: Mode management
+      capability_kind: planning
+      description: Query and switch the robot's whole-body motion mode.
+      produces: [current_mode, mode_transition]
+      boundaries:
+        - SetMcAction success must be verified with GetMcAction because firmware can return a false positive.
+        - Cross-unit ROS service reliability is marked false for mode services.
+      standard_mappings:
+        - {standard: IEEE 1872.2/AuR, term: Task}
+        - {standard: RoSO, term: Function}
+    source: {type: document, locator: "aimdk.docx#§5.1.1; capability_boundary.yaml mode_switch"}
+
+  - type: Capability
+    id: agibot_x2.cap.locomotion_velocity_control
+    properties:
+      name_human: Locomotion velocity control
+      capability_kind: navigation
+      description: Command forward, lateral, and angular walking velocity under MC input-source arbitration.
+      consumes: [forward_velocity, lateral_velocity, angular_velocity, input_source]
+      produces: [base_motion]
+      environment_requirements: [flat_walkable_ground, locomotion_or_stand_mode]
+      boundaries:
+        - Requires a registered input source.
+        - Static-start thresholds differ by axis and are version sensitive.
+        - Affects legs and waist; treat as MOTION safety class.
+      standard_mappings:
+        - {standard: RoSO, term: Actuation}
+        - {standard: IEEE 1872.2/AuR, term: AutonomousCapability}
+    source: {type: document, locator: "aimdk.docx#§5.1.2"}
+
+  - type: Capability
+    id: agibot_x2.cap.input_source_arbitration
+    properties:
+      name_human: Input source arbitration
+      capability_kind: communication
+      description: Register, modify, enable, disable, and query control input sources.
+      produces: [registered_input_source, active_input_source, priority_state]
+      boundaries:
+        - Built-in sources must not be deleted.
+        - Priority and timeout determine command preemption behavior.
+      standard_mappings:
+        - {standard: RoSO, term: Function}
+    source: {type: document, locator: "aimdk.docx#§5.1.3"}
+
+  - type: Capability
+    id: agibot_x2.cap.preset_motion
+    properties:
+      name_human: Preset motion execution
+      capability_kind: actuation
+      description: Invoke vendor predefined gestures and recovery motions.
+      consumes: [motion_id, area, interrupt]
+      produces: [whole_body_motion, arm_motion]
+      environment_requirements: [stand_default_for_gestures]
+      boundaries:
+        - Motion and area must match a registered PresetMotion.
+        - Most gestures require STAND_DEFAULT mode.
+      standard_mappings:
+        - {standard: IEEE 1872.2/AuR, term: Task}
+        - {standard: RoSO, term: Function}
+    source: {type: document, locator: "aimdk.docx#§5.1.4"}
+
+  - type: Capability
+    id: agibot_x2.cap.joint_position_control
+    properties:
+      name_human: Joint position control
+      capability_kind: actuation
+      description: Command grouped head, waist, arm, and leg joint positions with limit checks.
+      consumes: [joint_positions_by_domain]
+      produces: [joint_motion]
+      boundaries:
+        - All commanded positions must remain within Joint.position_limit.
+        - Direct joint control is safest in JOINT_DEFAULT or PASSIVE_DEFAULT.
+        - Realtime joint history is not recorded in current MCAP configuration.
+      standard_mappings:
+        - {standard: RoSO, term: Actuation}
+    source: {type: document, locator: "aimdk.docx#§5.1.6; capability_boundary.yaml joint_state"}
+
+  - type: Capability
+    id: agibot_x2.cap.hand_manipulation
+    properties:
+      name_human: Hand manipulation
+      capability_kind: manipulation
+      description: Query installed end effector type and command gripper/dexterous hand joints.
+      consumes: [hand_type, hand_joint_commands]
+      produces: [grasp_state, hand_motion]
+      boundaries:
+        - Command hand_type must match the installed end effector.
+        - Native MC hand control must be disabled before autonomous hand commands.
+      standard_mappings:
+        - {standard: RoSO, term: Actuation}
+        - {standard: IEEE 1872.2/AuR, term: AutonomousCapability}
+    source: {type: document, locator: "aimdk.docx#§5.1.5"}
+
+  - type: Capability
+    id: agibot_x2.cap.speech_output
+    properties:
+      name_human: Speech and media output
+      capability_kind: interaction
+      description: Play TTS/media and configure volume/mute state on the interaction computer.
+      consumes: [text, media_file, volume, mute_state]
+      produces: [speech_audio, media_audio]
+      boundaries:
+        - Media files must be present on PC3 and readable.
+        - TTS priority participates in interaction priority arbitration.
+      standard_mappings:
+        - {standard: RoSO, term: Function}
+    source: {type: document, locator: "aimdk.docx#§5.2.1"}
+
+  - type: Capability
+    id: agibot_x2.cap.power_diagnostics
+    properties:
+      name_human: Power diagnostics
+      capability_kind: diagnosis
+      description: Observe PMU/BMS status bits, voltages, currents, temperatures, capacity, and charge/discharge state.
+      produces: [pmu_status_bits, bms_status_bits, battery_state, bus_voltage_current]
+      boundaries:
+        - PMU topic is realtime but not included in current hal_sensor MCAP retention.
+      standard_mappings:
+        - {standard: RoSO, term: Sensing}
+        - {standard: IEEE 1872.2/AuR, term: AutonomousCapability}
+    source: {type: document, locator: "aimdk.docx#§5.4.2; capability_boundary.yaml mcap_hal_sensor"}
+
+  - type: Capability
+    id: agibot_x2.cap.tactile_head_events
+    properties:
+      name_human: Head tactile event sensing
+      capability_kind: sensing
+      description: Observe head touch, tap, swipe, and idle events.
+      detects: [touch, swipe, single_tap, double_tap, triple_tap]
+      produces: [touch_event_type, touch_channels]
+      qos: {frequency_hz: 100}
+      standard_mappings:
+        - {standard: RoSO, term: Sensing}
+    source: {type: document, locator: "aimdk.docx#§5.4.1"}
+
+  - type: Capability
+    id: agibot_x2.cap.visual_depth_sensing
+    properties:
+      name_human: Visual and depth sensing
+      capability_kind: sensing
+      description: Provide front stereo/RGBD image streams and RGBD depth point cloud for perception workloads.
+      detects: [image_frame, depth_pointcloud]
+      produces: [rgb_image, stereo_image, depth_pointcloud]
+      qos: {frequency_hz: 10}
+      boundaries:
+        - Camera streams are bandwidth sensitive and marked cross_unit_safe=false where known.
+      standard_mappings:
+        - {standard: RoSO, term: Sensing}
+    source: {type: document, locator: "aimdk.docx#§5.4.1"}
+
+  - type: Capability
+    id: agibot_x2.cap.body_state_observation
+    properties:
+      name_human: Body state observation
+      capability_kind: sensing
+      description: Observe IMU, body pose, common MC state, joint state topics, and DCU monitor streams.
+      produces: [imu_state, body_pose, mc_common_state, joint_state, dcu_monitor]
+      qos: {imu_frequency_hz: 500}
+      boundaries:
+        - Chest IMU and joint state are realtime topics but not recorded in current MCAP configuration.
+        - HDS does not cover joint lock, mode false positives, IMU tilt, or fall detection.
+      standard_mappings:
+        - {standard: RoSO, term: Sensing}
+        - {standard: IEEE 1872.2/AuR, term: AutonomousCapability}
+    source: {type: log_observation, locator: "session_2026_04_08; capability_boundary.yaml"}
+
+  # Capability parameters
+  - type: CapabilityParameter
+    id: agibot_x2.cap.param.locomotion.forward_velocity
+    properties:
+      name: forward_velocity
+      value_type: float
+      unit: m/s
+      required: true
+      constraints: [{type: range, min: -1.8, max: 1.8}]
+  - type: CapabilityParameter
+    id: agibot_x2.cap.param.locomotion.lateral_velocity
+    properties:
+      name: lateral_velocity
+      value_type: float
+      unit: m/s
+      required: true
+      constraints: [{type: range, min: -0.8, max: 0.8}]
+  - type: CapabilityParameter
+    id: agibot_x2.cap.param.locomotion.angular_velocity
+    properties:
+      name: angular_velocity
+      value_type: float
+      unit: rad/s
+      required: true
+      constraints: [{type: range, min: -2.0, max: 2.0}]
+
+  # Service requirements
+  - type: ServiceRequirement
+    id: agibot_x2.req.safe_base_motion
+    properties:
+      name_human: Safe base motion
+      required_capabilities: [navigation, communication, sensing]
+      required_outputs: [base_motion, imu_state]
+      environment: [flat_walkable_ground]
+      safety_constraints:
+        - mode must be verified before motion commands
+        - input source must be registered and enabled
+
+  - type: ServiceRequirement
+    id: agibot_x2.req.robot_health_report
+    properties:
+      name_human: Robot health report
+      required_capabilities: [diagnosis, sensing]
+      required_outputs: [battery_state, pmu_status_bits, bms_status_bits, dcu_monitor]
+      safety_constraints:
+        - report must disclose MCAP observability blind spots
+
+  - type: ServiceRequirement
+    id: agibot_x2.req.human_interaction
+    properties:
+      name_human: Human interaction
+      required_capabilities: [interaction, sensing, actuation]
+      required_outputs: [speech_audio, touch_event_type, arm_motion]
+
+links:
+  # Providers
+  - {type: provides_capability, source: agibot_x2.sw.motion_controller, target: agibot_x2.cap.mode_management}
+  - {type: provides_capability, source: agibot_x2.sw.motion_controller, target: agibot_x2.cap.locomotion_velocity_control}
+  - {type: provides_capability, source: agibot_x2.sw.motion_controller, target: agibot_x2.cap.input_source_arbitration}
+  - {type: provides_capability, source: agibot_x2.sw.motion_controller, target: agibot_x2.cap.preset_motion}
+  - {type: provides_capability, source: agibot_x2.sw.motion_controller, target: agibot_x2.cap.joint_position_control}
+  - {type: provides_capability, source: agibot_x2.sw.motion_controller, target: agibot_x2.cap.hand_manipulation}
+  - {type: provides_capability, source: agibot_x2.sw.interaction_audio, target: agibot_x2.cap.speech_output}
+  - {type: provides_capability, source: agibot_x2.sw.power_monitor, target: agibot_x2.cap.power_diagnostics}
+  - {type: provides_capability, source: agibot_x2.sw.hal_sensor, target: agibot_x2.cap.tactile_head_events}
+  - {type: provides_capability, source: agibot_x2.sw.hal_sensor, target: agibot_x2.cap.visual_depth_sensing}
+  - {type: provides_capability, source: agibot_x2.sw.hal_sensor, target: agibot_x2.cap.body_state_observation}
+  - {type: provides_capability, source: agibot_x2.hw.sensor.touch_head, target: agibot_x2.cap.tactile_head_events}
+  - {type: provides_capability, source: agibot_x2.hw.sensor.rgbd_head_front, target: agibot_x2.cap.visual_depth_sensing}
+  - {type: provides_capability, source: agibot_x2.hw.sensor.stereo_head_front_left, target: agibot_x2.cap.visual_depth_sensing}
+  - {type: provides_capability, source: agibot_x2.hw.sensor.lidar_chest_front, target: agibot_x2.cap.body_state_observation}
+  - {type: provides_capability, source: agibot_x2.hw.sensor.imu_chest, target: agibot_x2.cap.body_state_observation}
+  - {type: provides_capability, source: agibot_x2.hw.sensor.imu_torso, target: agibot_x2.cap.body_state_observation}
+
+  # Parameters
+  - {type: has_parameter, source: agibot_x2.cap.locomotion_velocity_control, target: agibot_x2.cap.param.locomotion.forward_velocity}
+  - {type: has_parameter, source: agibot_x2.cap.locomotion_velocity_control, target: agibot_x2.cap.param.locomotion.lateral_velocity}
+  - {type: has_parameter, source: agibot_x2.cap.locomotion_velocity_control, target: agibot_x2.cap.param.locomotion.angular_velocity}
+
+  # Exposed via actions/services/topics
+  - {type: exposed_via, source: agibot_x2.cap.mode_management, target: get_mc_action}
+  - {type: exposed_via, source: agibot_x2.cap.mode_management, target: set_mc_action}
+  - {type: exposed_via, source: agibot_x2.cap.mode_management, target: agibot_x2.if.srv.get_mc_action}
+  - {type: exposed_via, source: agibot_x2.cap.mode_management, target: agibot_x2.if.srv.set_mc_action}
+
+  - {type: exposed_via, source: agibot_x2.cap.locomotion_velocity_control, target: set_forward_velocity}
+  - {type: exposed_via, source: agibot_x2.cap.locomotion_velocity_control, target: set_lateral_velocity}
+  - {type: exposed_via, source: agibot_x2.cap.locomotion_velocity_control, target: set_angular_velocity}
+  - {type: exposed_via, source: agibot_x2.cap.locomotion_velocity_control, target: agibot_x2.if.topic.mc_locomotion_velocity}
+
+  - {type: exposed_via, source: agibot_x2.cap.input_source_arbitration, target: get_current_input_source}
+  - {type: exposed_via, source: agibot_x2.cap.input_source_arbitration, target: register_input_source}
+  - {type: exposed_via, source: agibot_x2.cap.input_source_arbitration, target: modify_input_source}
+  - {type: exposed_via, source: agibot_x2.cap.input_source_arbitration, target: delete_input_source}
+  - {type: exposed_via, source: agibot_x2.cap.input_source_arbitration, target: enable_input_source}
+  - {type: exposed_via, source: agibot_x2.cap.input_source_arbitration, target: disable_input_source}
+  - {type: exposed_via, source: agibot_x2.cap.input_source_arbitration, target: agibot_x2.if.srv.set_mc_input_source}
+
+  - {type: exposed_via, source: agibot_x2.cap.preset_motion, target: set_preset_motion}
+  - {type: exposed_via, source: agibot_x2.cap.preset_motion, target: agibot_x2.if.srv.set_mc_preset_motion}
+  - {type: exposed_via, source: agibot_x2.cap.joint_position_control, target: set_joint_position}
+  - {type: exposed_via, source: agibot_x2.cap.joint_position_control, target: get_all_joint_state}
+  - {type: exposed_via, source: agibot_x2.cap.joint_position_control, target: agibot_x2.if.topic.joint_arm_command}
+  - {type: exposed_via, source: agibot_x2.cap.joint_position_control, target: agibot_x2.if.topic.joint_leg_command}
+  - {type: exposed_via, source: agibot_x2.cap.joint_position_control, target: agibot_x2.if.topic.joint_arm_state}
+  - {type: exposed_via, source: agibot_x2.cap.joint_position_control, target: agibot_x2.if.topic.joint_leg_state}
+  - {type: exposed_via, source: agibot_x2.cap.joint_position_control, target: agibot_x2.if.srv.get_all_joint_state}
+
+  - {type: exposed_via, source: agibot_x2.cap.hand_manipulation, target: get_hand_type}
+  - {type: exposed_via, source: agibot_x2.cap.hand_manipulation, target: set_hand_command}
+  - {type: exposed_via, source: agibot_x2.cap.hand_manipulation, target: agibot_x2.if.srv.get_hand_type}
+  - {type: exposed_via, source: agibot_x2.cap.hand_manipulation, target: agibot_x2.if.topic.joint_hand_command}
+  - {type: exposed_via, source: agibot_x2.cap.hand_manipulation, target: agibot_x2.if.topic.joint_hand_state}
+
+  - {type: exposed_via, source: agibot_x2.cap.speech_output, target: play_tts}
+  - {type: exposed_via, source: agibot_x2.cap.speech_output, target: play_media_file}
+  - {type: exposed_via, source: agibot_x2.cap.speech_output, target: set_volume}
+  - {type: exposed_via, source: agibot_x2.cap.speech_output, target: get_volume}
+  - {type: exposed_via, source: agibot_x2.cap.speech_output, target: set_mute}
+  - {type: exposed_via, source: agibot_x2.cap.speech_output, target: get_mute}
+  - {type: exposed_via, source: agibot_x2.cap.speech_output, target: agibot_x2.if.srv.play_tts}
+  - {type: exposed_via, source: agibot_x2.cap.speech_output, target: agibot_x2.if.srv.play_media_file}
+  - {type: exposed_via, source: agibot_x2.cap.speech_output, target: agibot_x2.if.srv.set_volume}
+  - {type: exposed_via, source: agibot_x2.cap.speech_output, target: agibot_x2.if.srv.set_mute}
+
+  - {type: exposed_via, source: agibot_x2.cap.power_diagnostics, target: agibot_x2.if.topic.pmu_state}
+  - {type: exposed_via, source: agibot_x2.cap.tactile_head_events, target: agibot_x2.if.topic.touch_head}
+  - {type: exposed_via, source: agibot_x2.cap.visual_depth_sensing, target: agibot_x2.if.topic.stereo_front_left_image}
+  - {type: exposed_via, source: agibot_x2.cap.visual_depth_sensing, target: agibot_x2.if.topic.rgbd_front_image}
+  - {type: exposed_via, source: agibot_x2.cap.visual_depth_sensing, target: agibot_x2.if.topic.rgbd_front_pointcloud}
+  - {type: exposed_via, source: agibot_x2.cap.body_state_observation, target: agibot_x2.if.topic.imu_chest}
+  - {type: exposed_via, source: agibot_x2.cap.body_state_observation, target: agibot_x2.if.topic.imu_torso}
+  - {type: exposed_via, source: agibot_x2.cap.body_state_observation, target: agibot_x2.if.topic.mc_body_pose}
+  - {type: exposed_via, source: agibot_x2.cap.body_state_observation, target: agibot_x2.if.topic.mc_common_state}
+  - {type: exposed_via, source: agibot_x2.cap.body_state_observation, target: agibot_x2.if.topic.monitor_udcu}
+  - {type: exposed_via, source: agibot_x2.cap.body_state_observation, target: agibot_x2.if.topic.monitor_ddcu}
+
+  # Service fit
+  - {type: satisfies_requirement, source: agibot_x2.cap.mode_management, target: agibot_x2.req.safe_base_motion}
+  - {type: satisfies_requirement, source: agibot_x2.cap.input_source_arbitration, target: agibot_x2.req.safe_base_motion}
+  - {type: satisfies_requirement, source: agibot_x2.cap.locomotion_velocity_control, target: agibot_x2.req.safe_base_motion}
+  - {type: satisfies_requirement, source: agibot_x2.cap.body_state_observation, target: agibot_x2.req.safe_base_motion}
+  - {type: satisfies_requirement, source: agibot_x2.cap.power_diagnostics, target: agibot_x2.req.robot_health_report}
+  - {type: satisfies_requirement, source: agibot_x2.cap.body_state_observation, target: agibot_x2.req.robot_health_report}
+  - {type: satisfies_requirement, source: agibot_x2.cap.speech_output, target: agibot_x2.req.human_interaction}
+  - {type: satisfies_requirement, source: agibot_x2.cap.tactile_head_events, target: agibot_x2.req.human_interaction}
+  - {type: satisfies_requirement, source: agibot_x2.cap.preset_motion, target: agibot_x2.req.human_interaction}

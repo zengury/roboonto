@@ -1,0 +1,61 @@
+# Half-Cheetah — Actions. The agent talks to the simulator through these.
+# In Phase 1, the policy emits torques directly via `apply_torques`.
+# Higher-level actions (switch_gait, brake) become meaningful in Phase 2+
+# when LLM patches add gait modes.
+
+actions:
+  - type_id: apply_torques
+    description: 把 6 维归一化 torque 向量送给所有 actuator
+    invoker:
+      type: mujoco_torque
+      name: "mjData.ctrl[:]"
+    parameters:
+      - name: ctrl
+        type: vector
+        unit: normalized
+        required: true
+        constraints:
+          - {type: shape, length: 6}
+          - {type: range, min: -1.0, max: 1.0}
+    preconditions: []
+    affects:
+      - halfcheetah.hw.joint.bthigh
+      - halfcheetah.hw.joint.bshin
+      - halfcheetah.hw.joint.bfoot
+      - halfcheetah.hw.joint.fthigh
+      - halfcheetah.hw.joint.fshin
+      - halfcheetah.hw.joint.ffoot
+    safety_class: MOTION
+    idempotent: false
+    source: {type: document, locator: "gymnasium HalfCheetah-v5 action space"}
+
+  - type_id: reset_episode
+    description: 重置仿真为 seed 指定的初始状态
+    invoker:
+      type: cli
+      name: "env.reset"
+    parameters:
+      - name: seed
+        type: int
+        required: false
+    preconditions: []
+    affects: []
+    safety_class: CONFIG
+    idempotent: true
+    source: {type: document, locator: "gymnasium API"}
+
+  - type_id: switch_gait
+    description: 切换主步态模式（trot / gallop / recovery / idle）
+    invoker:
+      type: compound
+      name: "policy.set_mode"
+    parameters:
+      - name: mode
+        type: enum
+        values: [IDLE, TROT, GALLOP, RECOVERY]
+        required: true
+    preconditions: []
+    affects: []
+    safety_class: CONFIG
+    idempotent: true
+    source: {type: document, locator: "self"}

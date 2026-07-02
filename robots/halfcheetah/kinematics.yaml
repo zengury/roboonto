@@ -1,0 +1,140 @@
+# Half-Cheetah — Kinematics. Mirrors the MuJoCo XML structure.
+# Joint limits taken from gymnasium HalfCheetah-v5 model defaults.
+
+objects:
+  # ── Links (8 bodies in MuJoCo) ────────────────────────────────────
+  - type: Link
+    id: halfcheetah.hw.link.torso
+    properties:
+      name_urdf: torso
+      mass: 6.36
+    source: {type: urdf, locator: "half_cheetah.xml#body[torso]"}
+
+  - type: Link
+    id: halfcheetah.hw.link.bthigh
+    properties: {name_urdf: bthigh, mass: 1.50}
+    source: {type: urdf, locator: "half_cheetah.xml#body[bthigh]"}
+
+  - type: Link
+    id: halfcheetah.hw.link.bshin
+    properties: {name_urdf: bshin, mass: 1.10}
+    source: {type: urdf, locator: "half_cheetah.xml#body[bshin]"}
+
+  - type: Link
+    id: halfcheetah.hw.link.bfoot
+    properties: {name_urdf: bfoot, mass: 0.88}
+    source: {type: urdf, locator: "half_cheetah.xml#body[bfoot]"}
+
+  - type: Link
+    id: halfcheetah.hw.link.fthigh
+    properties: {name_urdf: fthigh, mass: 1.43}
+    source: {type: urdf, locator: "half_cheetah.xml#body[fthigh]"}
+
+  - type: Link
+    id: halfcheetah.hw.link.fshin
+    properties: {name_urdf: fshin, mass: 1.20}
+    source: {type: urdf, locator: "half_cheetah.xml#body[fshin]"}
+
+  - type: Link
+    id: halfcheetah.hw.link.ffoot
+    properties: {name_urdf: ffoot, mass: 0.88}
+    source: {type: urdf, locator: "half_cheetah.xml#body[ffoot]"}
+
+  # ── Joints (6 actuated hinge joints, ranges from MuJoCo XML) ───────
+  - type: Joint
+    id: halfcheetah.hw.joint.bthigh
+    properties:
+      name_urdf: bthigh
+      name_human: 后腿髋
+      joint_kind: revolute
+      dof_axis: pitch
+      parent_link: halfcheetah.hw.link.torso
+      child_link: halfcheetah.hw.link.bthigh
+      position_limit: {min: -0.52, max: 1.05, unit: rad}
+      velocity_limit: 20.0
+      effort_limit: 120.0
+      j_label: BH
+    source: {type: urdf, locator: "half_cheetah.xml#joint[bthigh]"}
+
+  - type: Joint
+    id: halfcheetah.hw.joint.bshin
+    properties:
+      name_urdf: bshin
+      name_human: 后腿膝
+      joint_kind: revolute
+      dof_axis: pitch
+      parent_link: halfcheetah.hw.link.bthigh
+      child_link: halfcheetah.hw.link.bshin
+      position_limit: {min: -0.785, max: 0.785, unit: rad}
+      velocity_limit: 20.0
+      effort_limit: 90.0
+      j_label: BK
+    source: {type: urdf, locator: "half_cheetah.xml#joint[bshin]"}
+
+  - type: Joint
+    id: halfcheetah.hw.joint.bfoot
+    properties:
+      name_urdf: bfoot
+      name_human: 后腿踝
+      joint_kind: revolute
+      dof_axis: pitch
+      parent_link: halfcheetah.hw.link.bshin
+      child_link: halfcheetah.hw.link.bfoot
+      position_limit: {min: -0.4, max: 0.785, unit: rad}
+      velocity_limit: 20.0
+      effort_limit: 60.0
+      j_label: BA
+    source: {type: urdf, locator: "half_cheetah.xml#joint[bfoot]"}
+
+  - type: Joint
+    id: halfcheetah.hw.joint.fthigh
+    properties:
+      name_urdf: fthigh
+      name_human: 前腿髋
+      joint_kind: revolute
+      dof_axis: pitch
+      parent_link: halfcheetah.hw.link.torso
+      child_link: halfcheetah.hw.link.fthigh
+      position_limit: {min: -1.0, max: 0.7, unit: rad}
+      velocity_limit: 20.0
+      effort_limit: 120.0
+      j_label: FH
+    source: {type: urdf, locator: "half_cheetah.xml#joint[fthigh]"}
+
+  - type: Joint
+    id: halfcheetah.hw.joint.fshin
+    properties:
+      name_urdf: fshin
+      name_human: 前腿膝
+      joint_kind: revolute
+      dof_axis: pitch
+      parent_link: halfcheetah.hw.link.fthigh
+      child_link: halfcheetah.hw.link.fshin
+      position_limit: {min: -1.2, max: 0.87, unit: rad}
+      velocity_limit: 20.0
+      effort_limit: 60.0
+      j_label: FK
+    source: {type: urdf, locator: "half_cheetah.xml#joint[fshin]"}
+
+  - type: Joint
+    id: halfcheetah.hw.joint.ffoot
+    properties:
+      name_urdf: ffoot
+      name_human: 前腿踝
+      joint_kind: revolute
+      dof_axis: pitch
+      parent_link: halfcheetah.hw.link.fshin
+      child_link: halfcheetah.hw.link.ffoot
+      position_limit: {min: -0.5, max: 0.5, unit: rad}
+      velocity_limit: 20.0
+      effort_limit: 30.0
+      j_label: FA
+    source: {type: urdf, locator: "half_cheetah.xml#joint[ffoot]"}
+
+links:
+  - {type: parent_of, source: halfcheetah.hw.link.torso,  target: halfcheetah.hw.link.bthigh}
+  - {type: parent_of, source: halfcheetah.hw.link.bthigh, target: halfcheetah.hw.link.bshin}
+  - {type: parent_of, source: halfcheetah.hw.link.bshin,  target: halfcheetah.hw.link.bfoot}
+  - {type: parent_of, source: halfcheetah.hw.link.torso,  target: halfcheetah.hw.link.fthigh}
+  - {type: parent_of, source: halfcheetah.hw.link.fthigh, target: halfcheetah.hw.link.fshin}
+  - {type: parent_of, source: halfcheetah.hw.link.fshin,  target: halfcheetah.hw.link.ffoot}

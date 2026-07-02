@@ -1,0 +1,25 @@
+# MY_ROBOT — Interfaces: Topics, Services, Message Schemas
+# ======================================================================
+# 数据来源 (优先级从高到低):
+#   1. roboonto import sdk-code <SDK源码目录>     — .msg/.srv 定义
+#   2. agent-runtime ros2-probe                    — 真机 topic 列表
+#   3. agent-runtime hardware-probe                — QoS 实际值
+#   4. 产品文档 §5.x topic 表                       — 人工补充语义
+# ======================================================================
+
+objects: []
+
+# 示例 — 每个 topic:
+# - type: Topic
+#   id: MY_ROBOT.if.topic.joint_states
+#   properties:
+#     name: "/my_robot/joint_states"
+#     msg_type: MY_ROBOT.if.msgschema.JointState
+#     qos: BEST_EFFORT
+#     frequency_hz: 200
+#     compute_unit: MY_ROBOT.hw.compute.main
+#   source:
+#     type: sdk_code
+#     locator: "src/msg/JointState.msg"
+
+links: []

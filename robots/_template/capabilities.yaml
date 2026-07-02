@@ -1,0 +1,55 @@
+# MY_ROBOT — Capabilities and Service Requirements
+# ======================================================================
+# 能力层描述 "what it is / what it can do",接口和 action 描述 "how to use it"。
+# 这一层用于把 IEEE 1872.2/AuR、CORA、RoSO 等标准术语锚到工程 ontology:
+#   Component/Sensor/SoftwareComponent -> provides_capability -> Capability
+#   Capability -> exposed_via -> Topic/Service/Action
+#   Capability -> satisfies_requirement -> ServiceRequirement
+# ======================================================================
+
+objects: []
+
+# 示例 — 人体检测能力:
+# - type: Capability
+#   id: MY_ROBOT.cap.person_detection
+#   properties:
+#     name_human: Person detection
+#     capability_kind: perception
+#     description: Detect people in the forward camera field of view.
+#     detects: [person]
+#     produces: [bounding_box, confidence]
+#     environment_requirements: [lit_indoor_area]
+#     qos:
+#       min_frequency_hz: 10
+#       max_latency_ms: 150
+#     boundaries:
+#       - only valid while camera topic is available
+#     standard_mappings:
+#       - {standard: RoSO, term: Function}
+#       - {standard: IEEE 1872.2/AuR, term: AutonomousCapability}
+#
+# - type: CapabilityParameter
+#   id: MY_ROBOT.cap.param.person_detection.confidence_threshold
+#   properties:
+#     name: confidence_threshold
+#     value_type: float
+#     required: false
+#     default: 0.6
+#     constraints:
+#       - {type: range, min: 0.0, max: 1.0}
+#
+# - type: ServiceRequirement
+#   id: MY_ROBOT.req.follow_person
+#   properties:
+#     name_human: Follow a person
+#     required_capabilities: [perception, navigation]
+#     required_outputs: [person_pose]
+#     environment: [indoor]
+
+links: []
+
+# 示例关系:
+# - {type: provides_capability, source: MY_ROBOT.sw.perception.people, target: MY_ROBOT.cap.person_detection}
+# - {type: has_parameter, source: MY_ROBOT.cap.person_detection, target: MY_ROBOT.cap.param.person_detection.confidence_threshold}
+# - {type: exposed_via, source: MY_ROBOT.cap.person_detection, target: MY_ROBOT.if.topic.person_detections}
+# - {type: satisfies_requirement, source: MY_ROBOT.cap.person_detection, target: MY_ROBOT.req.follow_person}

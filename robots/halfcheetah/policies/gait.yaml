@@ -1,0 +1,47 @@
+# Half-Cheetah Trot Gait — Phase 1 hand-written feedforward baseline.
+#
+# Strategy: open-loop sinusoidal torque on each joint with phase offsets.
+# This is a classic, well-understood baseline that gets ~1500-1700 reward
+# without any closed-loop feedback. PD correction is layered on top
+# (small kp/kd) to absorb perturbations.
+#
+# All parameters live here so LLM patches in Phase 2 can edit them.
+# The code (gait.py) reads this dict and applies the formula.
+
+policy_name: gait
+policy_kind: programmatic
+controller_function: "gait.trot_controller"
+mode_default: TROT
+
+# ── Sinusoidal feedforward parameters ──────────────────────────────
+# Action[i] = amplitude * sin(2π · frequency_hz · t + phase_offset[i])
+# t is episode time in seconds.
+
+trot:
+  frequency_hz: 4.5            # full sinusoid cycles per second
+  amplitude: 0.9               # peak action magnitude (env clips at 1.0)
+  back_front_phase_shift: 1.26 # ≈ 2π/5; back/front leg phase difference
+  inner_leg_phase_shift: 0.5   # offset between thigh/shin/foot within a leg
+
+# Per-joint phase offsets (computed from above; LLM may override here)
+# Order matches actuator order: bthigh, bshin, bfoot, fthigh, fshin, ffoot.
+joint_phase_offsets:
+  bthigh: 0.0
+  bshin:  0.5
+  bfoot:  1.0
+  fthigh: 1.26
+  fshin:  1.76
+  ffoot:  2.26
+
+# ── Optional PD correction layer ───────────────────────────────────
+# Adds kp·(target_q - q) - kd·qdot to the sinusoid to absorb disturbances.
+# In v0.1, targets are zero (no postural goal). LLM may tune.
+pd_correction:
+  enabled: false
+  kp: 1.0
+  kd: 0.1
+  joint_targets_q: {bthigh: 0.0, bshin: 0.0, bfoot: 0.0,
+                    fthigh: 0.0, fshin: 0.0, ffoot: 0.0}
+
+# ── Output post-processing ─────────────────────────────────────────
+output_scale: 1.0              # multiply final action before clipping

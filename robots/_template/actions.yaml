@@ -1,0 +1,33 @@
+# MY_ROBOT — Actions (agent 可调用的动词)
+# ======================================================================
+# 这是 ontology 最重要的文件 — 定义 agent 能做什么,什么条件下能做。
+#
+# 每个 action 必须声明:
+#   type_id      唯一 ID, 如 "set_forward_velocity"
+#   description  人类可读描述
+#   invoker      调用方式: ros2_topic / ros2_service / cli
+#   parameters   参数列表 (name, type, required, constraints)
+#   preconditions 前置条件 (DSL 表达式)
+#   affects      影响范围 (wildcard 支持)
+#   safety_class INFO / CONFIG / MOTION / POWER / IRREVERSIBLE
+#
+# 来源: SDK 文档 §5 (API 参考)
+# ======================================================================
+
+actions: []
+
+# 示例 — 查询模式 (最安全的 action,先做这个):
+# - type_id: get_mc_action
+#   description: 查询当前运动模式
+#   invoker:
+#     type: ros2_service
+#     name: "/my_sdk/srv/GetMcAction"
+#     srv_type: my_sdk/srv/GetMcAction
+#   parameters: []
+#   preconditions: []
+#   affects: []
+#   safety_class: INFO
+#   idempotent: true
+#   source:
+#     type: document
+#     locator: "SDK 文档 §5.1.1"

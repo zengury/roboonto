@@ -1,0 +1,25 @@
+# Minimal valid robot — fixture for framework + API tests.
+# Designed to grade `customer-ready` against customer_v1.
+
+robot:
+  id: minibot
+  vendor: TestCo
+  model: MiniBot
+  firmware_version: "0.1"
+  roboonto_version: "0.2"
+  ros2_version: humble
+  description: |
+    Minimal valid ontology used by tests. Hand-crafted to satisfy every
+    rule in framework/profiles/customer_v1.yaml.
+
+includes:
+  - standard_mappings.yaml
+  - hardware.yaml
+  - kinematics.yaml
+  - interfaces.yaml
+  - capabilities.yaml
+  - behaviors.yaml
+  - events.yaml
+  - actions.yaml
+  - derived_links.yaml
+  - capability_boundary.yaml

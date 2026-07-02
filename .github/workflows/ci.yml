@@ -1,0 +1,46 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: ["3.10", "3.12"]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+      - name: Install
+        run: |
+          python -m pip install --upgrade pip
+          pip install -e .
+          pip install pytest pyyaml
+      - name: Unit tests
+        run: pytest tests/ -q
+
+  packs:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install
+        run: |
+          pip install -e .
+          pip install pyyaml
+      - name: Validate all packs
+        run: |
+          roboonto validate robots/agibot_x2
+          roboonto validate robots/unitree_g1_edu
+          roboonto validate robots/halfcheetah
+      - name: Readiness gates (real robots must stay customer-ready)
+        run: |
+          roboonto readiness robots/agibot_x2 --profile customer_v1 --require customer-ready
+          roboonto readiness robots/unitree_g1_edu --profile customer_v1 --require customer-ready

@@ -1,0 +1,15 @@
+objects:
+  - type: Topic
+    id: minibot.if.topic.cmd_vel
+    properties:
+      name: "/minibot/cmd_vel"
+      msg_type: "geometry_msgs/msg/Twist"
+      direction: subscribe_from_outside
+    source: {type: document, locator: "minibot SDK §5.1"}
+
+  - type: Service
+    id: minibot.if.srv.get_mode
+    properties:
+      name: "/minibot/srv/get_mode"
+      srv_type: "minibot_msgs/srv/GetMode"
+    source: {type: document, locator: "minibot SDK §5.2"}

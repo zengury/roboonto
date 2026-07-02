@@ -1,0 +1,11 @@
+objects:
+  - type: StatusBit
+    id: minibot.event.power_good
+    properties:
+      carrier_field: status_word
+      bit_index: 0
+      bit_name: powerGood
+      severity: info
+      semantic: 主电源正常
+      polarity: high_means_ok
+    source: {type: document, locator: "minibot SDK §5.4"}

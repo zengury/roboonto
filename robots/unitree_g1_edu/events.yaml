@@ -1,0 +1,1081 @@
+objects:
+- id: unitree_g1_edu.event.sport_mode
+  properties:
+    description: 当前运动模式
+    field: sport_mode_state.mode
+    name: 运动模式状态
+  source:
+    locator: unitree_sdk2/include/unitree/idl/hg/SportModeState_.hpp
+    type: sdk_code
+  type: StatusBit
+- id: unitree_g1_edu.event.imu_data
+  properties:
+    description: 骨盆 IMU 四元数+角速度+加速度
+    field: imu_state
+    name: IMU 数据
+  source:
+    locator: unitree_sdk2/include/unitree/idl/hg/IMUState_.hpp
+    type: sdk_code
+  type: StatusBit
+- id: unitree_g1_edu.event.bms_soc
+  properties:
+    description: 电池剩余电量百分比
+    field: bms_state.soc
+    name: 电池 SOC
+  source:
+    locator: unitree_sdk2/include/unitree/idl/hg/BmsState_.hpp
+    type: sdk_code
+  type: StatusBit
+- id: unitree_g1_edu.event.motor_overheat
+  properties:
+    description: 任一关节电机温度超过安全阈值
+    name: 电机过温
+    severity: error
+  source:
+    confidence: medium
+    type: document
+  type: FaultCode
+- id: unitree_g1_edu.event.battery_low
+  properties:
+    description: BMS SOC 低于安全阈值
+    name: 电池电量低
+    severity: warning
+  source:
+    confidence: medium
+    type: document
+  type: FaultCode
+- id: unitree_g1_edu.event.comm_loss
+  properties:
+    description: 与机器人 DDS 通信中断
+    name: DDS 通信丢失
+    severity: error
+  source:
+    confidence: medium
+    type: document
+  type: FaultCode
+- id: unitree_g1_edu.event.joint_limit
+  properties:
+    description: 关节角度超出运动范围
+    name: 关节限位超限
+    severity: warning
+  source:
+    confidence: medium
+    type: document
+  type: FaultCode
+- id: unitree_g1_edu.event.motor.L_LEG_HIP_PITCH.mode
+  properties:
+    description: 电机控制模式 (0=位置, 1=速度)
+    field: low_state.motor_state[0].mode
+    name: L_LEG_HIP_PITCH mode
+  source:
+    locator: unitree_sdk2/include/unitree/idl/hg/MotorState_.hpp
+    type: sdk_code
+  type: StatusBit
+- id: unitree_g1_edu.event.motor.L_LEG_HIP_PITCH.temperature
+  properties:
+    description: 电机温度 (℃)
+    field: low_state.motor_state[0].temperature
+    name: L_LEG_HIP_PITCH temperature
+  source:
+    locator: unitree_sdk2/include/unitree/idl/hg/MotorState_.hpp
+    type: sdk_code
+  type: StatusBit
+- id: unitree_g1_edu.event.motor.L_LEG_HIP_PITCH.motorstate
+  properties:
+    description: 电机状态码
+    field: low_state.motor_state[0].motorstate
+    name: L_LEG_HIP_PITCH motorstate
+  source:
+    locator: unitree_sdk2/include/unitree/idl/hg/MotorState_.hpp
+    type: sdk_code
+  type: StatusBit
+- id: unitree_g1_edu.event.motor.L_LEG_HIP_ROLL.mode
+  properties:
+    description: 电机控制模式 (0=位置, 1=速度)
+    field: low_state.motor_state[1].mode
+    name: L_LEG_HIP_ROLL mode
+  source:
+    locator: unitree_sdk2/include/unitree/idl/hg/MotorState_.hpp
+    type: sdk_code
+  type: StatusBit
+- id: unitree_g1_edu.event.motor.L_LEG_HIP_ROLL.temperature
+  properties:
+    description: 电机温度 (℃)
+    field: low_state.motor_state[1].temperature
+    name: L_LEG_HIP_ROLL temperature
+  source:
+    locator: unitree_sdk2/include/unitree/idl/hg/MotorState_.hpp
+    type: sdk_code
+  type: StatusBit
+- id: unitree_g1_edu.event.motor.L_LEG_HIP_ROLL.motorstate
+  properties:
+    description: 电机状态码
+    field: low_state.motor_state[1].motorstate
+    name: L_LEG_HIP_ROLL motorstate
+  source:
+    locator: unitree_sdk2/include/unitree/idl/hg/MotorState_.hpp
+    type: sdk_code
+  type: StatusBit
+- id: unitree_g1_edu.event.motor.L_LEG_HIP_YAW.mode
+  properties:
+    description: 电机控制模式 (0=位置, 1=速度)
+    field: low_state.motor_state[2].mode
+    name: L_LEG_HIP_YAW mode
+  source:
+    locator: unitree_sdk2/include/unitree/idl/hg/MotorState_.hpp
+    type: sdk_code
+  type: StatusBit
+- id: unitree_g1_edu.event.motor.L_LEG_HIP_YAW.temperature
+  properties:
+    description: 电机温度 (℃)
+    field: low_state.motor_state[2].temperature
+    name: L_LEG_HIP_YAW temperature
+  source:
+    locator: unitree_sdk2/include/unitree/idl/hg/MotorState_.hpp
+    type: sdk_code
+  type: StatusBit
+- id: unitree_g1_edu.event.motor.L_LEG_HIP_YAW.motorstate
+  properties:
+    description: 电机状态码
+    field: low_state.motor_state[2].motorstate
+    name: L_LEG_HIP_YAW motorstate
+  source:
+    locator: unitree_sdk2/include/unitree/idl/hg/MotorState_.hpp
+    type: sdk_code
+  type: StatusBit
+- id: unitree_g1_edu.event.motor.L_LEG_KNEE.mode
+  properties:
+    description: 电机控制模式 (0=位置, 1=速度)
+    field: low_state.motor_state[3].mode
+    name: L_LEG_KNEE mode
+  source:
+    locator: unitree_sdk2/include/unitree/idl/hg/MotorState_.hpp
+    type: sdk_code
+  type: StatusBit
+- id: unitree_g1_edu.event.motor.L_LEG_KNEE.temperature
+  properties:
+    description: 电机温度 (℃)
+    field: low_state.motor_state[3].temperature
+    name: L_LEG_KNEE temperature
+  source:
+    locator: unitree_sdk2/include/unitree/idl/hg/MotorState_.hpp
+    type: sdk_code
+  type: StatusBit
+- id: unitree_g1_edu.event.motor.L_LEG_KNEE.motorstate
+  properties:
+    description: 电机状态码
+    field: low_state.motor_state[3].motorstate
+    name: L_LEG_KNEE motorstate
+  source:
+    locator: unitree_sdk2/include/unitree/idl/hg/MotorState_.hpp
+    type: sdk_code
+  type: StatusBit
+- id: unitree_g1_edu.event.motor.L_LEG_ANKLE_PITCH.mode
+  properties:
+    description: 电机控制模式 (0=位置, 1=速度)
+    field: low_state.motor_state[4].mode
+    name: L_LEG_ANKLE_PITCH mode
+  source:
+    locator: unitree_sdk2/include/unitree/idl/hg/MotorState_.hpp
+    type: sdk_code
+  type: StatusBit
+- id: unitree_g1_edu.event.motor.L_LEG_ANKLE_PITCH.temperature
+  properties:
+    description: 电机温度 (℃)
+    field: low_state.motor_state[4].temperature
+    name: L_LEG_ANKLE_PITCH temperature
+  source:
+    locator: unitree_sdk2/include/unitree/idl/hg/MotorState_.hpp
+    type: sdk_code
+  type: StatusBit
+- id: unitree_g1_edu.event.motor.L_LEG_ANKLE_PITCH.motorstate
+  properties:
+    description: 电机状态码
+    field: low_state.motor_state[4].motorstate
+    name: L_LEG_ANKLE_PITCH motorstate
+  source:
+    locator: unitree_sdk2/include/unitree/idl/hg/MotorState_.hpp
+    type: sdk_code
+  type: StatusBit
+- id: unitree_g1_edu.event.motor.L_LEG_ANKLE_ROLL.mode
+  properties:
+    description: 电机控制模式 (0=位置, 1=速度)
+    field: low_state.motor_state[5].mode
+    name: L_LEG_ANKLE_ROLL mode
+  source:
+    locator: unitree_sdk2/include/unitree/idl/hg/MotorState_.hpp
+    type: sdk_code
+  type: StatusBit
+- id: unitree_g1_edu.event.motor.L_LEG_ANKLE_ROLL.temperature
+  properties:
+    description: 电机温度 (℃)
+    field: low_state.motor_state[5].temperature
+    name: L_LEG_ANKLE_ROLL temperature
+  source:
+    locator: unitree_sdk2/include/unitree/idl/hg/MotorState_.hpp
+    type: sdk_code
+  type: StatusBit
+- id: unitree_g1_edu.event.motor.L_LEG_ANKLE_ROLL.motorstate
+  properties:
+    description: 电机状态码
+    field: low_state.motor_state[5].motorstate
+    name: L_LEG_ANKLE_ROLL motorstate
+  source:
+    locator: unitree_sdk2/include/unitree/idl/hg/MotorState_.hpp
+    type: sdk_code
+  type: StatusBit
+- id: unitree_g1_edu.event.motor.R_LEG_HIP_PITCH.mode
+  properties:
+    description: 电机控制模式 (0=位置, 1=速度)
+    field: low_state.motor_state[6].mode
+    name: R_LEG_HIP_PITCH mode
+  source:
+    locator: unitree_sdk2/include/unitree/idl/hg/MotorState_.hpp
+    type: sdk_code
+  type: StatusBit
+- id: unitree_g1_edu.event.motor.R_LEG_HIP_PITCH.temperature
+  properties:
+    description: 电机温度 (℃)
+    field: low_state.motor_state[6].temperature
+    name: R_LEG_HIP_PITCH temperature
+  source:
+    locator: unitree_sdk2/include/unitree/idl/hg/MotorState_.hpp
+    type: sdk_code
+  type: StatusBit
+- id: unitree_g1_edu.event.motor.R_LEG_HIP_PITCH.motorstate
+  properties:
+    description: 电机状态码
+    field: low_state.motor_state[6].motorstate
+    name: R_LEG_HIP_PITCH motorstate
+  source:
+    locator: unitree_sdk2/include/unitree/idl/hg/MotorState_.hpp
+    type: sdk_code
+  type: StatusBit
+- id: unitree_g1_edu.event.motor.R_LEG_HIP_ROLL.mode
+  properties:
+    description: 电机控制模式 (0=位置, 1=速度)
+    field: low_state.motor_state[7].mode
+    name: R_LEG_HIP_ROLL mode
+  source:
+    locator: unitree_sdk2/include/unitree/idl/hg/MotorState_.hpp
+    type: sdk_code
+  type: StatusBit
+- id: unitree_g1_edu.event.motor.R_LEG_HIP_ROLL.temperature
+  properties:
+    description: 电机温度 (℃)
+    field: low_state.motor_state[7].temperature
+    name: R_LEG_HIP_ROLL temperature
+  source:
+    locator: unitree_sdk2/include/unitree/idl/hg/MotorState_.hpp
+    type: sdk_code
+  type: StatusBit
+- id: unitree_g1_edu.event.motor.R_LEG_HIP_ROLL.motorstate
+  properties:
+    description: 电机状态码
+    field: low_state.motor_state[7].motorstate
+    name: R_LEG_HIP_ROLL motorstate
+  source:
+    locator: unitree_sdk2/include/unitree/idl/hg/MotorState_.hpp
+    type: sdk_code
+  type: StatusBit
+- id: unitree_g1_edu.event.motor.R_LEG_HIP_YAW.mode
+  properties:
+    description: 电机控制模式 (0=位置, 1=速度)
+    field: low_state.motor_state[8].mode
+    name: R_LEG_HIP_YAW mode
+  source:
+    locator: unitree_sdk2/include/unitree/idl/hg/MotorState_.hpp
+    type: sdk_code
+  type: StatusBit
+- id: unitree_g1_edu.event.motor.R_LEG_HIP_YAW.temperature
+  properties:
+    description: 电机温度 (℃)
+    field: low_state.motor_state[8].temperature
+    name: R_LEG_HIP_YAW temperature
+  source:
+    locator: unitree_sdk2/include/unitree/idl/hg/MotorState_.hpp
+    type: sdk_code
+  type: StatusBit
+- id: unitree_g1_edu.event.motor.R_LEG_HIP_YAW.motorstate
+  properties:
+    description: 电机状态码
+    field: low_state.motor_state[8].motorstate
+    name: R_LEG_HIP_YAW motorstate
+  source:
+    locator: unitree_sdk2/include/unitree/idl/hg/MotorState_.hpp
+    type: sdk_code
+  type: StatusBit
+- id: unitree_g1_edu.event.motor.R_LEG_KNEE.mode
+  properties:
+    description: 电机控制模式 (0=位置, 1=速度)
+    field: low_state.motor_state[9].mode
+    name: R_LEG_KNEE mode
+  source:
+    locator: unitree_sdk2/include/unitree/idl/hg/MotorState_.hpp
+    type: sdk_code
+  type: StatusBit
+- id: unitree_g1_edu.event.motor.R_LEG_KNEE.temperature
+  properties:
+    description: 电机温度 (℃)
+    field: low_state.motor_state[9].temperature
+    name: R_LEG_KNEE temperature
+  source:
+    locator: unitree_sdk2/include/unitree/idl/hg/MotorState_.hpp
+    type: sdk_code
+  type: StatusBit
+- id: unitree_g1_edu.event.motor.R_LEG_KNEE.motorstate
+  properties:
+    description: 电机状态码
+    field: low_state.motor_state[9].motorstate
+    name: R_LEG_KNEE motorstate
+  source:
+    locator: unitree_sdk2/include/unitree/idl/hg/MotorState_.hpp
+    type: sdk_code
+  type: StatusBit
+- id: unitree_g1_edu.event.motor.R_LEG_ANKLE_PITCH.mode
+  properties:
+    description: 电机控制模式 (0=位置, 1=速度)
+    field: low_state.motor_state[10].mode
+    name: R_LEG_ANKLE_PITCH mode
+  source:
+    locator: unitree_sdk2/include/unitree/idl/hg/MotorState_.hpp
+    type: sdk_code
+  type: StatusBit
+- id: unitree_g1_edu.event.motor.R_LEG_ANKLE_PITCH.temperature
+  properties:
+    description: 电机温度 (℃)
+    field: low_state.motor_state[10].temperature
+    name: R_LEG_ANKLE_PITCH temperature
+  source:
+    locator: unitree_sdk2/include/unitree/idl/hg/MotorState_.hpp
+    type: sdk_code
+  type: StatusBit
+- id: unitree_g1_edu.event.motor.R_LEG_ANKLE_PITCH.motorstate
+  properties:
+    description: 电机状态码
+    field: low_state.motor_state[10].motorstate
+    name: R_LEG_ANKLE_PITCH motorstate
+  source:
+    locator: unitree_sdk2/include/unitree/idl/hg/MotorState_.hpp
+    type: sdk_code
+  type: StatusBit
+- id: unitree_g1_edu.event.motor.R_LEG_ANKLE_ROLL.mode
+  properties:
+    description: 电机控制模式 (0=位置, 1=速度)
+    field: low_state.motor_state[11].mode
+    name: R_LEG_ANKLE_ROLL mode
+  source:
+    locator: unitree_sdk2/include/unitree/idl/hg/MotorState_.hpp
+    type: sdk_code
+  type: StatusBit
+- id: unitree_g1_edu.event.motor.R_LEG_ANKLE_ROLL.temperature
+  properties:
+    description: 电机温度 (℃)
+    field: low_state.motor_state[11].temperature
+    name: R_LEG_ANKLE_ROLL temperature
+  source:
+    locator: unitree_sdk2/include/unitree/idl/hg/MotorState_.hpp
+    type: sdk_code
+  type: StatusBit
+- id: unitree_g1_edu.event.motor.R_LEG_ANKLE_ROLL.motorstate
+  properties:
+    description: 电机状态码
+    field: low_state.motor_state[11].motorstate
+    name: R_LEG_ANKLE_ROLL motorstate
+  source:
+    locator: unitree_sdk2/include/unitree/idl/hg/MotorState_.hpp
+    type: sdk_code
+  type: StatusBit
+- id: unitree_g1_edu.event.motor.TORSO.mode
+  properties:
+    description: 电机控制模式 (0=位置, 1=速度)
+    field: low_state.motor_state[12].mode
+    name: TORSO mode
+  source:
+    locator: unitree_sdk2/include/unitree/idl/hg/MotorState_.hpp
+    type: sdk_code
+  type: StatusBit
+- id: unitree_g1_edu.event.motor.TORSO.temperature
+  properties:
+    description: 电机温度 (℃)
+    field: low_state.motor_state[12].temperature
+    name: TORSO temperature
+  source:
+    locator: unitree_sdk2/include/unitree/idl/hg/MotorState_.hpp
+    type: sdk_code
+  type: StatusBit
+- id: unitree_g1_edu.event.motor.TORSO.motorstate
+  properties:
+    description: 电机状态码
+    field: low_state.motor_state[12].motorstate
+    name: TORSO motorstate
+  source:
+    locator: unitree_sdk2/include/unitree/idl/hg/MotorState_.hpp
+    type: sdk_code
+  type: StatusBit
+- id: unitree_g1_edu.event.motor.L_SHOULDER_PITCH.mode
+  properties:
+    description: 电机控制模式 (0=位置, 1=速度)
+    field: low_state.motor_state[13].mode
+    name: L_SHOULDER_PITCH mode
+  source:
+    locator: unitree_sdk2/include/unitree/idl/hg/MotorState_.hpp
+    type: sdk_code
+  type: StatusBit
+- id: unitree_g1_edu.event.motor.L_SHOULDER_PITCH.temperature
+  properties:
+    description: 电机温度 (℃)
+    field: low_state.motor_state[13].temperature
+    name: L_SHOULDER_PITCH temperature
+  source:
+    locator: unitree_sdk2/include/unitree/idl/hg/MotorState_.hpp
+    type: sdk_code
+  type: StatusBit
+- id: unitree_g1_edu.event.motor.L_SHOULDER_PITCH.motorstate
+  properties:
+    description: 电机状态码
+    field: low_state.motor_state[13].motorstate
+    name: L_SHOULDER_PITCH motorstate
+  source:
+    locator: unitree_sdk2/include/unitree/idl/hg/MotorState_.hpp
+    type: sdk_code
+  type: StatusBit
+- id: unitree_g1_edu.event.motor.L_SHOULDER_ROLL.mode
+  properties:
+    description: 电机控制模式 (0=位置, 1=速度)
+    field: low_state.motor_state[14].mode
+    name: L_SHOULDER_ROLL mode
+  source:
+    locator: unitree_sdk2/include/unitree/idl/hg/MotorState_.hpp
+    type: sdk_code
+  type: StatusBit
+- id: unitree_g1_edu.event.motor.L_SHOULDER_ROLL.temperature
+  properties:
+    description: 电机温度 (℃)
+    field: low_state.motor_state[14].temperature
+    name: L_SHOULDER_ROLL temperature
+  source:
+    locator: unitree_sdk2/include/unitree/idl/hg/MotorState_.hpp
+    type: sdk_code
+  type: StatusBit
+- id: unitree_g1_edu.event.motor.L_SHOULDER_ROLL.motorstate
+  properties:
+    description: 电机状态码
+    field: low_state.motor_state[14].motorstate
+    name: L_SHOULDER_ROLL motorstate
+  source:
+    locator: unitree_sdk2/include/unitree/idl/hg/MotorState_.hpp
+    type: sdk_code
+  type: StatusBit
+- id: unitree_g1_edu.event.motor.L_SHOULDER_YAW.mode
+  properties:
+    description: 电机控制模式 (0=位置, 1=速度)
+    field: low_state.motor_state[15].mode
+    name: L_SHOULDER_YAW mode
+  source:
+    locator: unitree_sdk2/include/unitree/idl/hg/MotorState_.hpp
+    type: sdk_code
+  type: StatusBit
+- id: unitree_g1_edu.event.motor.L_SHOULDER_YAW.temperature
+  properties:
+    description: 电机温度 (℃)
+    field: low_state.motor_state[15].temperature
+    name: L_SHOULDER_YAW temperature
+  source:
+    locator: unitree_sdk2/include/unitree/idl/hg/MotorState_.hpp
+    type: sdk_code
+  type: StatusBit
+- id: unitree_g1_edu.event.motor.L_SHOULDER_YAW.motorstate
+  properties:
+    description: 电机状态码
+    field: low_state.motor_state[15].motorstate
+    name: L_SHOULDER_YAW motorstate
+  source:
+    locator: unitree_sdk2/include/unitree/idl/hg/MotorState_.hpp
+    type: sdk_code
+  type: StatusBit
+- id: unitree_g1_edu.event.motor.L_ELBOW_PITCH.mode
+  properties:
+    description: 电机控制模式 (0=位置, 1=速度)
+    field: low_state.motor_state[16].mode
+    name: L_ELBOW_PITCH mode
+  source:
+    locator: unitree_sdk2/include/unitree/idl/hg/MotorState_.hpp
+    type: sdk_code
+  type: StatusBit
+- id: unitree_g1_edu.event.motor.L_ELBOW_PITCH.temperature
+  properties:
+    description: 电机温度 (℃)
+    field: low_state.motor_state[16].temperature
+    name: L_ELBOW_PITCH temperature
+  source:
+    locator: unitree_sdk2/include/unitree/idl/hg/MotorState_.hpp
+    type: sdk_code
+  type: StatusBit
+- id: unitree_g1_edu.event.motor.L_ELBOW_PITCH.motorstate
+  properties:
+    description: 电机状态码
+    field: low_state.motor_state[16].motorstate
+    name: L_ELBOW_PITCH motorstate
+  source:
+    locator: unitree_sdk2/include/unitree/idl/hg/MotorState_.hpp
+    type: sdk_code
+  type: StatusBit
+- id: unitree_g1_edu.event.motor.L_ELBOW_ROLL.mode
+  properties:
+    description: 电机控制模式 (0=位置, 1=速度)
+    field: low_state.motor_state[17].mode
+    name: L_ELBOW_ROLL mode
+  source:
+    locator: unitree_sdk2/include/unitree/idl/hg/MotorState_.hpp
+    type: sdk_code
+  type: StatusBit
+- id: unitree_g1_edu.event.motor.L_ELBOW_ROLL.temperature
+  properties:
+    description: 电机温度 (℃)
+    field: low_state.motor_state[17].temperature
+    name: L_ELBOW_ROLL temperature
+  source:
+    locator: unitree_sdk2/include/unitree/idl/hg/MotorState_.hpp
+    type: sdk_code
+  type: StatusBit
+- id: unitree_g1_edu.event.motor.L_ELBOW_ROLL.motorstate
+  properties:
+    description: 电机状态码
+    field: low_state.motor_state[17].motorstate
+    name: L_ELBOW_ROLL motorstate
+  source:
+    locator: unitree_sdk2/include/unitree/idl/hg/MotorState_.hpp
+    type: sdk_code
+  type: StatusBit
+- id: unitree_g1_edu.event.motor.R_SHOULDER_PITCH.mode
+  properties:
+    description: 电机控制模式 (0=位置, 1=速度)
+    field: low_state.motor_state[18].mode
+    name: R_SHOULDER_PITCH mode
+  source:
+    locator: unitree_sdk2/include/unitree/idl/hg/MotorState_.hpp
+    type: sdk_code
+  type: StatusBit
+- id: unitree_g1_edu.event.motor.R_SHOULDER_PITCH.temperature
+  properties:
+    description: 电机温度 (℃)
+    field: low_state.motor_state[18].temperature
+    name: R_SHOULDER_PITCH temperature
+  source:
+    locator: unitree_sdk2/include/unitree/idl/hg/MotorState_.hpp
+    type: sdk_code
+  type: StatusBit
+- id: unitree_g1_edu.event.motor.R_SHOULDER_PITCH.motorstate
+  properties:
+    description: 电机状态码
+    field: low_state.motor_state[18].motorstate
+    name: R_SHOULDER_PITCH motorstate
+  source:
+    locator: unitree_sdk2/include/unitree/idl/hg/MotorState_.hpp
+    type: sdk_code
+  type: StatusBit
+- id: unitree_g1_edu.event.motor.R_SHOULDER_ROLL.mode
+  properties:
+    description: 电机控制模式 (0=位置, 1=速度)
+    field: low_state.motor_state[19].mode
+    name: R_SHOULDER_ROLL mode
+  source:
+    locator: unitree_sdk2/include/unitree/idl/hg/MotorState_.hpp
+    type: sdk_code
+  type: StatusBit
+- id: unitree_g1_edu.event.motor.R_SHOULDER_ROLL.temperature
+  properties:
+    description: 电机温度 (℃)
+    field: low_state.motor_state[19].temperature
+    name: R_SHOULDER_ROLL temperature
+  source:
+    locator: unitree_sdk2/include/unitree/idl/hg/MotorState_.hpp
+    type: sdk_code
+  type: StatusBit
+- id: unitree_g1_edu.event.motor.R_SHOULDER_ROLL.motorstate
+  properties:
+    description: 电机状态码
+    field: low_state.motor_state[19].motorstate
+    name: R_SHOULDER_ROLL motorstate
+  source:
+    locator: unitree_sdk2/include/unitree/idl/hg/MotorState_.hpp
+    type: sdk_code
+  type: StatusBit
+- id: unitree_g1_edu.event.motor.R_SHOULDER_YAW.mode
+  properties:
+    description: 电机控制模式 (0=位置, 1=速度)
+    field: low_state.motor_state[20].mode
+    name: R_SHOULDER_YAW mode
+  source:
+    locator: unitree_sdk2/include/unitree/idl/hg/MotorState_.hpp
+    type: sdk_code
+  type: StatusBit
+- id: unitree_g1_edu.event.motor.R_SHOULDER_YAW.temperature
+  properties:
+    description: 电机温度 (℃)
+    field: low_state.motor_state[20].temperature
+    name: R_SHOULDER_YAW temperature
+  source:
+    locator: unitree_sdk2/include/unitree/idl/hg/MotorState_.hpp
+    type: sdk_code
+  type: StatusBit
+- id: unitree_g1_edu.event.motor.R_SHOULDER_YAW.motorstate
+  properties:
+    description: 电机状态码
+    field: low_state.motor_state[20].motorstate
+    name: R_SHOULDER_YAW motorstate
+  source:
+    locator: unitree_sdk2/include/unitree/idl/hg/MotorState_.hpp
+    type: sdk_code
+  type: StatusBit
+- id: unitree_g1_edu.event.motor.R_ELBOW_PITCH.mode
+  properties:
+    description: 电机控制模式 (0=位置, 1=速度)
+    field: low_state.motor_state[21].mode
+    name: R_ELBOW_PITCH mode
+  source:
+    locator: unitree_sdk2/include/unitree/idl/hg/MotorState_.hpp
+    type: sdk_code
+  type: StatusBit
+- id: unitree_g1_edu.event.motor.R_ELBOW_PITCH.temperature
+  properties:
+    description: 电机温度 (℃)
+    field: low_state.motor_state[21].temperature
+    name: R_ELBOW_PITCH temperature
+  source:
+    locator: unitree_sdk2/include/unitree/idl/hg/MotorState_.hpp
+    type: sdk_code
+  type: StatusBit
+- id: unitree_g1_edu.event.motor.R_ELBOW_PITCH.motorstate
+  properties:
+    description: 电机状态码
+    field: low_state.motor_state[21].motorstate
+    name: R_ELBOW_PITCH motorstate
+  source:
+    locator: unitree_sdk2/include/unitree/idl/hg/MotorState_.hpp
+    type: sdk_code
+  type: StatusBit
+- id: unitree_g1_edu.event.motor.R_ELBOW_ROLL.mode
+  properties:
+    description: 电机控制模式 (0=位置, 1=速度)
+    field: low_state.motor_state[22].mode
+    name: R_ELBOW_ROLL mode
+  source:
+    locator: unitree_sdk2/include/unitree/idl/hg/MotorState_.hpp
+    type: sdk_code
+  type: StatusBit
+- id: unitree_g1_edu.event.motor.R_ELBOW_ROLL.temperature
+  properties:
+    description: 电机温度 (℃)
+    field: low_state.motor_state[22].temperature
+    name: R_ELBOW_ROLL temperature
+  source:
+    locator: unitree_sdk2/include/unitree/idl/hg/MotorState_.hpp
+    type: sdk_code
+  type: StatusBit
+- id: unitree_g1_edu.event.motor.R_ELBOW_ROLL.motorstate
+  properties:
+    description: 电机状态码
+    field: low_state.motor_state[22].motorstate
+    name: R_ELBOW_ROLL motorstate
+  source:
+    locator: unitree_sdk2/include/unitree/idl/hg/MotorState_.hpp
+    type: sdk_code
+  type: StatusBit
+- id: unitree_g1_edu.event.bms.soc
+  properties:
+    description: 电池剩余电量 (%)
+    field: bms_state.soc
+    name: BMS soc
+  source:
+    locator: unitree_sdk2/include/unitree/idl/hg/BmsState_.hpp
+    type: sdk_code
+  type: StatusBit
+- id: unitree_g1_edu.event.bms.soh
+  properties:
+    description: 电池健康度 (%)
+    field: bms_state.soh
+    name: BMS soh
+  source:
+    locator: unitree_sdk2/include/unitree/idl/hg/BmsState_.hpp
+    type: sdk_code
+  type: StatusBit
+- id: unitree_g1_edu.event.bms.temperature
+  properties:
+    description: 电池温度 (℃)
+    field: bms_state.temperature
+    name: BMS temperature
+  source:
+    locator: unitree_sdk2/include/unitree/idl/hg/BmsState_.hpp
+    type: sdk_code
+  type: StatusBit
+- id: unitree_g1_edu.event.bms.current
+  properties:
+    description: 电池电流 (A)
+    field: bms_state.current
+    name: BMS current
+  source:
+    locator: unitree_sdk2/include/unitree/idl/hg/BmsState_.hpp
+    type: sdk_code
+  type: StatusBit
+- id: unitree_g1_edu.event.bms.bmsvoltage
+  properties:
+    description: 电池电压 (V)
+    field: bms_state.bmsvoltage
+    name: BMS bmsvoltage
+  source:
+    locator: unitree_sdk2/include/unitree/idl/hg/BmsState_.hpp
+    type: sdk_code
+  type: StatusBit
+- id: unitree_g1_edu.event.bms.cell_vol
+  properties:
+    description: 电芯电压 (V)
+    field: bms_state.cell_vol
+    name: BMS cell_vol
+  source:
+    locator: unitree_sdk2/include/unitree/idl/hg/BmsState_.hpp
+    type: sdk_code
+  type: StatusBit
+- id: unitree_g1_edu.event.bms.cycle
+  properties:
+    description: 充放电循环次数
+    field: bms_state.cycle
+    name: BMS cycle
+  source:
+    locator: unitree_sdk2/include/unitree/idl/hg/BmsState_.hpp
+    type: sdk_code
+  type: StatusBit
+- id: unitree_g1_edu.event.bms.fn
+  properties:
+    description: BMS 固件版本
+    field: bms_state.fn
+    name: BMS fn
+  source:
+    locator: unitree_sdk2/include/unitree/idl/hg/BmsState_.hpp
+    type: sdk_code
+  type: StatusBit
+- id: unitree_g1_edu.event.bms.bmsstate
+  properties:
+    description: BMS 状态码
+    field: bms_state.bmsstate
+    name: BMS bmsstate
+  source:
+    locator: unitree_sdk2/include/unitree/idl/hg/BmsState_.hpp
+    type: sdk_code
+  type: StatusBit
+- id: unitree_g1_edu.event.imu.quaternion
+  properties:
+    description: 姿态四元数
+    field: imu_state.quaternion
+    name: IMU quaternion
+  source:
+    locator: unitree_sdk2/include/unitree/idl/hg/IMUState_.hpp
+    type: sdk_code
+  type: StatusBit
+- id: unitree_g1_edu.event.imu.gyroscope
+  properties:
+    description: 角速度
+    field: imu_state.gyroscope
+    name: IMU gyroscope
+  source:
+    locator: unitree_sdk2/include/unitree/idl/hg/IMUState_.hpp
+    type: sdk_code
+  type: StatusBit
+- id: unitree_g1_edu.event.imu.accelerometer
+  properties:
+    description: 加速度
+    field: imu_state.accelerometer
+    name: IMU accelerometer
+  source:
+    locator: unitree_sdk2/include/unitree/idl/hg/IMUState_.hpp
+    type: sdk_code
+  type: StatusBit
+- id: unitree_g1_edu.event.imu.rpy
+  properties:
+    description: 欧拉角
+    field: imu_state.rpy
+    name: IMU rpy
+  source:
+    locator: unitree_sdk2/include/unitree/idl/hg/IMUState_.hpp
+    type: sdk_code
+  type: StatusBit
+- id: unitree_g1_edu.event.imu.temperature
+  properties:
+    description: IMU温度
+    field: imu_state.temperature
+    name: IMU temperature
+  source:
+    locator: unitree_sdk2/include/unitree/idl/hg/IMUState_.hpp
+    type: sdk_code
+  type: StatusBit
+- id: unitree_g1_edu.event.sport.fsm_id
+  properties:
+    description: 状态机ID
+    field: sport_mode_state.fsm_id
+    name: Sport fsm_id
+  source:
+    locator: unitree_sdk2/include/unitree/idl/hg/SportModeState_.hpp
+    type: sdk_code
+  type: StatusBit
+- id: unitree_g1_edu.event.sport.fsm_mode
+  properties:
+    description: 状态机模式
+    field: sport_mode_state.fsm_mode
+    name: Sport fsm_mode
+  source:
+    locator: unitree_sdk2/include/unitree/idl/hg/SportModeState_.hpp
+    type: sdk_code
+  type: StatusBit
+- id: unitree_g1_edu.event.sport.task_id
+  properties:
+    description: 当前任务ID
+    field: sport_mode_state.task_id
+    name: Sport task_id
+  source:
+    locator: unitree_sdk2/include/unitree/idl/hg/SportModeState_.hpp
+    type: sdk_code
+  type: StatusBit
+- id: unitree_g1_edu.event.sport.task_time
+  properties:
+    description: 任务已执行时间
+    field: sport_mode_state.task_time
+    name: Sport task_time
+  source:
+    locator: unitree_sdk2/include/unitree/idl/hg/SportModeState_.hpp
+    type: sdk_code
+  type: StatusBit
+- id: unitree_g1_edu.event.board.fan_state_0
+  properties:
+    description: 风扇0状态
+    field: main_board_state.fan_state[0]
+    name: 主板 fan_state[0]
+  source:
+    locator: unitree_sdk2/include/unitree/idl/hg/MainBoardState_.hpp
+    type: sdk_code
+  type: StatusBit
+- id: unitree_g1_edu.event.board.temperature_0
+  properties:
+    description: 主板温度传感器0
+    field: main_board_state.temperature[0]
+    name: 主板 temperature[0]
+  source:
+    locator: unitree_sdk2/include/unitree/idl/hg/MainBoardState_.hpp
+    type: sdk_code
+  type: StatusBit
+- id: unitree_g1_edu.event.board.state_0
+  properties:
+    description: 主板状态位0
+    field: main_board_state.state[0]
+    name: 主板 state[0]
+  source:
+    locator: unitree_sdk2/include/unitree/idl/hg/MainBoardState_.hpp
+    type: sdk_code
+  type: StatusBit
+- id: unitree_g1_edu.event.board.fan_state_1
+  properties:
+    description: 风扇1状态
+    field: main_board_state.fan_state[1]
+    name: 主板 fan_state[1]
+  source:
+    locator: unitree_sdk2/include/unitree/idl/hg/MainBoardState_.hpp
+    type: sdk_code
+  type: StatusBit
+- id: unitree_g1_edu.event.board.temperature_1
+  properties:
+    description: 主板温度传感器1
+    field: main_board_state.temperature[1]
+    name: 主板 temperature[1]
+  source:
+    locator: unitree_sdk2/include/unitree/idl/hg/MainBoardState_.hpp
+    type: sdk_code
+  type: StatusBit
+- id: unitree_g1_edu.event.board.state_1
+  properties:
+    description: 主板状态位1
+    field: main_board_state.state[1]
+    name: 主板 state[1]
+  source:
+    locator: unitree_sdk2/include/unitree/idl/hg/MainBoardState_.hpp
+    type: sdk_code
+  type: StatusBit
+- id: unitree_g1_edu.event.board.fan_state_2
+  properties:
+    description: 风扇2状态
+    field: main_board_state.fan_state[2]
+    name: 主板 fan_state[2]
+  source:
+    locator: unitree_sdk2/include/unitree/idl/hg/MainBoardState_.hpp
+    type: sdk_code
+  type: StatusBit
+- id: unitree_g1_edu.event.board.temperature_2
+  properties:
+    description: 主板温度传感器2
+    field: main_board_state.temperature[2]
+    name: 主板 temperature[2]
+  source:
+    locator: unitree_sdk2/include/unitree/idl/hg/MainBoardState_.hpp
+    type: sdk_code
+  type: StatusBit
+- id: unitree_g1_edu.event.board.state_2
+  properties:
+    description: 主板状态位2
+    field: main_board_state.state[2]
+    name: 主板 state[2]
+  source:
+    locator: unitree_sdk2/include/unitree/idl/hg/MainBoardState_.hpp
+    type: sdk_code
+  type: StatusBit
+- id: unitree_g1_edu.event.board.fan_state_3
+  properties:
+    description: 风扇3状态
+    field: main_board_state.fan_state[3]
+    name: 主板 fan_state[3]
+  source:
+    locator: unitree_sdk2/include/unitree/idl/hg/MainBoardState_.hpp
+    type: sdk_code
+  type: StatusBit
+- id: unitree_g1_edu.event.board.temperature_3
+  properties:
+    description: 主板温度传感器3
+    field: main_board_state.temperature[3]
+    name: 主板 temperature[3]
+  source:
+    locator: unitree_sdk2/include/unitree/idl/hg/MainBoardState_.hpp
+    type: sdk_code
+  type: StatusBit
+- id: unitree_g1_edu.event.board.state_3
+  properties:
+    description: 主板状态位3
+    field: main_board_state.state[3]
+    name: 主板 state[3]
+  source:
+    locator: unitree_sdk2/include/unitree/idl/hg/MainBoardState_.hpp
+    type: sdk_code
+  type: StatusBit
+- id: unitree_g1_edu.event.board.fan_state_4
+  properties:
+    description: 风扇4状态
+    field: main_board_state.fan_state[4]
+    name: 主板 fan_state[4]
+  source:
+    locator: unitree_sdk2/include/unitree/idl/hg/MainBoardState_.hpp
+    type: sdk_code
+  type: StatusBit
+- id: unitree_g1_edu.event.board.temperature_4
+  properties:
+    description: 主板温度传感器4
+    field: main_board_state.temperature[4]
+    name: 主板 temperature[4]
+  source:
+    locator: unitree_sdk2/include/unitree/idl/hg/MainBoardState_.hpp
+    type: sdk_code
+  type: StatusBit
+- id: unitree_g1_edu.event.board.state_4
+  properties:
+    description: 主板状态位4
+    field: main_board_state.state[4]
+    name: 主板 state[4]
+  source:
+    locator: unitree_sdk2/include/unitree/idl/hg/MainBoardState_.hpp
+    type: sdk_code
+  type: StatusBit
+- id: unitree_g1_edu.event.board.fan_state_5
+  properties:
+    description: 风扇5状态
+    field: main_board_state.fan_state[5]
+    name: 主板 fan_state[5]
+  source:
+    locator: unitree_sdk2/include/unitree/idl/hg/MainBoardState_.hpp
+    type: sdk_code
+  type: StatusBit
+- id: unitree_g1_edu.event.board.temperature_5
+  properties:
+    description: 主板温度传感器5
+    field: main_board_state.temperature[5]
+    name: 主板 temperature[5]
+  source:
+    locator: unitree_sdk2/include/unitree/idl/hg/MainBoardState_.hpp
+    type: sdk_code
+  type: StatusBit
+- id: unitree_g1_edu.event.board.state_5
+  properties:
+    description: 主板状态位5
+    field: main_board_state.state[5]
+    name: 主板 state[5]
+  source:
+    locator: unitree_sdk2/include/unitree/idl/hg/MainBoardState_.hpp
+    type: sdk_code
+  type: StatusBit
+- id: unitree_g1_edu.event.loco_state_unavailable
+  properties:
+    code: 7301
+    name: Loco 状态不可用
+    severity: error
+  source:
+    locator: unitree_sdk2/include/unitree/robot/g1/loco/g1_loco_error.hpp
+    type: sdk_code
+  type: FaultCode
+- id: unitree_g1_edu.event.invalid_fsm_id
+  properties:
+    code: 7302
+    name: 无效 FSM ID
+    severity: error
+  source:
+    locator: unitree_sdk2/include/unitree/robot/g1/loco/g1_loco_error.hpp
+    type: sdk_code
+  type: FaultCode
+- id: unitree_g1_edu.event.invalid_task_id
+  properties:
+    code: 7303
+    name: 无效任务 ID
+    severity: error
+  source:
+    locator: unitree_sdk2/include/unitree/robot/g1/loco/g1_loco_error.hpp
+    type: sdk_code
+  type: FaultCode
+- id: unitree_g1_edu.event.arm_topic_occupied
+  properties:
+    code: 7400
+    name: 机械臂 DDS topic 被占用
+    severity: error
+  source:
+    locator: unitree_sdk2/include/unitree/robot/g1/arm/g1_arm_action_error.hpp
+    type: sdk_code
+  type: FaultCode
+- id: unitree_g1_edu.event.arm_holding
+  properties:
+    code: 7401
+    name: 机械臂正在持握中
+    severity: warning
+  source:
+    locator: unitree_sdk2/include/unitree/robot/g1/arm/g1_arm_action_error.hpp
+    type: sdk_code
+  type: FaultCode
+- id: unitree_g1_edu.event.arm_invalid_action
+  properties:
+    code: 7402
+    name: 无效机械臂动作 ID
+    severity: error
+  source:
+    locator: unitree_sdk2/include/unitree/robot/g1/arm/g1_arm_action_error.hpp
+    type: sdk_code
+  type: FaultCode
+- id: unitree_g1_edu.event.arm_invalid_fsm
+  properties:
+    code: 7404
+    name: 机械臂 FSM ID 不匹配
+    severity: error
+  source:
+    locator: unitree_sdk2/include/unitree/robot/g1/arm/g1_arm_action_error.hpp
+    type: sdk_code
+  type: FaultCode
+- id: unitree_g1_edu.event.audio_invalid_param
+  properties:
+    code: 100
+    name: 音频参数无效
+    severity: warning
+  source:
+    locator: unitree_sdk2/include/unitree/robot/g1/audio/g1_audio_error.hpp
+    type: sdk_code
+  type: FaultCode

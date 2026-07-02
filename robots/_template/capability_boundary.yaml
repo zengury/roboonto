@@ -1,0 +1,44 @@
+# MY_ROBOT — Capability Boundary (可观测性边界声明)
+# ======================================================================
+# 诚实声明当前 ontology 覆盖什么、不覆盖什么。
+# 这决定了 hardware-probe / diagnostics / agent 的"可回答范围"。
+#
+# 此文件用于:
+#   1. Probe 知道哪些 topic/sensor 应该存在
+#   2. Diagnostics 知道哪些数据源可查询
+#   3. Agent 不会假装能观测到不存在的数据
+# ======================================================================
+
+robot_id: MY_ROBOT
+
+# 已建模的传感器 (probe 会逐一检查)
+declared_sensors: []
+# 示例:
+# - id: MY_ROBOT.hw.sensor.imu_chest
+#   topic: "/my_robot/imu/chest"
+#   msg_type: "sensor_msgs/msg/Imu"
+#   qos_expected: BEST_EFFORT
+#   frequency_hz_expected: 200
+
+# 已建模的关节组 (probe 会检查每个关节的温度/位置/速度)
+declared_joint_groups: []
+# 示例:
+# - name: leg
+#   expected_count: 6
+#   topic: "/my_robot/joint/leg/state"
+
+# 日志源 (diagnostics 可查询的)
+log_sources: []
+# 示例:
+# - id: ec  # EtherCAT master log
+#   path: "/var/log/ethercat/master.log"
+#   format: text
+
+# 已知限制 (诚实声明)
+known_gaps:
+  - "本 ontology 为初始版本，大部分 shard 尚未填写。"
+  - "没有 cause-effect 关系 — agent 无法诊断根因。"
+  - "没有 perception 建模 — agent 无法理解视觉输入。"
+
+# 未覆盖的领域 (probe 遇到这些时不算 unhealthy)
+uncovered_domains: []

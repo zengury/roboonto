@@ -1,0 +1,58 @@
+# Half-Cheetah — Goals (the loop's reward function as ontology)
+#
+# This is the FIRST goals.yaml in the project. The schema becomes the
+# template for X2 / future robots. Two key fields:
+#   primary_goal     — what we maximize (must declare metric + direction)
+#   constraints      — hard (terminate_episode) or soft (weighted_penalty)
+#   evaluation       — how rollout runner aggregates and gates patches
+
+robot: halfcheetah
+version: "v0.1"
+profile: learning_v1
+
+primary_goal:
+  metric: forward_velocity                 # info["x_velocity"] from gym
+  aggregator: mean
+  horizon_steps: 1000
+  direction: maximize
+  baseline_reference:
+    random_policy: -300
+    pd_handwritten: 1500                   # Phase 1 exit target
+    ppo_baseline: 3000                     # Phase 2 exit target (D2)
+    sac_baseline: 6000                     # stretch goal
+
+constraints:
+  - id: stay_upright
+    metric: body_pitch_abs                 # |obs[1]| (root angle)
+    operator: "<"
+    threshold: 0.5                         # rad ≈ 28°
+    on_violation: terminate_episode
+    severity: hard
+    rationale: |
+      cheetah models can flip and produce unbounded forward_velocity by
+      tumbling end over end. Hard cap on body pitch keeps reward
+      semantically meaningful.
+
+  - id: action_efficiency
+    metric: action_norm_squared            # ‖ctrl‖²
+    aggregator: sum
+    weight: -0.1                           # standard gym reward shaping
+    direction: minimize
+    severity: soft
+
+evaluation:
+  rollouts_per_eval: 100                   # Gate 3 final
+  rollouts_per_screen: 30                  # Gate 3 prescreen (decision 10.2)
+  significance_threshold: 0.95             # paired t-test confidence
+  reward_formula: |
+    sum(forward_velocity_at_step) - 0.1 * sum(action_norm_squared_at_step)
+    truncated when stay_upright violated
+  seeds:
+    fixed_count: 50                        # decision 10.5
+    holdout_count: 50                      # holdout for D2-pass overfitting check
+
+# References to ontology objects this goal is grounded in
+grounded_in:
+  hard_constraint_event: halfcheetah.event.pitch_violation
+  soft_constraint_event: halfcheetah.event.high_action_norm
+  primary_metric_source: halfcheetah.if.topic.observation  # vel via info field

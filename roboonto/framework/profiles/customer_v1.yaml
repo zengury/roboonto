@@ -1,0 +1,240 @@
+# Customer-Ready Framework Profile v1
+#
+# Distilled from the AgiBot X2 reference ontology
+# (roboonto/robots/agibot_x2/ — 250 objects / 22 actions / 324 links / 0 errors).
+#
+# Severities
+#   must   — hard prerequisite. If any `must` fails, the build is blocked at alpha.
+#   should — expected for customer-ready. Missing `should`s demote the grade.
+#   may    — extras. Only affects the maturity score, not the grade.
+#
+# Grades
+#   alpha          all `must` rules pass
+#   beta           alpha + ≥70% of `should` rules pass
+#   customer-ready beta + 100% of `should` rules pass
+
+id: customer_v1
+description: |
+  Lenient framework profile derived from the X2 customer ontology. Tells
+  engineers what a new-robot ontology needs before it can be released
+  alongside the customer build.
+reference_robot: agibot_x2
+
+rules:
+  # ─── must ────────────────────────────────────────────────────────────
+  - id: meta.id
+    severity: must
+    check: robot_meta_field
+    args: {field: id}
+    description: robot.id is set (not the placeholder)
+    hint: edit ontology.yaml → robot.id
+
+  - id: meta.vendor
+    severity: must
+    check: robot_meta_field
+    args: {field: vendor}
+    description: robot.vendor is set
+    hint: edit ontology.yaml → robot.vendor
+
+  - id: meta.model
+    severity: must
+    check: robot_meta_field
+    args: {field: model}
+    description: robot.model is set
+    hint: edit ontology.yaml → robot.model
+
+  - id: loader.clean
+    severity: must
+    check: loader_clean
+    description: roboonto loader reports zero errors
+    hint: run `roboonto validate <dir>` and fix listed errors first
+
+  - id: hardware.compute
+    severity: must
+    check: object_count
+    args: {type: ComputeUnit, min: 1}
+    description: at least one ComputeUnit declared
+    hint: add ComputeUnit objects to hardware.yaml (X2 has 3)
+
+  - id: hardware.power
+    severity: must
+    check: object_count
+    args: {type: PowerSubsystem, min: 1}
+    description: at least one PowerSubsystem declared
+    hint: add a PowerSubsystem to hardware.yaml
+
+  - id: behaviors.modes
+    severity: must
+    check: object_count
+    args: {type: Mode, min: 1}
+    description: at least one operating Mode declared
+    hint: add Mode objects to behaviors.yaml
+
+  - id: actions.exist
+    severity: must
+    check: action_count
+    args: {min: 1}
+    description: at least one Action declared
+    hint: add an Action to actions.yaml — start with a read-only `get_*`
+
+  - id: actions.invoker_type
+    severity: must
+    check: action_invokers
+    args: {allowed: [ros2_topic, ros2_service, cli, compound, dds_service, dds_topic]}
+    description: every Action invoker.type is one of the standard kinds
+    hint: actions.yaml — fix invoker.type
+
+  - id: actions.safety_class
+    severity: must
+    check: actions_have_field
+    args: {field: safety_class, non_empty: true}
+    description: every Action declares safety_class
+    hint: add safety_class (INFO/CONFIG/MOTION/POWER/IRREVERSIBLE) to each action
+
+  # ─── should ──────────────────────────────────────────────────────────
+  - id: hardware.sensors
+    severity: should
+    check: object_count
+    args: {type: Sensor, min: 1}
+    description: at least one Sensor declared (X2 has 9)
+    hint: add Sensor entries to hardware.yaml
+
+  - id: hardware.joints
+    severity: should
+    check: object_count
+    args: {type: Joint, min: 1}
+    description: at least one Joint declared (run roboonto import urdf)
+    hint: roboonto import urdf <robot.urdf> -o <ontology_dir>
+
+  - id: hardware.links
+    severity: should
+    check: object_count
+    args: {type: Link, min: 1}
+    description: at least one Link declared (URDF importer fills this)
+    hint: roboonto import urdf <robot.urdf> -o <ontology_dir>
+
+  - id: kinematics.joint_limits
+    severity: should
+    check: joints_have_position_limit
+    description: every Joint has a position_limit
+    hint: review joints_patch.yaml — ensure all entries have position_limit
+
+  - id: behaviors.modes_diversity
+    severity: should
+    check: object_count
+    args: {type: Mode, min: 3}
+    description: ≥3 distinct Modes declared (X2 has 6)
+    hint: add Modes (e.g. PASSIVE / DAMPING / ACTIVE)
+
+  - id: interfaces.topics
+    severity: should
+    check: object_count
+    args: {type: Topic, min: 1}
+    description: at least one Topic declared
+    hint: roboonto import sdk-code <sdk_dir> -o <ontology_dir>
+
+  - id: interfaces.services
+    severity: should
+    check: object_count
+    args: {type: Service, min: 1}
+    description: at least one Service declared
+    hint: add Services to interfaces.yaml
+
+  - id: events.status_bits
+    severity: should
+    check: object_count
+    args: {type: StatusBit, min: 1}
+    description: at least one StatusBit declared
+    hint: add StatusBit entries to events.yaml (PMU bits, joint health bits)
+
+  - id: actions.affects_modeled
+    severity: should
+    check: actions_have_field
+    args: {field: affects}
+    description: every Action declares what it affects (for impact analysis)
+    hint: add `affects:` list to each non-INFO action
+
+  - id: provenance.source_coverage
+    severity: should
+    check: objects_have_source
+    args: {min_pct: 60}
+    description: ≥60% of objects carry a `source` field (provenance)
+    hint: 'add a `source` block (type/locator) to each object'
+
+  - id: capability_boundary.populated
+    severity: should
+    check: capability_boundary
+    args: {min_declarations: 1}
+    description: capability_boundary.yaml has ≥1 declaration (sensor / joint group / log source / observability entry)
+    hint: 'fill capability_boundary.yaml — list declared_sensors or observability entries'
+
+  - id: standards.registry
+    severity: should
+    check: standard_mappings_count
+    args: {min: 2}
+    description: standard_mappings.yaml maps at least two external ontology vocabularies
+    hint: 'add standard_mappings.yaml with IEEE/RoSO/CORA term anchors'
+
+  - id: capabilities.exist
+    severity: should
+    check: object_count
+    args: {type: Capability, min: 1}
+    description: at least one Capability declares what the robot can do
+    hint: 'add capabilities.yaml with Capability objects'
+
+  - id: capabilities.providers
+    severity: should
+    check: capabilities_have_link
+    args: {link_type: provides_capability, direction: in}
+    description: every Capability has at least one provider component or sensor
+    hint: 'add provides_capability links from SoftwareComponent/Sensor to Capability'
+
+  - id: capabilities.exposed_via
+    severity: should
+    check: capabilities_have_link
+    args: {link_type: exposed_via, direction: out}
+    description: every Capability is exposed through at least one Topic, Service, or Action
+    hint: 'add exposed_via links from Capability to Topic/Service/Action'
+
+  - id: capabilities.high_risk_actions_mapped
+    severity: should
+    check: actions_exposed_by_capability
+    args: {safety_classes: [MOTION, POWER, IRREVERSIBLE]}
+    description: every high-risk Action is reachable from a Capability
+    hint: 'connect MOTION/POWER/IRREVERSIBLE actions with Capability -> exposed_via'
+
+  - id: derived_links.exist
+    severity: should
+    check: link_count
+    args: {min: 1}
+    description: at least one derived link declared
+    hint: add cross-shard relations to derived_links.yaml
+
+  # ─── may ─────────────────────────────────────────────────────────────
+  - id: events.fault_codes
+    severity: may
+    check: object_count
+    args: {type: FaultCode, min: 1}
+    description: FaultCode entries (X2 has 9)
+    hint: add FaultCode objects to events.yaml
+
+  - id: behaviors.preset_motions
+    severity: may
+    check: object_count
+    args: {type: PresetMotion, min: 1}
+    description: PresetMotion entries (X2 has 31)
+    hint: add PresetMotion objects to behaviors.yaml
+
+  - id: provenance.high_source_coverage
+    severity: may
+    check: objects_have_source
+    args: {min_pct: 90}
+    description: ≥90% of objects carry a source field (audit-grade)
+    hint: tighten source coverage to near-100%
+
+  - id: derived_links.dense
+    severity: may
+    check: link_count
+    args: {min: 50}
+    description: dense relational graph (X2 has 324)
+    hint: cross-link StatusBit ↔ Topic, Action ↔ Mode, etc.

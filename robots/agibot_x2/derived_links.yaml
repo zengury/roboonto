@@ -1,0 +1,280 @@
+# Derived Links — 把隐含在属性里的关系显式化成图边
+#
+# 这份文件不添加新 object,只添加 link 实例。所有 link 都能从其他 YAML 的
+# 属性机械推导出来(e.g. StatusBit.carrier_field="pmu_bool_status" 对应
+# 承载它的 pmu_state topic)。Importer 可自动生成,此处先手工列出验证设计。
+#
+# 原则:**ontology 不允许有未建模的隐含语义**。如果 A 的属性提到 B,
+# 那 A ↔ B 之间一定要有显式 link。
+
+links:
+
+# ============================================================
+# StatusBit → Topic  (carried_by)
+#   PMU 的 11 位由 /aima/hal/pmu/state 承载
+#   BMS 的 21 位也由 /aima/hal/pmu/state 承载(pmu_state msg 内)
+# ============================================================
+- { type: carried_by, source: agibot_x2.event.pmu.rk3588_power_good,          target: agibot_x2.if.topic.pmu_state }
+- { type: carried_by, source: agibot_x2.event.pmu.rk3588_monitor1,             target: agibot_x2.if.topic.pmu_state }
+- { type: carried_by, source: agibot_x2.event.pmu.rk3588_monitor2,             target: agibot_x2.if.topic.pmu_state }
+- { type: carried_by, source: agibot_x2.event.pmu.orin_power_good,             target: agibot_x2.if.topic.pmu_state }
+- { type: carried_by, source: agibot_x2.event.pmu.orin_monitor1,               target: agibot_x2.if.topic.pmu_state }
+- { type: carried_by, source: agibot_x2.event.pmu.orin_monitor2,               target: agibot_x2.if.topic.pmu_state }
+- { type: carried_by, source: agibot_x2.event.pmu.bus48v_overcurrent,          target: agibot_x2.if.topic.pmu_state }
+- { type: carried_by, source: agibot_x2.event.pmu.bus48v_overtemperature,      target: agibot_x2.if.topic.pmu_state }
+- { type: carried_by, source: agibot_x2.event.pmu.rk3588_plug_detect,          target: agibot_x2.if.topic.pmu_state }
+- { type: carried_by, source: agibot_x2.event.pmu.orin_nx_plug_detect,         target: agibot_x2.if.topic.pmu_state }
+
+- { type: carried_by, source: agibot_x2.event.bms.charge_flag,                 target: agibot_x2.if.topic.pmu_state }
+- { type: carried_by, source: agibot_x2.event.bms.charge_overcurrent,          target: agibot_x2.if.topic.pmu_state }
+- { type: carried_by, source: agibot_x2.event.bms.discharge_flag,              target: agibot_x2.if.topic.pmu_state }
+- { type: carried_by, source: agibot_x2.event.bms.discharge_overcurrent,       target: agibot_x2.if.topic.pmu_state }
+- { type: carried_by, source: agibot_x2.event.bms.short_circuit,               target: agibot_x2.if.topic.pmu_state }
+- { type: carried_by, source: agibot_x2.event.bms.cell_overvoltage,            target: agibot_x2.if.topic.pmu_state }
+- { type: carried_by, source: agibot_x2.event.bms.cell_undervoltage,           target: agibot_x2.if.topic.pmu_state }
+- { type: carried_by, source: agibot_x2.event.bms.battery_overvoltage,         target: agibot_x2.if.topic.pmu_state }
+- { type: carried_by, source: agibot_x2.event.bms.battery_undervoltage,        target: agibot_x2.if.topic.pmu_state }
+- { type: carried_by, source: agibot_x2.event.bms.cell_open_circuit,           target: agibot_x2.if.topic.pmu_state }
+- { type: carried_by, source: agibot_x2.event.bms.ntc_open_circuit,            target: agibot_x2.if.topic.pmu_state }
+- { type: carried_by, source: agibot_x2.event.bms.cell_discharge_overtemp,     target: agibot_x2.if.topic.pmu_state }
+- { type: carried_by, source: agibot_x2.event.bms.cell_charge_overtemp,        target: agibot_x2.if.topic.pmu_state }
+- { type: carried_by, source: agibot_x2.event.bms.cell_discharge_undertemp,    target: agibot_x2.if.topic.pmu_state }
+- { type: carried_by, source: agibot_x2.event.bms.cell_charge_undertemp,       target: agibot_x2.if.topic.pmu_state }
+- { type: carried_by, source: agibot_x2.event.bms.cell_voltage_diff_over_high, target: agibot_x2.if.topic.pmu_state }
+- { type: carried_by, source: agibot_x2.event.bms.mosfet_charge_disable,       target: agibot_x2.if.topic.pmu_state }
+- { type: carried_by, source: agibot_x2.event.bms.mosfet_discharge_disable,    target: agibot_x2.if.topic.pmu_state }
+- { type: carried_by, source: agibot_x2.event.bms.mosfet_overtemp,             target: agibot_x2.if.topic.pmu_state }
+- { type: carried_by, source: agibot_x2.event.bms.balance_line_resistance_over_high, target: agibot_x2.if.topic.pmu_state }
+
+# ============================================================
+# StatusBit → Hardware (indicates,补全原先只连了 8 个)
+#   PMU 通用故障指示电源;RK3588/ORIN 位指示对应计算单元
+# ============================================================
+- { type: indicates, source: agibot_x2.event.pmu.rk3588_power_good,  target: agibot_x2.hw.compute.pc1 }
+- { type: indicates, source: agibot_x2.event.pmu.rk3588_monitor1,    target: agibot_x2.hw.compute.pc1 }
+- { type: indicates, source: agibot_x2.event.pmu.rk3588_monitor2,    target: agibot_x2.hw.compute.pc1 }
+- { type: indicates, source: agibot_x2.event.pmu.rk3588_plug_detect, target: agibot_x2.hw.compute.pc1 }
+- { type: indicates, source: agibot_x2.event.pmu.orin_power_good,    target: agibot_x2.hw.compute.pc2 }
+- { type: indicates, source: agibot_x2.event.pmu.orin_monitor1,      target: agibot_x2.hw.compute.pc2 }
+- { type: indicates, source: agibot_x2.event.pmu.orin_monitor2,      target: agibot_x2.hw.compute.pc2 }
+- { type: indicates, source: agibot_x2.event.pmu.orin_nx_plug_detect, target: agibot_x2.hw.compute.pc2 }
+# 已经有的 bus48v_* 两个也 covered;补上剩余 BMS 位(全部指向 power)
+- { type: indicates, source: agibot_x2.event.bms.charge_flag,                 target: agibot_x2.hw.power }
+- { type: indicates, source: agibot_x2.event.bms.charge_overcurrent,          target: agibot_x2.hw.power }
+- { type: indicates, source: agibot_x2.event.bms.discharge_flag,              target: agibot_x2.hw.power }
+- { type: indicates, source: agibot_x2.event.bms.battery_overvoltage,         target: agibot_x2.hw.power }
+- { type: indicates, source: agibot_x2.event.bms.battery_undervoltage,        target: agibot_x2.hw.power }
+- { type: indicates, source: agibot_x2.event.bms.cell_open_circuit,           target: agibot_x2.hw.power }
+- { type: indicates, source: agibot_x2.event.bms.ntc_open_circuit,            target: agibot_x2.hw.power }
+- { type: indicates, source: agibot_x2.event.bms.cell_discharge_undertemp,    target: agibot_x2.hw.power }
+- { type: indicates, source: agibot_x2.event.bms.cell_charge_undertemp,       target: agibot_x2.hw.power }
+- { type: indicates, source: agibot_x2.event.bms.cell_voltage_diff_over_high, target: agibot_x2.hw.power }
+- { type: indicates, source: agibot_x2.event.bms.mosfet_charge_disable,       target: agibot_x2.hw.power }
+- { type: indicates, source: agibot_x2.event.bms.mosfet_discharge_disable,    target: agibot_x2.hw.power }
+- { type: indicates, source: agibot_x2.event.bms.balance_line_resistance_over_high, target: agibot_x2.hw.power }
+
+# ============================================================
+# TouchEvent → Topic (触摸事件由 /aima/hal/sensor/touch_head 承载)
+# ============================================================
+- { type: carried_by, source: agibot_x2.event.touch.unknown,     target: agibot_x2.if.topic.touch_head }
+- { type: carried_by, source: agibot_x2.event.touch.idle,        target: agibot_x2.if.topic.touch_head }
+- { type: carried_by, source: agibot_x2.event.touch.touch,       target: agibot_x2.if.topic.touch_head }
+- { type: carried_by, source: agibot_x2.event.touch.swipe,       target: agibot_x2.if.topic.touch_head }
+- { type: carried_by, source: agibot_x2.event.touch.single_tap,  target: agibot_x2.if.topic.touch_head }
+- { type: carried_by, source: agibot_x2.event.touch.double_tap,  target: agibot_x2.if.topic.touch_head }
+- { type: carried_by, source: agibot_x2.event.touch.triple_tap,  target: agibot_x2.if.topic.touch_head }
+
+# ============================================================
+# FaultCode → Action / Hardware (hand faults 来自 hand_state msg)
+# ============================================================
+- { type: carried_by, source: agibot_x2.event.hand.omnipicker.no_fault,        target: agibot_x2.if.topic.joint_hand_state }
+- { type: carried_by, source: agibot_x2.event.hand.omnipicker.over_temp,       target: agibot_x2.if.topic.joint_hand_state }
+- { type: carried_by, source: agibot_x2.event.hand.omnipicker.over_speed,      target: agibot_x2.if.topic.joint_hand_state }
+- { type: carried_by, source: agibot_x2.event.hand.omnipicker.init_fault,      target: agibot_x2.if.topic.joint_hand_state }
+- { type: carried_by, source: agibot_x2.event.hand.omnipicker.over_limit,      target: agibot_x2.if.topic.joint_hand_state }
+- { type: carried_by, source: agibot_x2.event.hand.omnipicker.target_reached,  target: agibot_x2.if.topic.joint_hand_state }
+- { type: carried_by, source: agibot_x2.event.hand.omnipicker.moving,          target: agibot_x2.if.topic.joint_hand_state }
+- { type: carried_by, source: agibot_x2.event.hand.omnipicker.jammed,          target: agibot_x2.if.topic.joint_hand_state }
+- { type: carried_by, source: agibot_x2.event.hand.omnipicker.object_dropped,  target: agibot_x2.if.topic.joint_hand_state }
+# 关节组错误 → 泛指运动学关节
+- { type: carried_by, source: agibot_x2.event.joint_domain.damping_mode,    target: agibot_x2.if.topic.joint_arm_state }
+- { type: carried_by, source: agibot_x2.event.joint_domain.power_off,       target: agibot_x2.if.topic.joint_arm_state }
+- { type: carried_by, source: agibot_x2.event.joint_domain.disabled,        target: agibot_x2.if.topic.joint_arm_state }
+- { type: carried_by, source: agibot_x2.event.joint_domain.comm_disconnect, target: agibot_x2.if.topic.joint_arm_state }
+
+# ============================================================
+# PresetMotion → Action (invocable_via,每个预设动作都由 set_preset_motion 触发)
+# ============================================================
+- { type: invocable_via, source: agibot_x2.motion.right_hand_wave,   target: set_preset_motion }
+- { type: invocable_via, source: agibot_x2.motion.left_hand_wave,    target: set_preset_motion }
+- { type: invocable_via, source: agibot_x2.motion.right_handshake,   target: set_preset_motion }
+- { type: invocable_via, source: agibot_x2.motion.left_handshake,    target: set_preset_motion }
+- { type: invocable_via, source: agibot_x2.motion.right_hand_raise,  target: set_preset_motion }
+- { type: invocable_via, source: agibot_x2.motion.left_hand_raise,   target: set_preset_motion }
+- { type: invocable_via, source: agibot_x2.motion.right_flying_kiss, target: set_preset_motion }
+- { type: invocable_via, source: agibot_x2.motion.left_flying_kiss,  target: set_preset_motion }
+- { type: invocable_via, source: agibot_x2.motion.applause,          target: set_preset_motion }
+- { type: invocable_via, source: agibot_x2.motion.right_salute,      target: set_preset_motion }
+- { type: invocable_via, source: agibot_x2.motion.left_salute,       target: set_preset_motion }
+- { type: invocable_via, source: agibot_x2.motion.heart_both,        target: set_preset_motion }
+- { type: invocable_via, source: agibot_x2.motion.heart_right,       target: set_preset_motion }
+- { type: invocable_via, source: agibot_x2.motion.heart_left,        target: set_preset_motion }
+- { type: invocable_via, source: agibot_x2.motion.hug,               target: set_preset_motion }
+- { type: invocable_via, source: agibot_x2.motion.cheer_up,          target: set_preset_motion }
+- { type: invocable_via, source: agibot_x2.motion.arms_out_both,     target: set_preset_motion }
+- { type: invocable_via, source: agibot_x2.motion.arm_out_right,     target: set_preset_motion }
+- { type: invocable_via, source: agibot_x2.motion.arm_out_left,      target: set_preset_motion }
+- { type: invocable_via, source: agibot_x2.motion.bye,               target: set_preset_motion }
+- { type: invocable_via, source: agibot_x2.motion.wave_burst,        target: set_preset_motion }
+- { type: invocable_via, source: agibot_x2.motion.right_high_five,   target: set_preset_motion }
+- { type: invocable_via, source: agibot_x2.motion.left_high_five,    target: set_preset_motion }
+- { type: invocable_via, source: agibot_x2.motion.cross_arms,        target: set_preset_motion }
+- { type: invocable_via, source: agibot_x2.motion.chest_wave_right,  target: set_preset_motion }
+- { type: invocable_via, source: agibot_x2.motion.chest_wave_left,   target: set_preset_motion }
+- { type: invocable_via, source: agibot_x2.motion.bow,               target: set_preset_motion }
+- { type: invocable_via, source: agibot_x2.motion.head_scratch,      target: set_preset_motion }
+- { type: invocable_via, source: agibot_x2.motion.butt_scratch,      target: set_preset_motion }
+- { type: invocable_via, source: agibot_x2.motion.lying_stand_up,    target: set_preset_motion }
+- { type: invocable_via, source: agibot_x2.motion.sitting_stand_up,  target: set_preset_motion }
+# PresetMotion → Mode (所有预设动作需要 stand_default 模式)
+- { type: requires_mode, source: agibot_x2.motion.right_hand_wave,   target: agibot_x2.mode.stand_default }
+- { type: requires_mode, source: agibot_x2.motion.left_hand_wave,    target: agibot_x2.mode.stand_default }
+- { type: requires_mode, source: agibot_x2.motion.applause,          target: agibot_x2.mode.stand_default }
+- { type: requires_mode, source: agibot_x2.motion.hug,               target: agibot_x2.mode.stand_default }
+- { type: requires_mode, source: agibot_x2.motion.bow,               target: agibot_x2.mode.stand_default }
+- { type: requires_mode, source: agibot_x2.motion.lying_stand_up,    target: agibot_x2.mode.passive_default }
+- { type: requires_mode, source: agibot_x2.motion.sitting_stand_up,  target: agibot_x2.mode.joint_default }
+
+# ============================================================
+# Joint → Link (parent_of_link / child_of_link)
+# 关节两端挂的 link —— URDF 权威的运动学关系。这是真正解锁 Joint 簇的关键。
+# (注:所有 31 个 Joint 的 properties.parent_link/child_link 已经在 joints_patch.yaml 里带上,
+#  此处只把它们显式化为 link 关系,供图谱遍历)
+# ============================================================
+- { type: has_parent_link, source: agibot_x2.hw.left_arm.shoulder_pitch,  target: agibot_x2.hw.link.torso_link }
+- { type: has_child_link,  source: agibot_x2.hw.left_arm.shoulder_pitch,  target: agibot_x2.hw.link.left_shoulder_pitch_link }
+- { type: has_parent_link, source: agibot_x2.hw.left_arm.shoulder_roll,   target: agibot_x2.hw.link.left_shoulder_pitch_link }
+- { type: has_child_link,  source: agibot_x2.hw.left_arm.shoulder_roll,   target: agibot_x2.hw.link.left_shoulder_roll_link }
+- { type: has_parent_link, source: agibot_x2.hw.left_arm.shoulder_yaw,    target: agibot_x2.hw.link.left_shoulder_roll_link }
+- { type: has_child_link,  source: agibot_x2.hw.left_arm.shoulder_yaw,    target: agibot_x2.hw.link.left_shoulder_yaw_link }
+- { type: has_parent_link, source: agibot_x2.hw.left_arm.elbow,           target: agibot_x2.hw.link.left_shoulder_yaw_link }
+- { type: has_child_link,  source: agibot_x2.hw.left_arm.elbow,           target: agibot_x2.hw.link.left_elbow_link }
+- { type: has_parent_link, source: agibot_x2.hw.left_arm.wrist_yaw,       target: agibot_x2.hw.link.left_elbow_link }
+- { type: has_child_link,  source: agibot_x2.hw.left_arm.wrist_yaw,       target: agibot_x2.hw.link.left_wrist_yaw_link }
+- { type: has_parent_link, source: agibot_x2.hw.left_arm.wrist_pitch,     target: agibot_x2.hw.link.left_wrist_yaw_link }
+- { type: has_child_link,  source: agibot_x2.hw.left_arm.wrist_pitch,     target: agibot_x2.hw.link.left_wrist_pitch_link }
+- { type: has_parent_link, source: agibot_x2.hw.left_arm.wrist_roll,      target: agibot_x2.hw.link.left_wrist_pitch_link }
+- { type: has_child_link,  source: agibot_x2.hw.left_arm.wrist_roll,      target: agibot_x2.hw.link.left_wrist_roll_link }
+- { type: has_parent_link, source: agibot_x2.hw.right_arm.shoulder_pitch, target: agibot_x2.hw.link.torso_link }
+- { type: has_child_link,  source: agibot_x2.hw.right_arm.shoulder_pitch, target: agibot_x2.hw.link.right_shoulder_pitch_link }
+- { type: has_parent_link, source: agibot_x2.hw.right_arm.shoulder_roll,  target: agibot_x2.hw.link.right_shoulder_pitch_link }
+- { type: has_child_link,  source: agibot_x2.hw.right_arm.shoulder_roll,  target: agibot_x2.hw.link.right_shoulder_roll_link }
+- { type: has_parent_link, source: agibot_x2.hw.right_arm.shoulder_yaw,   target: agibot_x2.hw.link.right_shoulder_roll_link }
+- { type: has_child_link,  source: agibot_x2.hw.right_arm.shoulder_yaw,   target: agibot_x2.hw.link.right_shoulder_yaw_link }
+- { type: has_parent_link, source: agibot_x2.hw.right_arm.elbow,          target: agibot_x2.hw.link.right_shoulder_yaw_link }
+- { type: has_child_link,  source: agibot_x2.hw.right_arm.elbow,          target: agibot_x2.hw.link.right_elbow_link }
+- { type: has_parent_link, source: agibot_x2.hw.right_arm.wrist_yaw,      target: agibot_x2.hw.link.right_elbow_link }
+- { type: has_child_link,  source: agibot_x2.hw.right_arm.wrist_yaw,      target: agibot_x2.hw.link.right_wrist_yaw_link }
+- { type: has_parent_link, source: agibot_x2.hw.right_arm.wrist_pitch,    target: agibot_x2.hw.link.right_wrist_yaw_link }
+- { type: has_child_link,  source: agibot_x2.hw.right_arm.wrist_pitch,    target: agibot_x2.hw.link.right_wrist_pitch_link }
+- { type: has_parent_link, source: agibot_x2.hw.right_arm.wrist_roll,     target: agibot_x2.hw.link.right_wrist_pitch_link }
+- { type: has_child_link,  source: agibot_x2.hw.right_arm.wrist_roll,     target: agibot_x2.hw.link.right_wrist_roll_link }
+- { type: has_parent_link, source: agibot_x2.hw.left_leg.hip_pitch,       target: agibot_x2.hw.link.pelvis }
+- { type: has_child_link,  source: agibot_x2.hw.left_leg.hip_pitch,       target: agibot_x2.hw.link.left_hip_pitch_link }
+- { type: has_parent_link, source: agibot_x2.hw.left_leg.hip_roll,        target: agibot_x2.hw.link.left_hip_pitch_link }
+- { type: has_child_link,  source: agibot_x2.hw.left_leg.hip_roll,        target: agibot_x2.hw.link.left_hip_roll_link }
+- { type: has_parent_link, source: agibot_x2.hw.left_leg.hip_yaw,         target: agibot_x2.hw.link.left_hip_roll_link }
+- { type: has_child_link,  source: agibot_x2.hw.left_leg.hip_yaw,         target: agibot_x2.hw.link.left_hip_yaw_link }
+- { type: has_parent_link, source: agibot_x2.hw.left_leg.knee,            target: agibot_x2.hw.link.left_hip_yaw_link }
+- { type: has_child_link,  source: agibot_x2.hw.left_leg.knee,            target: agibot_x2.hw.link.left_knee_link }
+- { type: has_parent_link, source: agibot_x2.hw.left_leg.ankle_pitch,     target: agibot_x2.hw.link.left_knee_link }
+- { type: has_child_link,  source: agibot_x2.hw.left_leg.ankle_pitch,     target: agibot_x2.hw.link.left_ankle_pitch_link }
+- { type: has_parent_link, source: agibot_x2.hw.left_leg.ankle_roll,      target: agibot_x2.hw.link.left_ankle_pitch_link }
+- { type: has_child_link,  source: agibot_x2.hw.left_leg.ankle_roll,      target: agibot_x2.hw.link.left_ankle_roll_link }
+- { type: has_parent_link, source: agibot_x2.hw.right_leg.hip_pitch,      target: agibot_x2.hw.link.pelvis }
+- { type: has_child_link,  source: agibot_x2.hw.right_leg.hip_pitch,      target: agibot_x2.hw.link.right_hip_pitch_link }
+- { type: has_parent_link, source: agibot_x2.hw.right_leg.hip_roll,       target: agibot_x2.hw.link.right_hip_pitch_link }
+- { type: has_child_link,  source: agibot_x2.hw.right_leg.hip_roll,       target: agibot_x2.hw.link.right_hip_roll_link }
+- { type: has_parent_link, source: agibot_x2.hw.right_leg.hip_yaw,        target: agibot_x2.hw.link.right_hip_roll_link }
+- { type: has_child_link,  source: agibot_x2.hw.right_leg.hip_yaw,        target: agibot_x2.hw.link.right_hip_yaw_link }
+- { type: has_parent_link, source: agibot_x2.hw.right_leg.knee,           target: agibot_x2.hw.link.right_hip_yaw_link }
+- { type: has_child_link,  source: agibot_x2.hw.right_leg.knee,           target: agibot_x2.hw.link.right_knee_link }
+- { type: has_parent_link, source: agibot_x2.hw.right_leg.ankle_pitch,    target: agibot_x2.hw.link.right_knee_link }
+- { type: has_child_link,  source: agibot_x2.hw.right_leg.ankle_pitch,    target: agibot_x2.hw.link.right_ankle_pitch_link }
+- { type: has_parent_link, source: agibot_x2.hw.right_leg.ankle_roll,     target: agibot_x2.hw.link.right_ankle_pitch_link }
+- { type: has_child_link,  source: agibot_x2.hw.right_leg.ankle_roll,     target: agibot_x2.hw.link.right_ankle_roll_link }
+- { type: has_parent_link, source: agibot_x2.hw.waist.waist_yaw,          target: agibot_x2.hw.link.pelvis }
+- { type: has_child_link,  source: agibot_x2.hw.waist.waist_yaw,          target: agibot_x2.hw.link.waist_yaw_link }
+- { type: has_parent_link, source: agibot_x2.hw.waist.waist_pitch,        target: agibot_x2.hw.link.waist_yaw_link }
+- { type: has_child_link,  source: agibot_x2.hw.waist.waist_pitch,        target: agibot_x2.hw.link.waist_pitch_link }
+- { type: has_parent_link, source: agibot_x2.hw.waist.waist_roll,         target: agibot_x2.hw.link.waist_pitch_link }
+- { type: has_child_link,  source: agibot_x2.hw.waist.waist_roll,         target: agibot_x2.hw.link.torso_link }
+- { type: has_parent_link, source: agibot_x2.hw.head.head_yaw,            target: agibot_x2.hw.link.torso_link }
+- { type: has_child_link,  source: agibot_x2.hw.head.head_yaw,            target: agibot_x2.hw.link.head_yaw_link }
+- { type: has_parent_link, source: agibot_x2.hw.head.head_pitch,          target: agibot_x2.hw.link.head_yaw_link }
+- { type: has_child_link,  source: agibot_x2.hw.head.head_pitch,          target: agibot_x2.hw.link.head_pitch_link }
+
+# ============================================================
+# PriorityLevel → Action (used_by,优先级被哪些 Action 用)
+# ============================================================
+- { type: used_by, source: agibot_x2.priority.safety_l10,      target: play_tts }
+- { type: used_by, source: agibot_x2.priority.safety_l10,      target: play_media_file }
+- { type: used_by, source: agibot_x2.priority.warning_l8,      target: play_tts }
+- { type: used_by, source: agibot_x2.priority.warning_l8,      target: play_media_file }
+- { type: used_by, source: agibot_x2.priority.system_l7,       target: play_tts }
+- { type: used_by, source: agibot_x2.priority.interaction_l6,  target: play_tts }
+- { type: used_by, source: agibot_x2.priority.interaction_l6,  target: play_media_file }
+- { type: used_by, source: agibot_x2.priority.mission_l4,      target: play_tts }
+- { type: used_by, source: agibot_x2.priority.service_l2,      target: play_tts }
+- { type: used_by, source: agibot_x2.priority.background_l1,   target: play_tts }
+
+# ============================================================
+# InputSource → Action (grants,输入源授权哪些 action)
+# ============================================================
+- { type: grants, source: agibot_x2.input_source.rc,          target: set_forward_velocity }
+- { type: grants, source: agibot_x2.input_source.rc,          target: set_lateral_velocity }
+- { type: grants, source: agibot_x2.input_source.rc,          target: set_angular_velocity }
+- { type: grants, source: agibot_x2.input_source.rc,          target: set_mc_action }
+- { type: grants, source: agibot_x2.input_source.app_proxy,   target: set_mc_action }
+- { type: grants, source: agibot_x2.input_source.app_proxy,   target: set_preset_motion }
+- { type: grants, source: agibot_x2.input_source.interaction, target: play_tts }
+- { type: grants, source: agibot_x2.input_source.interaction, target: set_preset_motion }
+- { type: grants, source: agibot_x2.input_source.pnc,         target: set_forward_velocity }
+- { type: grants, source: agibot_x2.input_source.pnc,         target: set_preset_motion }
+- { type: grants, source: agibot_x2.input_source.vr,          target: set_joint_position }
+
+# ============================================================
+# Mode → Action (allows 的补全:joint_default 允许 hand 控制)
+# ============================================================
+- { type: allows, source: agibot_x2.mode.joint_default, target: set_hand_command }
+- { type: allows, source: agibot_x2.mode.stand_default, target: set_hand_command }
+- { type: allows, source: agibot_x2.mode.damping_default, target: get_all_joint_state }
+# 所有模式都允许 INFO 级查询
+- { type: allows, source: agibot_x2.mode.passive_default,    target: get_mc_action }
+- { type: allows, source: agibot_x2.mode.damping_default,    target: get_mc_action }
+- { type: allows, source: agibot_x2.mode.joint_default,      target: get_mc_action }
+- { type: allows, source: agibot_x2.mode.stand_default,      target: get_mc_action }
+- { type: allows, source: agibot_x2.mode.locomotion_default, target: get_mc_action }
+- { type: allows, source: agibot_x2.mode.passive_default,    target: get_all_joint_state }
+- { type: allows, source: agibot_x2.mode.joint_default,      target: get_all_joint_state }
+
+# ============================================================
+# ControlLoop → Topic (arbitrates)
+# ============================================================
+- { type: arbitrates, source: agibot_x2.control_loop.mc_arbitration, target: agibot_x2.if.topic.mc_locomotion_velocity }
+
+# ============================================================
+# Sensor → Topic (补齐 interfaces.yaml 里漏掉的一些 publishes_via)
+# ============================================================
+- { type: publishes_via, source: agibot_x2.hw.sensor.stereo_head_front_right, target: agibot_x2.if.topic.stereo_front_left_image }  # 左右双目共享 topic 前缀
+- { type: publishes_via, source: agibot_x2.hw.sensor.rgb_head_front_interaction, target: agibot_x2.if.topic.vad_audio_output }
+
+# ============================================================
+# ComputeUnit → Topic/Service 归属
+# ============================================================
+- { type: hosts, source: agibot_x2.hw.compute.pc2, target: agibot_x2.if.topic.pmu_state }
+- { type: hosts, source: agibot_x2.hw.compute.pc2, target: agibot_x2.if.topic.lidar_pointcloud }
+- { type: hosts, source: agibot_x2.hw.compute.pc2, target: agibot_x2.if.topic.imu_chest }
+- { type: hosts, source: agibot_x2.hw.compute.pc2, target: agibot_x2.if.topic.imu_torso }
+- { type: hosts, source: agibot_x2.hw.compute.pc3, target: agibot_x2.if.topic.vad_audio_output }
+- { type: hosts, source: agibot_x2.hw.compute.pc3, target: agibot_x2.if.topic.face_ui_status }

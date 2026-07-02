@@ -1,0 +1,41 @@
+# Unitree G1 EDU — Standard Mappings Registry
+# Maps external ontology/standard vocabulary into RoboOnto engineering types.
+# Informative alignment, not a conformance claim.
+
+standards:
+  - id: ieee_1872_2_aur
+    name: IEEE 1872.2 Autonomous Robotics Ontology
+    role: standard_term_anchor
+    mappings:
+      AutonomousRobot: {roboonto_type: robot}
+      AutonomousSystem: {roboonto_type: SoftwareComponent}
+      AutonomousCapability: {roboonto_type: Capability}
+      Task: {roboonto_type: ServiceRequirement}
+      Environment: {roboonto_property: environment_requirements}
+
+  - id: cora
+    name: IEEE 1872.1 Core Ontologies for Robotics and Automation
+    role: core_robotics_term_anchor
+    mappings:
+      Robot: {roboonto_type: robot}
+      RoboticSystem: {roboonto_type: SoftwareComponent}
+      RobotPart: {roboonto_types: [Link, Joint, Sensor]}
+      PhysicalEnvironment: {roboonto_property: environment_requirements}
+
+  - id: roso
+    name: Robotic Service Ontology
+    role: service_capability_model
+    mappings:
+      Component: {roboonto_type: SoftwareComponent}
+      Function: {roboonto_type: Capability}
+      Sensing: {roboonto_capability_kind: sensing}
+      Actuation: {roboonto_capability_kind: actuation}
+      ServiceRequirement: {roboonto_type: ServiceRequirement}
+      hasParameter: {roboonto_link_type: has_parameter}
+      provides: {roboonto_link_type: provides_capability}
+      detects: {roboonto_link_type: detects}
+
+notes:
+  design_rule: >
+    API/interface objects explain how to call the robot; Capability objects
+    explain what the robot can do and which component provides that function.

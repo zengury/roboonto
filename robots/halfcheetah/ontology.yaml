@@ -1,0 +1,29 @@
+# Half-Cheetah — Ontology Entry
+# 2D planar simulated quadruped (gymnasium HalfCheetah-v5 / MuJoCo).
+# Used as the experimental subject for Track B: LLM-only learning loop.
+
+robot:
+  id: halfcheetah
+  vendor: Farama
+  model: HalfCheetah-v5
+  firmware_version: "n/a (simulated)"
+  roboonto_version: "0.2"
+  ros2_version: "n/a"
+  description: |
+    MuJoCo HalfCheetah-v5 — 2D planar quadruped, 6 actuated joints
+    (back leg: bthigh, bshin, bfoot; front leg: fthigh, fshin, ffoot).
+    Continuous torque control in [-1, 1]; reward = forward_velocity − 0.1·‖action‖².
+    No physical hardware; we model it as a robot to validate the framework's
+    learning loop on a fast, safe, repeatable platform.
+
+includes:
+  - hardware.yaml
+  - kinematics.yaml
+  - interfaces.yaml
+  - capabilities.yaml
+  - behaviors.yaml
+  - events.yaml
+  - actions.yaml
+  - derived_links.yaml
+  - capability_boundary.yaml
+  - goals.yaml

@@ -1,0 +1,50 @@
+objects:
+  - type: SoftwareComponent
+    id: minibot.sw.motion.controller
+    properties:
+      name_human: Motion controller
+      component_kind: control
+      runs_on: minibot.hw.compute.main
+      implementation: minibot_motion
+      lifecycle: managed
+      standard_mappings:
+        - {standard: RoSO, term: Component}
+
+  - type: Capability
+    id: minibot.cap.velocity_control
+    properties:
+      name_human: Velocity control
+      capability_kind: actuation
+      description: Command base linear velocity.
+      produces: [base_motion]
+      boundaries:
+        - requires ACTIVE mode
+      standard_mappings:
+        - {standard: RoSO, term: Function}
+        - {standard: IEEE 1872.2/AuR, term: AutonomousCapability}
+
+  - type: CapabilityParameter
+    id: minibot.cap.param.velocity_control.linear_x
+    properties:
+      name: linear_x
+      value_type: float
+      unit: m/s
+      required: true
+      constraints:
+        - {type: range, min: -1.0, max: 1.0}
+
+  - type: ServiceRequirement
+    id: minibot.req.drive_base
+    properties:
+      name_human: Drive base
+      required_capabilities: [actuation]
+      required_outputs: [base_motion]
+      safety_constraints:
+        - velocity command must be range checked
+
+links:
+  - {type: provides_capability, source: minibot.sw.motion.controller, target: minibot.cap.velocity_control}
+  - {type: has_parameter, source: minibot.cap.velocity_control, target: minibot.cap.param.velocity_control.linear_x}
+  - {type: exposed_via, source: minibot.cap.velocity_control, target: set_velocity}
+  - {type: exposed_via, source: minibot.cap.velocity_control, target: minibot.if.topic.cmd_vel}
+  - {type: satisfies_requirement, source: minibot.cap.velocity_control, target: minibot.req.drive_base}

@@ -1,0 +1,16 @@
+# MY_ROBOT — Behaviors: Modes, PresetMotions, ControlLoops
+# ======================================================================
+# 来源: SDK 文档 §5.1 (运动控制章节)
+# ======================================================================
+
+objects: []
+
+# - type: Mode
+#   id: MY_ROBOT.mode.stand_default
+#   properties:
+#     mode_value: STAND_DEFAULT
+#     name_human: "稳定站立"
+#     description: "机器人站立，不支持走跑但所有关节可用"
+#   source:
+#     type: document
+#     locator: "SDK 文档 §5.1.1"

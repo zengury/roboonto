@@ -1,0 +1,760 @@
+objects:
+- id: unitree_g1_edu.hw.joint.left_hip_pitch
+  properties:
+    axis_xyz:
+    - 0.0
+    - 1.0
+    - 0.0
+    child_link: unitree_g1_edu.hw.link.left_hip_pitch_link
+    dof_axis: pitch
+    effort_limit:
+      unit: Nm
+      value: 88.0
+    joint_kind: revolute
+    origin_rpy:
+    - 0.0
+    - 0.0
+    - 0.0
+    origin_xyz:
+    - 0.0
+    - 0.064452
+    - -0.1027
+    parent_link: unitree_g1_edu.hw.link.pelvis
+    position_limit:
+      max: 2.8798
+      min: -2.5307
+      unit: rad
+    urdf_name: left_hip_pitch_joint
+    velocity_limit:
+      unit: rad/s
+      value: 32.0
+  source:
+    locator: g1_23dof_rev_1_0.urdf#joint[left_hip_pitch_joint]
+    type: urdf
+  type: Joint
+- id: unitree_g1_edu.hw.joint.left_hip_roll
+  properties:
+    axis_xyz:
+    - 1.0
+    - 0.0
+    - 0.0
+    child_link: unitree_g1_edu.hw.link.left_hip_roll_link
+    dof_axis: roll
+    effort_limit:
+      unit: Nm
+      value: 139.0
+    joint_kind: revolute
+    origin_rpy:
+    - 0.0
+    - -0.1749
+    - 0.0
+    origin_xyz:
+    - 0.0
+    - 0.052
+    - -0.030465
+    parent_link: unitree_g1_edu.hw.link.left_hip_pitch_link
+    position_limit:
+      max: 2.9671
+      min: -0.5236
+      unit: rad
+    urdf_name: left_hip_roll_joint
+    velocity_limit:
+      unit: rad/s
+      value: 20.0
+  source:
+    locator: g1_23dof_rev_1_0.urdf#joint[left_hip_roll_joint]
+    type: urdf
+  type: Joint
+- id: unitree_g1_edu.hw.joint.left_hip_yaw
+  properties:
+    axis_xyz:
+    - 0.0
+    - 0.0
+    - 1.0
+    child_link: unitree_g1_edu.hw.link.left_hip_yaw_link
+    dof_axis: yaw
+    effort_limit:
+      unit: Nm
+      value: 88.0
+    joint_kind: revolute
+    origin_rpy:
+    - 0.0
+    - 0.0
+    - 0.0
+    origin_xyz:
+    - 0.025001
+    - 0.0
+    - -0.12412
+    parent_link: unitree_g1_edu.hw.link.left_hip_roll_link
+    position_limit:
+      max: 2.7576
+      min: -2.7576
+      unit: rad
+    urdf_name: left_hip_yaw_joint
+    velocity_limit:
+      unit: rad/s
+      value: 32.0
+  source:
+    locator: g1_23dof_rev_1_0.urdf#joint[left_hip_yaw_joint]
+    type: urdf
+  type: Joint
+- id: unitree_g1_edu.hw.joint.left_knee
+  properties:
+    axis_xyz:
+    - 0.0
+    - 1.0
+    - 0.0
+    child_link: unitree_g1_edu.hw.link.left_knee_link
+    dof_axis: pitch
+    effort_limit:
+      unit: Nm
+      value: 139.0
+    joint_kind: revolute
+    origin_rpy:
+    - 0.0
+    - 0.1749
+    - 0.0
+    origin_xyz:
+    - -0.078273
+    - 0.0021489
+    - -0.17734
+    parent_link: unitree_g1_edu.hw.link.left_hip_yaw_link
+    position_limit:
+      max: 2.8798
+      min: -0.0873
+      unit: rad
+    urdf_name: left_knee_joint
+    velocity_limit:
+      unit: rad/s
+      value: 20.0
+  source:
+    locator: g1_23dof_rev_1_0.urdf#joint[left_knee_joint]
+    type: urdf
+  type: Joint
+- id: unitree_g1_edu.hw.joint.left_ankle_pitch
+  properties:
+    axis_xyz:
+    - 0.0
+    - 1.0
+    - 0.0
+    child_link: unitree_g1_edu.hw.link.left_ankle_pitch_link
+    dof_axis: pitch
+    effort_limit:
+      unit: Nm
+      value: 35.0
+    joint_kind: revolute
+    origin_rpy:
+    - 0.0
+    - 0.0
+    - 0.0
+    origin_xyz:
+    - 0.0
+    - -9.4445e-05
+    - -0.30001
+    parent_link: unitree_g1_edu.hw.link.left_knee_link
+    position_limit:
+      max: 0.5236
+      min: -0.8727
+      unit: rad
+    urdf_name: left_ankle_pitch_joint
+    velocity_limit:
+      unit: rad/s
+      value: 30.0
+  source:
+    locator: g1_23dof_rev_1_0.urdf#joint[left_ankle_pitch_joint]
+    type: urdf
+  type: Joint
+- id: unitree_g1_edu.hw.joint.left_ankle_roll
+  properties:
+    axis_xyz:
+    - 1.0
+    - 0.0
+    - 0.0
+    child_link: unitree_g1_edu.hw.link.left_ankle_roll_link
+    dof_axis: roll
+    effort_limit:
+      unit: Nm
+      value: 35.0
+    joint_kind: revolute
+    origin_rpy:
+    - 0.0
+    - 0.0
+    - 0.0
+    origin_xyz:
+    - 0.0
+    - 0.0
+    - -0.017558
+    parent_link: unitree_g1_edu.hw.link.left_ankle_pitch_link
+    position_limit:
+      max: 0.2618
+      min: -0.2618
+      unit: rad
+    urdf_name: left_ankle_roll_joint
+    velocity_limit:
+      unit: rad/s
+      value: 30.0
+  source:
+    locator: g1_23dof_rev_1_0.urdf#joint[left_ankle_roll_joint]
+    type: urdf
+  type: Joint
+- id: unitree_g1_edu.hw.joint.right_hip_pitch
+  properties:
+    axis_xyz:
+    - 0.0
+    - 1.0
+    - 0.0
+    child_link: unitree_g1_edu.hw.link.right_hip_pitch_link
+    dof_axis: pitch
+    effort_limit:
+      unit: Nm
+      value: 88.0
+    joint_kind: revolute
+    origin_rpy:
+    - 0.0
+    - 0.0
+    - 0.0
+    origin_xyz:
+    - 0.0
+    - -0.064452
+    - -0.1027
+    parent_link: unitree_g1_edu.hw.link.pelvis
+    position_limit:
+      max: 2.8798
+      min: -2.5307
+      unit: rad
+    urdf_name: right_hip_pitch_joint
+    velocity_limit:
+      unit: rad/s
+      value: 32.0
+  source:
+    locator: g1_23dof_rev_1_0.urdf#joint[right_hip_pitch_joint]
+    type: urdf
+  type: Joint
+- id: unitree_g1_edu.hw.joint.right_hip_roll
+  properties:
+    axis_xyz:
+    - 1.0
+    - 0.0
+    - 0.0
+    child_link: unitree_g1_edu.hw.link.right_hip_roll_link
+    dof_axis: roll
+    effort_limit:
+      unit: Nm
+      value: 139.0
+    joint_kind: revolute
+    origin_rpy:
+    - 0.0
+    - -0.1749
+    - 0.0
+    origin_xyz:
+    - 0.0
+    - -0.052
+    - -0.030465
+    parent_link: unitree_g1_edu.hw.link.right_hip_pitch_link
+    position_limit:
+      max: 0.5236
+      min: -2.9671
+      unit: rad
+    urdf_name: right_hip_roll_joint
+    velocity_limit:
+      unit: rad/s
+      value: 20.0
+  source:
+    locator: g1_23dof_rev_1_0.urdf#joint[right_hip_roll_joint]
+    type: urdf
+  type: Joint
+- id: unitree_g1_edu.hw.joint.right_hip_yaw
+  properties:
+    axis_xyz:
+    - 0.0
+    - 0.0
+    - 1.0
+    child_link: unitree_g1_edu.hw.link.right_hip_yaw_link
+    dof_axis: yaw
+    effort_limit:
+      unit: Nm
+      value: 88.0
+    joint_kind: revolute
+    origin_rpy:
+    - 0.0
+    - 0.0
+    - 0.0
+    origin_xyz:
+    - 0.025001
+    - 0.0
+    - -0.12412
+    parent_link: unitree_g1_edu.hw.link.right_hip_roll_link
+    position_limit:
+      max: 2.7576
+      min: -2.7576
+      unit: rad
+    urdf_name: right_hip_yaw_joint
+    velocity_limit:
+      unit: rad/s
+      value: 32.0
+  source:
+    locator: g1_23dof_rev_1_0.urdf#joint[right_hip_yaw_joint]
+    type: urdf
+  type: Joint
+- id: unitree_g1_edu.hw.joint.right_knee
+  properties:
+    axis_xyz:
+    - 0.0
+    - 1.0
+    - 0.0
+    child_link: unitree_g1_edu.hw.link.right_knee_link
+    dof_axis: pitch
+    effort_limit:
+      unit: Nm
+      value: 139.0
+    joint_kind: revolute
+    origin_rpy:
+    - 0.0
+    - 0.1749
+    - 0.0
+    origin_xyz:
+    - -0.078273
+    - -0.0021489
+    - -0.17734
+    parent_link: unitree_g1_edu.hw.link.right_hip_yaw_link
+    position_limit:
+      max: 2.8798
+      min: -0.0873
+      unit: rad
+    urdf_name: right_knee_joint
+    velocity_limit:
+      unit: rad/s
+      value: 20.0
+  source:
+    locator: g1_23dof_rev_1_0.urdf#joint[right_knee_joint]
+    type: urdf
+  type: Joint
+- id: unitree_g1_edu.hw.joint.right_ankle_pitch
+  properties:
+    axis_xyz:
+    - 0.0
+    - 1.0
+    - 0.0
+    child_link: unitree_g1_edu.hw.link.right_ankle_pitch_link
+    dof_axis: pitch
+    effort_limit:
+      unit: Nm
+      value: 35.0
+    joint_kind: revolute
+    origin_rpy:
+    - 0.0
+    - 0.0
+    - 0.0
+    origin_xyz:
+    - 0.0
+    - 9.4445e-05
+    - -0.30001
+    parent_link: unitree_g1_edu.hw.link.right_knee_link
+    position_limit:
+      max: 0.5236
+      min: -0.8727
+      unit: rad
+    urdf_name: right_ankle_pitch_joint
+    velocity_limit:
+      unit: rad/s
+      value: 30.0
+  source:
+    locator: g1_23dof_rev_1_0.urdf#joint[right_ankle_pitch_joint]
+    type: urdf
+  type: Joint
+- id: unitree_g1_edu.hw.joint.right_ankle_roll
+  properties:
+    axis_xyz:
+    - 1.0
+    - 0.0
+    - 0.0
+    child_link: unitree_g1_edu.hw.link.right_ankle_roll_link
+    dof_axis: roll
+    effort_limit:
+      unit: Nm
+      value: 35.0
+    joint_kind: revolute
+    origin_rpy:
+    - 0.0
+    - 0.0
+    - 0.0
+    origin_xyz:
+    - 0.0
+    - 0.0
+    - -0.017558
+    parent_link: unitree_g1_edu.hw.link.right_ankle_pitch_link
+    position_limit:
+      max: 0.2618
+      min: -0.2618
+      unit: rad
+    urdf_name: right_ankle_roll_joint
+    velocity_limit:
+      unit: rad/s
+      value: 30.0
+  source:
+    locator: g1_23dof_rev_1_0.urdf#joint[right_ankle_roll_joint]
+    type: urdf
+  type: Joint
+- id: unitree_g1_edu.hw.joint.waist_yaw
+  properties:
+    axis_xyz:
+    - 0.0
+    - 0.0
+    - 1.0
+    child_link: unitree_g1_edu.hw.link.torso_link
+    dof_axis: yaw
+    effort_limit:
+      unit: Nm
+      value: 88.0
+    joint_kind: revolute
+    origin_rpy:
+    - 0.0
+    - 0.0
+    - 0.0
+    origin_xyz:
+    - -0.0039635
+    - 0.0
+    - 0.044
+    parent_link: unitree_g1_edu.hw.link.pelvis
+    position_limit:
+      max: 2.618
+      min: -2.618
+      unit: rad
+    urdf_name: waist_yaw_joint
+    velocity_limit:
+      unit: rad/s
+      value: 32.0
+  source:
+    locator: g1_23dof_rev_1_0.urdf#joint[waist_yaw_joint]
+    type: urdf
+  type: Joint
+- id: unitree_g1_edu.hw.joint.left_shoulder_pitch
+  properties:
+    axis_xyz:
+    - 0.0
+    - 1.0
+    - 0.0
+    child_link: unitree_g1_edu.hw.link.left_shoulder_pitch_link
+    dof_axis: pitch
+    effort_limit:
+      unit: Nm
+      value: 25.0
+    joint_kind: revolute
+    origin_rpy:
+    - 0.27931
+    - 5.4949e-05
+    - -0.00019159
+    origin_xyz:
+    - 0.0039563
+    - 0.10022
+    - 0.24778
+    parent_link: unitree_g1_edu.hw.link.torso_link
+    position_limit:
+      max: 2.6704
+      min: -3.0892
+      unit: rad
+    urdf_name: left_shoulder_pitch_joint
+    velocity_limit:
+      unit: rad/s
+      value: 37.0
+  source:
+    locator: g1_23dof_rev_1_0.urdf#joint[left_shoulder_pitch_joint]
+    type: urdf
+  type: Joint
+- id: unitree_g1_edu.hw.joint.left_shoulder_roll
+  properties:
+    axis_xyz:
+    - 1.0
+    - 0.0
+    - 0.0
+    child_link: unitree_g1_edu.hw.link.left_shoulder_roll_link
+    dof_axis: roll
+    effort_limit:
+      unit: Nm
+      value: 25.0
+    joint_kind: revolute
+    origin_rpy:
+    - -0.27925
+    - 0.0
+    - 0.0
+    origin_xyz:
+    - 0.0
+    - 0.038
+    - -0.013831
+    parent_link: unitree_g1_edu.hw.link.left_shoulder_pitch_link
+    position_limit:
+      max: 2.2515
+      min: -1.5882
+      unit: rad
+    urdf_name: left_shoulder_roll_joint
+    velocity_limit:
+      unit: rad/s
+      value: 37.0
+  source:
+    locator: g1_23dof_rev_1_0.urdf#joint[left_shoulder_roll_joint]
+    type: urdf
+  type: Joint
+- id: unitree_g1_edu.hw.joint.left_shoulder_yaw
+  properties:
+    axis_xyz:
+    - 0.0
+    - 0.0
+    - 1.0
+    child_link: unitree_g1_edu.hw.link.left_shoulder_yaw_link
+    dof_axis: yaw
+    effort_limit:
+      unit: Nm
+      value: 25.0
+    joint_kind: revolute
+    origin_rpy:
+    - 0.0
+    - 0.0
+    - 0.0
+    origin_xyz:
+    - 0.0
+    - 0.00624
+    - -0.1032
+    parent_link: unitree_g1_edu.hw.link.left_shoulder_roll_link
+    position_limit:
+      max: 2.618
+      min: -2.618
+      unit: rad
+    urdf_name: left_shoulder_yaw_joint
+    velocity_limit:
+      unit: rad/s
+      value: 37.0
+  source:
+    locator: g1_23dof_rev_1_0.urdf#joint[left_shoulder_yaw_joint]
+    type: urdf
+  type: Joint
+- id: unitree_g1_edu.hw.joint.left_elbow
+  properties:
+    axis_xyz:
+    - 0.0
+    - 1.0
+    - 0.0
+    child_link: unitree_g1_edu.hw.link.left_elbow_link
+    dof_axis: pitch
+    effort_limit:
+      unit: Nm
+      value: 25.0
+    joint_kind: revolute
+    origin_rpy:
+    - 0.0
+    - 0.0
+    - 0.0
+    origin_xyz:
+    - 0.015783
+    - 0.0
+    - -0.080518
+    parent_link: unitree_g1_edu.hw.link.left_shoulder_yaw_link
+    position_limit:
+      max: 2.0944
+      min: -1.0472
+      unit: rad
+    urdf_name: left_elbow_joint
+    velocity_limit:
+      unit: rad/s
+      value: 37.0
+  source:
+    locator: g1_23dof_rev_1_0.urdf#joint[left_elbow_joint]
+    type: urdf
+  type: Joint
+- id: unitree_g1_edu.hw.joint.left_wrist_roll
+  properties:
+    axis_xyz:
+    - 1.0
+    - 0.0
+    - 0.0
+    child_link: unitree_g1_edu.hw.link.left_wrist_roll_rubber_hand
+    dof_axis: roll
+    effort_limit:
+      unit: Nm
+      value: 25.0
+    joint_kind: revolute
+    origin_rpy:
+    - 0.0
+    - 0.0
+    - 0.0
+    origin_xyz:
+    - 0.1
+    - 0.00188791
+    - -0.01
+    parent_link: unitree_g1_edu.hw.link.left_elbow_link
+    position_limit:
+      max: 1.9722
+      min: -1.9722
+      unit: rad
+    urdf_name: left_wrist_roll_joint
+    velocity_limit:
+      unit: rad/s
+      value: 37.0
+  source:
+    locator: g1_23dof_rev_1_0.urdf#joint[left_wrist_roll_joint]
+    type: urdf
+  type: Joint
+- id: unitree_g1_edu.hw.joint.right_shoulder_pitch
+  properties:
+    axis_xyz:
+    - 0.0
+    - 1.0
+    - 0.0
+    child_link: unitree_g1_edu.hw.link.right_shoulder_pitch_link
+    dof_axis: pitch
+    effort_limit:
+      unit: Nm
+      value: 25.0
+    joint_kind: revolute
+    origin_rpy:
+    - -0.27931
+    - 5.4949e-05
+    - 0.00019159
+    origin_xyz:
+    - 0.0039563
+    - -0.10021
+    - 0.24778
+    parent_link: unitree_g1_edu.hw.link.torso_link
+    position_limit:
+      max: 2.6704
+      min: -3.0892
+      unit: rad
+    urdf_name: right_shoulder_pitch_joint
+    velocity_limit:
+      unit: rad/s
+      value: 37.0
+  source:
+    locator: g1_23dof_rev_1_0.urdf#joint[right_shoulder_pitch_joint]
+    type: urdf
+  type: Joint
+- id: unitree_g1_edu.hw.joint.right_shoulder_roll
+  properties:
+    axis_xyz:
+    - 1.0
+    - 0.0
+    - 0.0
+    child_link: unitree_g1_edu.hw.link.right_shoulder_roll_link
+    dof_axis: roll
+    effort_limit:
+      unit: Nm
+      value: 25.0
+    joint_kind: revolute
+    origin_rpy:
+    - 0.27925
+    - 0.0
+    - 0.0
+    origin_xyz:
+    - 0.0
+    - -0.038
+    - -0.013831
+    parent_link: unitree_g1_edu.hw.link.right_shoulder_pitch_link
+    position_limit:
+      max: 1.5882
+      min: -2.2515
+      unit: rad
+    urdf_name: right_shoulder_roll_joint
+    velocity_limit:
+      unit: rad/s
+      value: 37.0
+  source:
+    locator: g1_23dof_rev_1_0.urdf#joint[right_shoulder_roll_joint]
+    type: urdf
+  type: Joint
+- id: unitree_g1_edu.hw.joint.right_shoulder_yaw
+  properties:
+    axis_xyz:
+    - 0.0
+    - 0.0
+    - 1.0
+    child_link: unitree_g1_edu.hw.link.right_shoulder_yaw_link
+    dof_axis: yaw
+    effort_limit:
+      unit: Nm
+      value: 25.0
+    joint_kind: revolute
+    origin_rpy:
+    - 0.0
+    - 0.0
+    - 0.0
+    origin_xyz:
+    - 0.0
+    - -0.00624
+    - -0.1032
+    parent_link: unitree_g1_edu.hw.link.right_shoulder_roll_link
+    position_limit:
+      max: 2.618
+      min: -2.618
+      unit: rad
+    urdf_name: right_shoulder_yaw_joint
+    velocity_limit:
+      unit: rad/s
+      value: 37.0
+  source:
+    locator: g1_23dof_rev_1_0.urdf#joint[right_shoulder_yaw_joint]
+    type: urdf
+  type: Joint
+- id: unitree_g1_edu.hw.joint.right_elbow
+  properties:
+    axis_xyz:
+    - 0.0
+    - 1.0
+    - 0.0
+    child_link: unitree_g1_edu.hw.link.right_elbow_link
+    dof_axis: pitch
+    effort_limit:
+      unit: Nm
+      value: 25.0
+    joint_kind: revolute
+    origin_rpy:
+    - 0.0
+    - 0.0
+    - 0.0
+    origin_xyz:
+    - 0.015783
+    - 0.0
+    - -0.080518
+    parent_link: unitree_g1_edu.hw.link.right_shoulder_yaw_link
+    position_limit:
+      max: 2.0944
+      min: -1.0472
+      unit: rad
+    urdf_name: right_elbow_joint
+    velocity_limit:
+      unit: rad/s
+      value: 37.0
+  source:
+    locator: g1_23dof_rev_1_0.urdf#joint[right_elbow_joint]
+    type: urdf
+  type: Joint
+- id: unitree_g1_edu.hw.joint.right_wrist_roll
+  properties:
+    axis_xyz:
+    - 1.0
+    - 0.0
+    - 0.0
+    child_link: unitree_g1_edu.hw.link.right_wrist_roll_rubber_hand
+    dof_axis: roll
+    effort_limit:
+      unit: Nm
+      value: 25.0
+    joint_kind: revolute
+    origin_rpy:
+    - 0.0
+    - 0.0
+    - 0.0
+    origin_xyz:
+    - 0.1
+    - -0.00188791
+    - -0.01
+    parent_link: unitree_g1_edu.hw.link.right_elbow_link
+    position_limit:
+      max: 1.9722
+      min: -1.9722
+      unit: rad
+    urdf_name: right_wrist_roll_joint
+    velocity_limit:
+      unit: rad/s
+      value: 37.0
+  source:
+    locator: g1_23dof_rev_1_0.urdf#joint[right_wrist_roll_joint]
+    type: urdf
+  type: Joint

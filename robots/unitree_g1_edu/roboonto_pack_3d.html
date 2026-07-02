@@ -1,0 +1,1223 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>RoboOnto · Unitree Robotics G1 EDU (23-DOF) Ontology Atlas</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300..900;1,9..144,300..900&family=IBM+Plex+Mono:wght@300;400;500;600&family=IBM+Plex+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg-0: #0a0d14;
+  --bg-1: #0f1420;
+  --bg-2: #161c2e;
+  --fg-0: #e8eaf0;
+  --fg-1: #aab3c5;
+  --fg-2: #6b7590;
+  --border: rgba(232, 234, 240, 0.08);
+  --border-strong: rgba(232, 234, 240, 0.16);
+  --accent: #60a5fa;
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+html, body {
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  background: var(--bg-0);
+  color: var(--fg-0);
+  font-family: "IBM Plex Sans", sans-serif;
+  font-weight: 400;
+  -webkit-font-smoothing: antialiased;
+  user-select: none;
+}
+
+#canvas-container {
+  position: fixed;
+  inset: 0;
+  z-index: 1;
+}
+
+canvas { display: block; }
+
+/* Ambient grain */
+body::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 10;
+  background-image:
+    radial-gradient(ellipse at 20% 15%, rgba(96, 165, 250, 0.08), transparent 40%),
+    radial-gradient(ellipse at 85% 80%, rgba(236, 64, 122, 0.05), transparent 40%);
+}
+
+/* ==================== TOP HEADER ==================== */
+#header {
+  position: fixed;
+  top: 0; left: 0; right: 0;
+  padding: 24px 32px 20px;
+  z-index: 20;
+  background: linear-gradient(to bottom, rgba(10, 13, 20, 0.85) 0%, transparent 100%);
+  pointer-events: none;
+}
+
+#header-inner {
+  display: flex;
+  align-items: baseline;
+  gap: 20px;
+  flex-wrap: wrap;
+}
+
+.brand {
+  font-family: "Fraunces", serif;
+  font-weight: 300;
+  font-size: 28px;
+  letter-spacing: -0.02em;
+  color: var(--fg-0);
+  font-style: italic;
+}
+
+.brand em {
+  font-style: normal;
+  font-weight: 500;
+}
+
+.subtitle {
+  font-family: "IBM Plex Mono", monospace;
+  font-size: 11px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--fg-2);
+}
+
+.stats-inline {
+  margin-left: auto;
+  display: flex;
+  gap: 28px;
+  font-family: "IBM Plex Mono", monospace;
+  font-size: 11px;
+  color: var(--fg-1);
+}
+
+.stats-inline .k {
+  color: var(--fg-2);
+  margin-right: 6px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.stats-inline .v {
+  color: var(--fg-0);
+  font-weight: 500;
+  font-variant-numeric: tabular-nums;
+}
+
+/* ==================== LEGEND (right top) ==================== */
+#legend {
+  position: fixed;
+  top: 88px;
+  right: 24px;
+  width: 220px;
+  padding: 18px 18px 14px;
+  background: rgba(15, 20, 32, 0.7);
+  backdrop-filter: blur(14px) saturate(160%);
+  -webkit-backdrop-filter: blur(14px) saturate(160%);
+  border: 1px solid var(--border);
+  border-radius: 2px;
+  z-index: 30;
+  pointer-events: auto;
+}
+
+.legend-title {
+  font-family: "IBM Plex Mono", monospace;
+  font-size: 10px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--fg-2);
+  margin-bottom: 12px;
+  padding-bottom: 10px;
+  border-bottom: 1px solid var(--border);
+}
+
+.legend-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 5px 0;
+  cursor: pointer;
+  transition: opacity 0.15s ease;
+  font-size: 12px;
+}
+
+.legend-row:hover { opacity: 0.75; }
+
+.legend-row.dimmed {
+  opacity: 0.28;
+}
+
+.legend-swatch {
+  width: 10px;
+  height: 10px;
+  border-radius: 2px;
+  flex-shrink: 0;
+}
+
+.legend-label {
+  font-family: "IBM Plex Sans", sans-serif;
+  color: var(--fg-0);
+  flex: 1;
+  letter-spacing: 0.01em;
+}
+
+.legend-count {
+  font-family: "IBM Plex Mono", monospace;
+  font-size: 11px;
+  color: var(--fg-2);
+  font-variant-numeric: tabular-nums;
+}
+
+/* ==================== DETAIL PANEL (right bottom) ==================== */
+#detail {
+  position: fixed;
+  bottom: 24px;
+  right: 24px;
+  width: 340px;
+  max-height: calc(100vh - 360px);
+  overflow-y: auto;
+  padding: 22px 22px 20px;
+  background: rgba(15, 20, 32, 0.82);
+  backdrop-filter: blur(14px) saturate(160%);
+  -webkit-backdrop-filter: blur(14px) saturate(160%);
+  border: 1px solid var(--border-strong);
+  border-radius: 2px;
+  z-index: 30;
+  pointer-events: auto;
+  display: none;
+}
+
+#detail.visible { display: block; }
+
+.detail-category {
+  font-family: "IBM Plex Mono", monospace;
+  font-size: 10px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  margin-bottom: 4px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.detail-category .cat-dot {
+  width: 8px; height: 8px; border-radius: 50%;
+}
+
+.detail-label {
+  font-family: "Fraunces", serif;
+  font-weight: 400;
+  font-style: italic;
+  font-size: 22px;
+  letter-spacing: -0.01em;
+  margin-bottom: 4px;
+  line-height: 1.2;
+  color: var(--fg-0);
+}
+
+.detail-id {
+  font-family: "IBM Plex Mono", monospace;
+  font-size: 10px;
+  color: var(--fg-2);
+  word-break: break-all;
+  margin-bottom: 16px;
+  padding-bottom: 14px;
+  border-bottom: 1px solid var(--border);
+  line-height: 1.5;
+}
+
+.detail-props {
+  font-family: "IBM Plex Mono", monospace;
+  font-size: 11px;
+  line-height: 1.6;
+}
+
+.detail-prop {
+  display: grid;
+  grid-template-columns: 100px 1fr;
+  gap: 10px;
+  padding: 4px 0;
+}
+
+.detail-prop-key {
+  color: var(--fg-2);
+  letter-spacing: 0.04em;
+}
+
+.detail-prop-val {
+  color: var(--fg-0);
+  word-break: break-word;
+}
+
+.detail-prop-val .severity-error { color: #ff9800; font-weight: 500; }
+.detail-prop-val .severity-fatal { color: #ef5350; font-weight: 600; }
+.detail-prop-val .severity-warn  { color: #ffd54f; }
+
+.detail-connections {
+  margin-top: 14px;
+  padding-top: 14px;
+  border-top: 1px solid var(--border);
+  font-family: "IBM Plex Mono", monospace;
+  font-size: 10px;
+  color: var(--fg-1);
+}
+
+.detail-connections-title {
+  color: var(--fg-2);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  margin-bottom: 6px;
+  font-size: 9px;
+}
+
+.detail-link {
+  padding: 2px 0;
+  cursor: pointer;
+  transition: color 0.15s;
+}
+
+.detail-link:hover { color: var(--accent); }
+
+.detail-link-type {
+  color: var(--fg-2);
+  margin-right: 6px;
+}
+
+.detail-close {
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  background: transparent;
+  border: 0;
+  color: var(--fg-2);
+  cursor: pointer;
+  font-family: "IBM Plex Mono", monospace;
+  font-size: 14px;
+  padding: 4px 8px;
+}
+
+.detail-close:hover { color: var(--fg-0); }
+
+/* ==================== SEARCH (left bottom) ==================== */
+#search-box {
+  position: fixed;
+  bottom: 24px;
+  left: 24px;
+  width: 320px;
+  padding: 16px 18px 14px;
+  background: rgba(15, 20, 32, 0.75);
+  backdrop-filter: blur(14px) saturate(160%);
+  -webkit-backdrop-filter: blur(14px) saturate(160%);
+  border: 1px solid var(--border);
+  border-radius: 2px;
+  z-index: 30;
+}
+
+.search-label {
+  font-family: "IBM Plex Mono", monospace;
+  font-size: 10px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--fg-2);
+  margin-bottom: 8px;
+}
+
+.search-input {
+  width: 100%;
+  background: transparent;
+  border: 0;
+  border-bottom: 1px solid var(--border-strong);
+  padding: 6px 0;
+  color: var(--fg-0);
+  font-family: "IBM Plex Sans", sans-serif;
+  font-size: 14px;
+  outline: none;
+  letter-spacing: 0.01em;
+}
+
+.search-input:focus { border-bottom-color: var(--accent); }
+
+.search-input::placeholder { color: var(--fg-2); }
+
+.search-hint {
+  margin-top: 8px;
+  font-family: "IBM Plex Mono", monospace;
+  font-size: 10px;
+  color: var(--fg-2);
+  letter-spacing: 0.04em;
+}
+
+.kbd {
+  display: inline-block;
+  padding: 1px 6px;
+  border: 1px solid var(--border-strong);
+  border-radius: 2px;
+  background: var(--bg-2);
+  font-family: "IBM Plex Mono", monospace;
+  font-size: 9px;
+  color: var(--fg-1);
+  margin: 0 2px;
+}
+
+/* ==================== HOVER TOOLTIP ==================== */
+#tooltip {
+  position: fixed;
+  pointer-events: none;
+  padding: 8px 12px;
+  background: rgba(15, 20, 32, 0.96);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  border: 1px solid var(--border-strong);
+  border-radius: 2px;
+  font-family: "IBM Plex Mono", monospace;
+  font-size: 11px;
+  color: var(--fg-0);
+  z-index: 40;
+  display: none;
+  max-width: 320px;
+  line-height: 1.4;
+}
+
+#tooltip .tt-cat {
+  font-size: 9px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--fg-2);
+  margin-bottom: 2px;
+}
+
+/* ==================== LOADING ==================== */
+#loading {
+  position: fixed;
+  inset: 0;
+  background: var(--bg-0);
+  z-index: 100;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: opacity 0.4s ease;
+}
+
+#loading.done {
+  opacity: 0;
+  pointer-events: none;
+}
+
+.loading-text {
+  font-family: "IBM Plex Mono", monospace;
+  font-size: 11px;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--fg-2);
+  animation: pulse 1.6s ease-in-out infinite;
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 0.4; }
+  50% { opacity: 1; }
+}
+
+/* ==================== RESPONSIVE ==================== */
+@media (max-width: 900px) {
+  #header { padding: 18px 20px; }
+  .brand { font-size: 22px; }
+  .stats-inline { display: none; }
+  #legend { top: 72px; right: 16px; width: 180px; }
+  #detail { width: calc(100vw - 32px); right: 16px; left: 16px; max-height: 260px; }
+  #search-box {
+    left: 16px;
+    bottom: 16px;
+    width: min(320px, calc(100vw - 32px));
+    padding: 12px 14px 13px;
+    backdrop-filter: blur(12px);
+  }
+  .search-hint { display: none; }
+}
+</style>
+</head>
+<body>
+
+<div id="loading">
+  <div class="loading-text">loading ontology…</div>
+</div>
+
+<div id="canvas-container"></div>
+
+<header id="header">
+  <div id="header-inner">
+    <div>
+      <div class="brand"><em>RoboOnto</em> <span style="color: var(--fg-2)">·</span> <em>Unitree Robotics G1 EDU (23-DOF)</em> Ontology Atlas</div>
+      <div class="subtitle">v0.1 · 3d force-directed semantic graph</div>
+    </div>
+    <div class="stats-inline">
+      <div><span class="k">NODES</span><span class="v" id="stat-nodes">—</span></div>
+      <div><span class="k">LINKS</span><span class="v" id="stat-links">—</span></div>
+      <div><span class="k">TYPES</span><span class="v" id="stat-types">—</span></div>
+      <div><span class="k">ACTIONS</span><span class="v" id="stat-actions">—</span></div>
+    </div>
+  </div>
+</header>
+
+<aside id="legend">
+  <div class="legend-title">Categories · filter</div>
+  <div id="legend-body"></div>
+</aside>
+
+<aside id="detail">
+  <button class="detail-close" onclick="app.closeDetail()">✕</button>
+  <div class="detail-category"><span class="cat-dot" id="d-catdot"></span><span id="d-cat">—</span></div>
+  <div class="detail-label" id="d-label">—</div>
+  <div class="detail-id" id="d-id">—</div>
+  <div class="detail-props" id="d-props"></div>
+  <div class="detail-connections" id="d-conns"></div>
+</aside>
+
+<div id="search-box">
+  <div class="search-label">search nodes</div>
+  <input class="search-input" id="search-input" placeholder="try: elbow, PMU, velocity, L10…" autocomplete="off">
+  <div class="search-hint">
+    <span class="kbd">drag</span> rotate &nbsp;
+    <span class="kbd">wheel</span> zoom &nbsp;
+    <span class="kbd">click</span> inspect
+  </div>
+</div>
+
+<div id="tooltip"></div>
+
+<script>
+// ==================== Inline Graph Data ====================
+// (Substituted at build time; see /home/claude/graph_inline.js)
+const GRAPH_DATA = {"robot": {"id": "unitree_g1_edu", "meta": {"description": "宇树 G1 EDU 版 (23-DOF rev_1_0)。腿6×2 + 腰1 + 臂5×2。hip gear ratio {14.3, 22.5}。mode_machine=4。", "firmware_version": "mode_machine=4, rev_1_0", "id": "unitree_g1_edu", "model": "G1 EDU (23-DOF)", "roboonto_version": "0.1", "ros2_version": "MY_ROS2", "vendor": "Unitree Robotics"}}, "stats": {"total_nodes": 214, "total_links": 85, "categories": {"hardware": 59, "behavior": 10, "event": 120, "interface": 8, "action": 17}, "object_types": {"Link": 31, "ComputeUnit": 2, "PowerSubsystem": 1, "Sensor": 2, "Joint": 23, "Mode": 3, "PresetMotion": 7, "StatusBit": 108, "FaultCode": 12, "Service": 3, "Topic": 5, "Action": 17}}, "category_colors": {"hardware": "#ff6b6b", "interface": "#4dd0e1", "behavior": "#ffd54f", "event": "#ff9800", "meta": "#90a4ae", "action": "#ec407a"}, "nodes": [{"id": "unitree_g1_edu.hw.link.pelvis", "type": "Link", "category": "hardware", "label": "pelvis", "color": "#ff6b6b", "source_doc": "urdf: g1_23dof_rev_1_0.urdf#link[pelvis]", "degree": 9, "properties": {"mass": 3.813, "mass_unit": "kg", "name_urdf": "pelvis", "visual_mesh": "meshes/pelvis.STL"}}, {"id": "unitree_g1_edu.hw.link.pelvis_contour_link", "type": "Link", "category": "hardware", "label": "pelvis_contour_link", "color": "#ff6b6b", "source_doc": "urdf: g1_23dof_rev_1_0.urdf#link[pelvis_contour_link]", "degree": 1, "properties": {"collision_mesh": "meshes/pelvis_contour_link.STL", "mass": 0.001, "mass_unit": "kg", "name_urdf": "pelvis_contour_link", "visual_mesh": "meshes/pelvis_contour_link.STL"}}, {"id": "unitree_g1_edu.hw.link.left_hip_pitch_link", "type": "Link", "category": "hardware", "label": "left_hip_pitch_link", "color": "#ff6b6b", "source_doc": "urdf: g1_23dof_rev_1_0.urdf#link[left_hip_pitch_link]", "degree": 4, "properties": {"collision_mesh": "meshes/left_hip_pitch_link.STL", "mass": 1.35, "mass_unit": "kg", "name_urdf": "left_hip_pitch_link", "visual_mesh": "meshes/left_hip_pitch_link.STL"}}, {"id": "unitree_g1_edu.hw.link.left_hip_roll_link", "type": "Link", "category": "hardware", "label": "left_hip_roll_link", "color": "#ff6b6b", "source_doc": "urdf: g1_23dof_rev_1_0.urdf#link[left_hip_roll_link]", "degree": 4, "properties": {"collision_mesh": "meshes/left_hip_roll_link.STL", "mass": 1.52, "mass_unit": "kg", "name_urdf": "left_hip_roll_link", "visual_mesh": "meshes/left_hip_roll_link.STL"}}, {"id": "unitree_g1_edu.hw.link.left_hip_yaw_link", "type": "Link", "category": "hardware", "label": "left_hip_yaw_link", "color": "#ff6b6b", "source_doc": "urdf: g1_23dof_rev_1_0.urdf#link[left_hip_yaw_link]", "degree": 4, "properties": {"collision_mesh": "meshes/left_hip_yaw_link.STL", "mass": 1.702, "mass_unit": "kg", "name_urdf": "left_hip_yaw_link", "visual_mesh": "meshes/left_hip_yaw_link.STL"}}, {"id": "unitree_g1_edu.hw.link.left_knee_link", "type": "Link", "category": "hardware", "label": "left_knee_link", "color": "#ff6b6b", "source_doc": "urdf: g1_23dof_rev_1_0.urdf#link[left_knee_link]", "degree": 4, "properties": {"collision_mesh": "meshes/left_knee_link.STL", "mass": 1.932, "mass_unit": "kg", "name_urdf": "left_knee_link", "visual_mesh": "meshes/left_knee_link.STL"}}, {"id": "unitree_g1_edu.hw.link.left_ankle_pitch_link", "type": "Link", "category": "hardware", "label": "left_ankle_pitch_link", "color": "#ff6b6b", "source_doc": "urdf: g1_23dof_rev_1_0.urdf#link[left_ankle_pitch_link]", "degree": 4, "properties": {"collision_mesh": "meshes/left_ankle_pitch_link.STL", "mass": 0.074, "mass_unit": "kg", "name_urdf": "left_ankle_pitch_link", "visual_mesh": "meshes/left_ankle_pitch_link.STL"}}, {"id": "unitree_g1_edu.hw.link.left_ankle_roll_link", "type": "Link", "category": "hardware", "label": "left_ankle_roll_link", "color": "#ff6b6b", "source_doc": "urdf: g1_23dof_rev_1_0.urdf#link[left_ankle_roll_link]", "degree": 2, "properties": {"mass": 0.608, "mass_unit": "kg", "name_urdf": "left_ankle_roll_link", "visual_mesh": "meshes/left_ankle_roll_link.STL"}}, {"id": "unitree_g1_edu.hw.link.right_hip_pitch_link", "type": "Link", "category": "hardware", "label": "right_hip_pitch_link", "color": "#ff6b6b", "source_doc": "urdf: g1_23dof_rev_1_0.urdf#link[right_hip_pitch_link]", "degree": 4, "properties": {"collision_mesh": "meshes/right_hip_pitch_link.STL", "mass": 1.35, "mass_unit": "kg", "name_urdf": "right_hip_pitch_link", "visual_mesh": "meshes/right_hip_pitch_link.STL"}}, {"id": "unitree_g1_edu.hw.link.right_hip_roll_link", "type": "Link", "category": "hardware", "label": "right_hip_roll_link", "color": "#ff6b6b", "source_doc": "urdf: g1_23dof_rev_1_0.urdf#link[right_hip_roll_link]", "degree": 4, "properties": {"collision_mesh": "meshes/right_hip_roll_link.STL", "mass": 1.52, "mass_unit": "kg", "name_urdf": "right_hip_roll_link", "visual_mesh": "meshes/right_hip_roll_link.STL"}}, {"id": "unitree_g1_edu.hw.link.right_hip_yaw_link", "type": "Link", "category": "hardware", "label": "right_hip_yaw_link", "color": "#ff6b6b", "source_doc": "urdf: g1_23dof_rev_1_0.urdf#link[right_hip_yaw_link]", "degree": 4, "properties": {"collision_mesh": "meshes/right_hip_yaw_link.STL", "mass": 1.702, "mass_unit": "kg", "name_urdf": "right_hip_yaw_link", "visual_mesh": "meshes/right_hip_yaw_link.STL"}}, {"id": "unitree_g1_edu.hw.link.right_knee_link", "type": "Link", "category": "hardware", "label": "right_knee_link", "color": "#ff6b6b", "source_doc": "urdf: g1_23dof_rev_1_0.urdf#link[right_knee_link]", "degree": 4, "properties": {"collision_mesh": "meshes/right_knee_link.STL", "mass": 1.932, "mass_unit": "kg", "name_urdf": "right_knee_link", "visual_mesh": "meshes/right_knee_link.STL"}}, {"id": "unitree_g1_edu.hw.link.right_ankle_pitch_link", "type": "Link", "category": "hardware", "label": "right_ankle_pitch_link", "color": "#ff6b6b", "source_doc": "urdf: g1_23dof_rev_1_0.urdf#link[right_ankle_pitch_link]", "degree": 4, "properties": {"collision_mesh": "meshes/right_ankle_pitch_link.STL", "mass": 0.074, "mass_unit": "kg", "name_urdf": "right_ankle_pitch_link", "visual_mesh": "meshes/right_ankle_pitch_link.STL"}}, {"id": "unitree_g1_edu.hw.link.right_ankle_roll_link", "type": "Link", "category": "hardware", "label": "right_ankle_roll_link", "color": "#ff6b6b", "source_doc": "urdf: g1_23dof_rev_1_0.urdf#link[right_ankle_roll_link]", "degree": 2, "properties": {"mass": 0.608, "mass_unit": "kg", "name_urdf": "right_ankle_roll_link", "visual_mesh": "meshes/right_ankle_roll_link.STL"}}, {"id": "unitree_g1_edu.hw.link.torso_link", "type": "Link", "category": "hardware", "label": "torso_link", "color": "#ff6b6b", "source_doc": "urdf: g1_23dof_rev_1_0.urdf#link[torso_link]", "degree": 11, "properties": {"collision_mesh": "meshes/torso_link_23dof_rev_1_0.STL", "mass": 6.78, "mass_unit": "kg", "name_urdf": "torso_link", "visual_mesh": "meshes/torso_link_23dof_rev_1_0.STL"}}, {"id": "unitree_g1_edu.hw.link.logo_link", "type": "Link", "category": "hardware", "label": "logo_link", "color": "#ff6b6b", "source_doc": "urdf: g1_23dof_rev_1_0.urdf#link[logo_link]", "degree": 1, "properties": {"collision_mesh": "meshes/logo_link.STL", "mass": 0.001, "mass_unit": "kg", "name_urdf": "logo_link", "visual_mesh": "meshes/logo_link.STL"}}, {"id": "unitree_g1_edu.hw.link.head_link", "type": "Link", "category": "hardware", "label": "head_link", "color": "#ff6b6b", "source_doc": "urdf: g1_23dof_rev_1_0.urdf#link[head_link]", "degree": 1, "properties": {"collision_mesh": "meshes/head_link.STL", "mass": 1.036, "mass_unit": "kg", "name_urdf": "head_link", "visual_mesh": "meshes/head_link.STL"}}, {"id": "unitree_g1_edu.hw.link.imu_in_torso", "type": "Link", "category": "hardware", "label": "imu_in_torso", "color": "#ff6b6b", "source_doc": "urdf: g1_23dof_rev_1_0.urdf#link[imu_in_torso]", "degree": 1, "properties": {"name_urdf": "imu_in_torso"}}, {"id": "unitree_g1_edu.hw.link.imu_in_pelvis", "type": "Link", "category": "hardware", "label": "imu_in_pelvis", "color": "#ff6b6b", "source_doc": "urdf: g1_23dof_rev_1_0.urdf#link[imu_in_pelvis]", "degree": 1, "properties": {"name_urdf": "imu_in_pelvis"}}, {"id": "unitree_g1_edu.hw.link.d435_link", "type": "Link", "category": "hardware", "label": "d435_link", "color": "#ff6b6b", "source_doc": "urdf: g1_23dof_rev_1_0.urdf#link[d435_link]", "degree": 1, "properties": {"name_urdf": "d435_link"}}, {"id": "unitree_g1_edu.hw.link.mid360_link", "type": "Link", "category": "hardware", "label": "mid360_link", "color": "#ff6b6b", "source_doc": "urdf: g1_23dof_rev_1_0.urdf#link[mid360_link]", "degree": 1, "properties": {"name_urdf": "mid360_link"}}, {"id": "unitree_g1_edu.hw.link.left_shoulder_pitch_link", "type": "Link", "category": "hardware", "label": "left_shoulder_pitch_link", "color": "#ff6b6b", "source_doc": "urdf: g1_23dof_rev_1_0.urdf#link[left_shoulder_pitch_link]", "degree": 4, "properties": {"mass": 0.718, "mass_unit": "kg", "name_urdf": "left_shoulder_pitch_link", "visual_mesh": "meshes/left_shoulder_pitch_link.STL"}}, {"id": "unitree_g1_edu.hw.link.left_shoulder_roll_link", "type": "Link", "category": "hardware", "label": "left_shoulder_roll_link", "color": "#ff6b6b", "source_doc": "urdf: g1_23dof_rev_1_0.urdf#link[left_shoulder_roll_link]", "degree": 4, "properties": {"mass": 0.643, "mass_unit": "kg", "name_urdf": "left_shoulder_roll_link", "visual_mesh": "meshes/left_shoulder_roll_link.STL"}}, {"id": "unitree_g1_edu.hw.link.left_shoulder_yaw_link", "type": "Link", "category": "hardware", "label": "left_shoulder_yaw_link", "color": "#ff6b6b", "source_doc": "urdf: g1_23dof_rev_1_0.urdf#link[left_shoulder_yaw_link]", "degree": 4, "properties": {"collision_mesh": "meshes/left_shoulder_yaw_link.STL", "mass": 0.734, "mass_unit": "kg", "name_urdf": "left_shoulder_yaw_link", "visual_mesh": "meshes/left_shoulder_yaw_link.STL"}}, {"id": "unitree_g1_edu.hw.link.left_elbow_link", "type": "Link", "category": "hardware", "label": "left_elbow_link", "color": "#ff6b6b", "source_doc": "urdf: g1_23dof_rev_1_0.urdf#link[left_elbow_link]", "degree": 4, "properties": {"collision_mesh": "meshes/left_elbow_link.STL", "mass": 0.6, "mass_unit": "kg", "name_urdf": "left_elbow_link", "visual_mesh": "meshes/left_elbow_link.STL"}}, {"id": "unitree_g1_edu.hw.link.left_wrist_roll_rubber_hand", "type": "Link", "category": "hardware", "label": "left_wrist_roll_rubber_hand", "color": "#ff6b6b", "source_doc": "urdf: g1_23dof_rev_1_0.urdf#link[left_wrist_roll_rubber_hand]", "degree": 2, "properties": {"collision_mesh": "meshes/left_wrist_roll_rubber_hand.STL", "mass": 0.35692864, "mass_unit": "kg", "name_urdf": "left_wrist_roll_rubber_hand", "visual_mesh": "meshes/left_wrist_roll_rubber_hand.STL"}}, {"id": "unitree_g1_edu.hw.link.right_shoulder_pitch_link", "type": "Link", "category": "hardware", "label": "right_shoulder_pitch_link", "color": "#ff6b6b", "source_doc": "urdf: g1_23dof_rev_1_0.urdf#link[right_shoulder_pitch_link]", "degree": 4, "properties": {"mass": 0.718, "mass_unit": "kg", "name_urdf": "right_shoulder_pitch_link", "visual_mesh": "meshes/right_shoulder_pitch_link.STL"}}, {"id": "unitree_g1_edu.hw.link.right_shoulder_roll_link", "type": "Link", "category": "hardware", "label": "right_shoulder_roll_link", "color": "#ff6b6b", "source_doc": "urdf: g1_23dof_rev_1_0.urdf#link[right_shoulder_roll_link]", "degree": 4, "properties": {"mass": 0.643, "mass_unit": "kg", "name_urdf": "right_shoulder_roll_link", "visual_mesh": "meshes/right_shoulder_roll_link.STL"}}, {"id": "unitree_g1_edu.hw.link.right_shoulder_yaw_link", "type": "Link", "category": "hardware", "label": "right_shoulder_yaw_link", "color": "#ff6b6b", "source_doc": "urdf: g1_23dof_rev_1_0.urdf#link[right_shoulder_yaw_link]", "degree": 4, "properties": {"collision_mesh": "meshes/right_shoulder_yaw_link.STL", "mass": 0.734, "mass_unit": "kg", "name_urdf": "right_shoulder_yaw_link", "visual_mesh": "meshes/right_shoulder_yaw_link.STL"}}, {"id": "unitree_g1_edu.hw.link.right_elbow_link", "type": "Link", "category": "hardware", "label": "right_elbow_link", "color": "#ff6b6b", "source_doc": "urdf: g1_23dof_rev_1_0.urdf#link[right_elbow_link]", "degree": 4, "properties": {"collision_mesh": "meshes/right_elbow_link.STL", "mass": 0.6, "mass_unit": "kg", "name_urdf": "right_elbow_link", "visual_mesh": "meshes/right_elbow_link.STL"}}, {"id": "unitree_g1_edu.hw.link.right_wrist_roll_rubber_hand", "type": "Link", "category": "hardware", "label": "right_wrist_roll_rubber_hand", "color": "#ff6b6b", "source_doc": "urdf: g1_23dof_rev_1_0.urdf#link[right_wrist_roll_rubber_hand]", "degree": 2, "properties": {"collision_mesh": "meshes/right_wrist_roll_rubber_hand.STL", "mass": 0.35692864, "mass_unit": "kg", "name_urdf": "right_wrist_roll_rubber_hand", "visual_mesh": "meshes/right_wrist_roll_rubber_hand.STL"}}, {"id": "unitree_g1_edu.hw.compute.main", "type": "ComputeUnit", "category": "hardware", "label": "main", "color": "#ff6b6b", "source_doc": "document: unitree_ros/robots/g1_description/README.md", "degree": 1, "properties": {"role": "motion_control", "soc": "ARM Cortex-A + GPU"}}, {"id": "unitree_g1_edu.hw.power.battery", "type": "PowerSubsystem", "category": "hardware", "label": "电池", "color": "#ff6b6b", "source_doc": "document", "degree": 1, "properties": {"name": "电池", "voltage_nominal": 48}}, {"id": "unitree_g1_edu.hw.sensor.imu", "type": "Sensor", "category": "hardware", "label": "骨盆IMU", "color": "#ff6b6b", "source_doc": "sdk_code: unitree_sdk2/idl/hg/IMUState_.hpp", "degree": 4, "properties": {"name": "骨盆IMU", "rate_hz": 500, "sensor_type": "IMU"}}, {"id": "unitree_g1_edu.hw.sensor.bms", "type": "Sensor", "category": "hardware", "label": "BMS", "color": "#ff6b6b", "source_doc": "sdk_code: unitree_sdk2/idl/hg/BmsState_.hpp", "degree": 4, "properties": {"name": "BMS", "sensor_type": "BMS"}}, {"id": "unitree_g1_edu.hw.compute.orin", "type": "ComputeUnit", "category": "hardware", "label": "orin", "color": "#ff6b6b", "source_doc": "document: unitree.com/g1", "degree": 1, "properties": {"ai_tops": 100, "cpu": "8-core Arm Cortex-A78AE", "gpu": "1024-core NVIDIA Ampere GPU with 32 Tensor Cores", "notes": "EDU版二开计算单元。G1标准版无此配置。", "role": "development", "soc": "NVIDIA Jetson Orin NX"}}, {"id": "unitree_g1_edu.hw.joint.left_hip_pitch", "type": "Joint", "category": "hardware", "label": "left_hip_pitch_joint", "color": "#ff6b6b", "source_doc": "urdf: g1_23dof_rev_1_0.urdf#joint[left_hip_pitch_joint]", "degree": 0, "properties": {"child_link": "unitree_g1_edu.hw.link.left_hip_pitch_link", "dof_axis": "pitch", "joint_kind": "revolute", "parent_link": "unitree_g1_edu.hw.link.pelvis", "urdf_name": "left_hip_pitch_joint"}}, {"id": "unitree_g1_edu.hw.joint.left_hip_roll", "type": "Joint", "category": "hardware", "label": "left_hip_roll_joint", "color": "#ff6b6b", "source_doc": "urdf: g1_23dof_rev_1_0.urdf#joint[left_hip_roll_joint]", "degree": 0, "properties": {"child_link": "unitree_g1_edu.hw.link.left_hip_roll_link", "dof_axis": "roll", "joint_kind": "revolute", "parent_link": "unitree_g1_edu.hw.link.left_hip_pitch_link", "urdf_name": "left_hip_roll_joint"}}, {"id": "unitree_g1_edu.hw.joint.left_hip_yaw", "type": "Joint", "category": "hardware", "label": "left_hip_yaw_joint", "color": "#ff6b6b", "source_doc": "urdf: g1_23dof_rev_1_0.urdf#joint[left_hip_yaw_joint]", "degree": 0, "properties": {"child_link": "unitree_g1_edu.hw.link.left_hip_yaw_link", "dof_axis": "yaw", "joint_kind": "revolute", "parent_link": "unitree_g1_edu.hw.link.left_hip_roll_link", "urdf_name": "left_hip_yaw_joint"}}, {"id": "unitree_g1_edu.hw.joint.left_knee", "type": "Joint", "category": "hardware", "label": "left_knee_joint", "color": "#ff6b6b", "source_doc": "urdf: g1_23dof_rev_1_0.urdf#joint[left_knee_joint]", "degree": 1, "properties": {"child_link": "unitree_g1_edu.hw.link.left_knee_link", "dof_axis": "pitch", "joint_kind": "revolute", "parent_link": "unitree_g1_edu.hw.link.left_hip_yaw_link", "urdf_name": "left_knee_joint"}}, {"id": "unitree_g1_edu.hw.joint.left_ankle_pitch", "type": "Joint", "category": "hardware", "label": "left_ankle_pitch_joint", "color": "#ff6b6b", "source_doc": "urdf: g1_23dof_rev_1_0.urdf#joint[left_ankle_pitch_joint]", "degree": 0, "properties": {"child_link": "unitree_g1_edu.hw.link.left_ankle_pitch_link", "dof_axis": "pitch", "joint_kind": "revolute", "parent_link": "unitree_g1_edu.hw.link.left_knee_link", "urdf_name": "left_ankle_pitch_joint"}}, {"id": "unitree_g1_edu.hw.joint.left_ankle_roll", "type": "Joint", "category": "hardware", "label": "left_ankle_roll_joint", "color": "#ff6b6b", "source_doc": "urdf: g1_23dof_rev_1_0.urdf#joint[left_ankle_roll_joint]", "degree": 0, "properties": {"child_link": "unitree_g1_edu.hw.link.left_ankle_roll_link", "dof_axis": "roll", "joint_kind": "revolute", "parent_link": "unitree_g1_edu.hw.link.left_ankle_pitch_link", "urdf_name": "left_ankle_roll_joint"}}, {"id": "unitree_g1_edu.hw.joint.right_hip_pitch", "type": "Joint", "category": "hardware", "label": "right_hip_pitch_joint", "color": "#ff6b6b", "source_doc": "urdf: g1_23dof_rev_1_0.urdf#joint[right_hip_pitch_joint]", "degree": 0, "properties": {"child_link": "unitree_g1_edu.hw.link.right_hip_pitch_link", "dof_axis": "pitch", "joint_kind": "revolute", "parent_link": "unitree_g1_edu.hw.link.pelvis", "urdf_name": "right_hip_pitch_joint"}}, {"id": "unitree_g1_edu.hw.joint.right_hip_roll", "type": "Joint", "category": "hardware", "label": "right_hip_roll_joint", "color": "#ff6b6b", "source_doc": "urdf: g1_23dof_rev_1_0.urdf#joint[right_hip_roll_joint]", "degree": 0, "properties": {"child_link": "unitree_g1_edu.hw.link.right_hip_roll_link", "dof_axis": "roll", "joint_kind": "revolute", "parent_link": "unitree_g1_edu.hw.link.right_hip_pitch_link", "urdf_name": "right_hip_roll_joint"}}, {"id": "unitree_g1_edu.hw.joint.right_hip_yaw", "type": "Joint", "category": "hardware", "label": "right_hip_yaw_joint", "color": "#ff6b6b", "source_doc": "urdf: g1_23dof_rev_1_0.urdf#joint[right_hip_yaw_joint]", "degree": 0, "properties": {"child_link": "unitree_g1_edu.hw.link.right_hip_yaw_link", "dof_axis": "yaw", "joint_kind": "revolute", "parent_link": "unitree_g1_edu.hw.link.right_hip_roll_link", "urdf_name": "right_hip_yaw_joint"}}, {"id": "unitree_g1_edu.hw.joint.right_knee", "type": "Joint", "category": "hardware", "label": "right_knee_joint", "color": "#ff6b6b", "source_doc": "urdf: g1_23dof_rev_1_0.urdf#joint[right_knee_joint]", "degree": 0, "properties": {"child_link": "unitree_g1_edu.hw.link.right_knee_link", "dof_axis": "pitch", "joint_kind": "revolute", "parent_link": "unitree_g1_edu.hw.link.right_hip_yaw_link", "urdf_name": "right_knee_joint"}}, {"id": "unitree_g1_edu.hw.joint.right_ankle_pitch", "type": "Joint", "category": "hardware", "label": "right_ankle_pitch_joint", "color": "#ff6b6b", "source_doc": "urdf: g1_23dof_rev_1_0.urdf#joint[right_ankle_pitch_joint]", "degree": 0, "properties": {"child_link": "unitree_g1_edu.hw.link.right_ankle_pitch_link", "dof_axis": "pitch", "joint_kind": "revolute", "parent_link": "unitree_g1_edu.hw.link.right_knee_link", "urdf_name": "right_ankle_pitch_joint"}}, {"id": "unitree_g1_edu.hw.joint.right_ankle_roll", "type": "Joint", "category": "hardware", "label": "right_ankle_roll_joint", "color": "#ff6b6b", "source_doc": "urdf: g1_23dof_rev_1_0.urdf#joint[right_ankle_roll_joint]", "degree": 0, "properties": {"child_link": "unitree_g1_edu.hw.link.right_ankle_roll_link", "dof_axis": "roll", "joint_kind": "revolute", "parent_link": "unitree_g1_edu.hw.link.right_ankle_pitch_link", "urdf_name": "right_ankle_roll_joint"}}, {"id": "unitree_g1_edu.hw.joint.waist_yaw", "type": "Joint", "category": "hardware", "label": "waist_yaw_joint", "color": "#ff6b6b", "source_doc": "urdf: g1_23dof_rev_1_0.urdf#joint[waist_yaw_joint]", "degree": 0, "properties": {"child_link": "unitree_g1_edu.hw.link.torso_link", "dof_axis": "yaw", "joint_kind": "revolute", "parent_link": "unitree_g1_edu.hw.link.pelvis", "urdf_name": "waist_yaw_joint"}}, {"id": "unitree_g1_edu.hw.joint.left_shoulder_pitch", "type": "Joint", "category": "hardware", "label": "left_shoulder_pitch_joint", "color": "#ff6b6b", "source_doc": "urdf: g1_23dof_rev_1_0.urdf#joint[left_shoulder_pitch_joint]", "degree": 0, "properties": {"child_link": "unitree_g1_edu.hw.link.left_shoulder_pitch_link", "dof_axis": "pitch", "joint_kind": "revolute", "parent_link": "unitree_g1_edu.hw.link.torso_link", "urdf_name": "left_shoulder_pitch_joint"}}, {"id": "unitree_g1_edu.hw.joint.left_shoulder_roll", "type": "Joint", "category": "hardware", "label": "left_shoulder_roll_joint", "color": "#ff6b6b", "source_doc": "urdf: g1_23dof_rev_1_0.urdf#joint[left_shoulder_roll_joint]", "degree": 0, "properties": {"child_link": "unitree_g1_edu.hw.link.left_shoulder_roll_link", "dof_axis": "roll", "joint_kind": "revolute", "parent_link": "unitree_g1_edu.hw.link.left_shoulder_pitch_link", "urdf_name": "left_shoulder_roll_joint"}}, {"id": "unitree_g1_edu.hw.joint.left_shoulder_yaw", "type": "Joint", "category": "hardware", "label": "left_shoulder_yaw_joint", "color": "#ff6b6b", "source_doc": "urdf: g1_23dof_rev_1_0.urdf#joint[left_shoulder_yaw_joint]", "degree": 0, "properties": {"child_link": "unitree_g1_edu.hw.link.left_shoulder_yaw_link", "dof_axis": "yaw", "joint_kind": "revolute", "parent_link": "unitree_g1_edu.hw.link.left_shoulder_roll_link", "urdf_name": "left_shoulder_yaw_joint"}}, {"id": "unitree_g1_edu.hw.joint.left_elbow", "type": "Joint", "category": "hardware", "label": "left_elbow_joint", "color": "#ff6b6b", "source_doc": "urdf: g1_23dof_rev_1_0.urdf#joint[left_elbow_joint]", "degree": 0, "properties": {"child_link": "unitree_g1_edu.hw.link.left_elbow_link", "dof_axis": "pitch", "joint_kind": "revolute", "parent_link": "unitree_g1_edu.hw.link.left_shoulder_yaw_link", "urdf_name": "left_elbow_joint"}}, {"id": "unitree_g1_edu.hw.joint.left_wrist_roll", "type": "Joint", "category": "hardware", "label": "left_wrist_roll_joint", "color": "#ff6b6b", "source_doc": "urdf: g1_23dof_rev_1_0.urdf#joint[left_wrist_roll_joint]", "degree": 0, "properties": {"child_link": "unitree_g1_edu.hw.link.left_wrist_roll_rubber_hand", "dof_axis": "roll", "joint_kind": "revolute", "parent_link": "unitree_g1_edu.hw.link.left_elbow_link", "urdf_name": "left_wrist_roll_joint"}}, {"id": "unitree_g1_edu.hw.joint.right_shoulder_pitch", "type": "Joint", "category": "hardware", "label": "right_shoulder_pitch_joint", "color": "#ff6b6b", "source_doc": "urdf: g1_23dof_rev_1_0.urdf#joint[right_shoulder_pitch_joint]", "degree": 0, "properties": {"child_link": "unitree_g1_edu.hw.link.right_shoulder_pitch_link", "dof_axis": "pitch", "joint_kind": "revolute", "parent_link": "unitree_g1_edu.hw.link.torso_link", "urdf_name": "right_shoulder_pitch_joint"}}, {"id": "unitree_g1_edu.hw.joint.right_shoulder_roll", "type": "Joint", "category": "hardware", "label": "right_shoulder_roll_joint", "color": "#ff6b6b", "source_doc": "urdf: g1_23dof_rev_1_0.urdf#joint[right_shoulder_roll_joint]", "degree": 0, "properties": {"child_link": "unitree_g1_edu.hw.link.right_shoulder_roll_link", "dof_axis": "roll", "joint_kind": "revolute", "parent_link": "unitree_g1_edu.hw.link.right_shoulder_pitch_link", "urdf_name": "right_shoulder_roll_joint"}}, {"id": "unitree_g1_edu.hw.joint.right_shoulder_yaw", "type": "Joint", "category": "hardware", "label": "right_shoulder_yaw_joint", "color": "#ff6b6b", "source_doc": "urdf: g1_23dof_rev_1_0.urdf#joint[right_shoulder_yaw_joint]", "degree": 0, "properties": {"child_link": "unitree_g1_edu.hw.link.right_shoulder_yaw_link", "dof_axis": "yaw", "joint_kind": "revolute", "parent_link": "unitree_g1_edu.hw.link.right_shoulder_roll_link", "urdf_name": "right_shoulder_yaw_joint"}}, {"id": "unitree_g1_edu.hw.joint.right_elbow", "type": "Joint", "category": "hardware", "label": "right_elbow_joint", "color": "#ff6b6b", "source_doc": "urdf: g1_23dof_rev_1_0.urdf#joint[right_elbow_joint]", "degree": 0, "properties": {"child_link": "unitree_g1_edu.hw.link.right_elbow_link", "dof_axis": "pitch", "joint_kind": "revolute", "parent_link": "unitree_g1_edu.hw.link.right_shoulder_yaw_link", "urdf_name": "right_elbow_joint"}}, {"id": "unitree_g1_edu.hw.joint.right_wrist_roll", "type": "Joint", "category": "hardware", "label": "right_wrist_roll_joint", "color": "#ff6b6b", "source_doc": "urdf: g1_23dof_rev_1_0.urdf#joint[right_wrist_roll_joint]", "degree": 0, "properties": {"child_link": "unitree_g1_edu.hw.link.right_wrist_roll_rubber_hand", "dof_axis": "roll", "joint_kind": "revolute", "parent_link": "unitree_g1_edu.hw.link.right_elbow_link", "urdf_name": "right_wrist_roll_joint"}}, {"id": "unitree_g1_edu.mode.passive", "type": "Mode", "category": "behavior", "label": "PASSIVE", "color": "#ffd54f", "source_doc": "sdk_code: unitree_sdk2/include/unitree/robot/g1/loco/g1_loco_api.hpp", "degree": 3, "properties": {"allows_motion": false, "description": "被动模式 — 关节松弛，无主动控制", "fsm_id": 1, "name": "PASSIVE"}}, {"id": "unitree_g1_edu.mode.walkrun", "type": "Mode", "category": "behavior", "label": "WALKRUN", "color": "#ffd54f", "source_doc": "sdk_code: unitree_sdk2/include/unitree/robot/g1/loco/g1_loco_api.hpp", "degree": 7, "properties": {"allows_motion": true, "description": "行走/跑步模式 — 全关节主动，支持速度控制", "fsm_id": 2, "name": "WALKRUN"}}, {"id": "unitree_g1_edu.mode.user_ctrl", "type": "Mode", "category": "behavior", "label": "USER_CTRL", "color": "#ffd54f", "source_doc": "sdk_code: unitree_sdk2/include/unitree/robot/g1/loco/g1_loco_api.hpp", "degree": 3, "properties": {"allows_motion": true, "description": "用户控制模式 — 外部直接发 joint 位置/力矩指令", "name": "USER_CTRL"}}, {"id": "unitree_g1_edu.motion.damp", "type": "PresetMotion", "category": "behavior", "label": "Damp", "color": "#ffd54f", "source_doc": "sdk_code: unitree_sdk2/example/g1/high_level/g1_loco_client_example.cpp", "degree": 0, "properties": {"category": "loco", "description": "切换到阻尼/被动模式，关节松弛", "name": "Damp"}}, {"id": "unitree_g1_edu.motion.standup", "type": "PresetMotion", "category": "behavior", "label": "StandUp", "color": "#ffd54f", "source_doc": "sdk_code: unitree_sdk2/example/g1/high_level/g1_loco_client_example.cpp", "degree": 0, "properties": {"category": "loco", "description": "从趴下/坐下状态站起", "name": "StandUp"}}, {"id": "unitree_g1_edu.motion.highstand", "type": "PresetMotion", "category": "behavior", "label": "HighStand", "color": "#ffd54f", "source_doc": "sdk_code: unitree_sdk2/example/g1/high_level/g1_loco_client_example.cpp", "degree": 0, "properties": {"category": "loco", "description": "高位站立（腿伸直）", "name": "HighStand"}}, {"id": "unitree_g1_edu.motion.lowstand", "type": "PresetMotion", "category": "behavior", "label": "LowStand", "color": "#ffd54f", "source_doc": "sdk_code: unitree_sdk2/example/g1/high_level/g1_loco_client_example.cpp", "degree": 0, "properties": {"category": "loco", "description": "低位站立（腿微弯）", "name": "LowStand"}}, {"id": "unitree_g1_edu.motion.balancestand", "type": "PresetMotion", "category": "behavior", "label": "BalanceStand", "color": "#ffd54f", "source_doc": "sdk_code: unitree_sdk2/example/g1/high_level/g1_loco_client_example.cpp", "degree": 0, "properties": {"category": "loco", "description": "平衡站立模式", "name": "BalanceStand"}}, {"id": "unitree_g1_edu.motion.stopmove", "type": "PresetMotion", "category": "behavior", "label": "StopMove", "color": "#ffd54f", "source_doc": "sdk_code: unitree_sdk2/example/g1/high_level/g1_loco_client_example.cpp", "degree": 0, "properties": {"category": "loco", "description": "停止移动，保持当前位置", "name": "StopMove"}}, {"id": "unitree_g1_edu.motion.move", "type": "PresetMotion", "category": "behavior", "label": "Move", "color": "#ffd54f", "source_doc": "sdk_code: unitree_sdk2/example/g1/high_level/g1_loco_client_example.cpp", "degree": 0, "properties": {"category": "loco", "description": "持续速度移动（需参数: vx, vy, omega）", "name": "Move"}}, {"id": "unitree_g1_edu.event.sport_mode", "type": "StatusBit", "category": "event", "label": "运动模式状态", "color": "#ff9800", "source_doc": "sdk_code: unitree_sdk2/include/unitree/idl/hg/SportModeState_.hpp", "degree": 0, "properties": {"description": "当前运动模式", "field": "sport_mode_state.mode", "name": "运动模式状态"}}, {"id": "unitree_g1_edu.event.imu_data", "type": "StatusBit", "category": "event", "label": "IMU 数据", "color": "#ff9800", "source_doc": "sdk_code: unitree_sdk2/include/unitree/idl/hg/IMUState_.hpp", "degree": 0, "properties": {"description": "骨盆 IMU 四元数+角速度+加速度", "field": "imu_state", "name": "IMU 数据"}}, {"id": "unitree_g1_edu.event.bms_soc", "type": "StatusBit", "category": "event", "label": "电池 SOC", "color": "#ff9800", "source_doc": "sdk_code: unitree_sdk2/include/unitree/idl/hg/BmsState_.hpp", "degree": 0, "properties": {"description": "电池剩余电量百分比", "field": "bms_state.soc", "name": "电池 SOC"}}, {"id": "unitree_g1_edu.event.motor_overheat", "type": "FaultCode", "category": "event", "label": "电机过温", "color": "#ff9800", "source_doc": "document", "degree": 1, "properties": {"description": "任一关节电机温度超过安全阈值", "name": "电机过温", "severity": "error"}}, {"id": "unitree_g1_edu.event.battery_low", "type": "FaultCode", "category": "event", "label": "电池电量低", "color": "#ff9800", "source_doc": "document", "degree": 1, "properties": {"description": "BMS SOC 低于安全阈值", "name": "电池电量低", "severity": "warning"}}, {"id": "unitree_g1_edu.event.comm_loss", "type": "FaultCode", "category": "event", "label": "DDS 通信丢失", "color": "#ff9800", "source_doc": "document", "degree": 0, "properties": {"description": "与机器人 DDS 通信中断", "name": "DDS 通信丢失", "severity": "error"}}, {"id": "unitree_g1_edu.event.joint_limit", "type": "FaultCode", "category": "event", "label": "关节限位超限", "color": "#ff9800", "source_doc": "document", "degree": 0, "properties": {"description": "关节角度超出运动范围", "name": "关节限位超限", "severity": "warning"}}, {"id": "unitree_g1_edu.event.motor.L_LEG_HIP_PITCH.mode", "type": "StatusBit", "category": "event", "label": "L_LEG_HIP_PITCH mode", "color": "#ff9800", "source_doc": "sdk_code: unitree_sdk2/include/unitree/idl/hg/MotorState_.hpp", "degree": 0, "properties": {"description": "电机控制模式 (0=位置, 1=速度)", "field": "low_state.motor_state[0].mode", "name": "L_LEG_HIP_PITCH mode"}}, {"id": "unitree_g1_edu.event.motor.L_LEG_HIP_PITCH.temperature", "type": "StatusBit", "category": "event", "label": "L_LEG_HIP_PITCH temperature", "color": "#ff9800", "source_doc": "sdk_code: unitree_sdk2/include/unitree/idl/hg/MotorState_.hpp", "degree": 0, "properties": {"description": "电机温度 (℃)", "field": "low_state.motor_state[0].temperature", "name": "L_LEG_HIP_PITCH temperature"}}, {"id": "unitree_g1_edu.event.motor.L_LEG_HIP_PITCH.motorstate", "type": "StatusBit", "category": "event", "label": "L_LEG_HIP_PITCH motorstate", "color": "#ff9800", "source_doc": "sdk_code: unitree_sdk2/include/unitree/idl/hg/MotorState_.hpp", "degree": 0, "properties": {"description": "电机状态码", "field": "low_state.motor_state[0].motorstate", "name": "L_LEG_HIP_PITCH motorstate"}}, {"id": "unitree_g1_edu.event.motor.L_LEG_HIP_ROLL.mode", "type": "StatusBit", "category": "event", "label": "L_LEG_HIP_ROLL mode", "color": "#ff9800", "source_doc": "sdk_code: unitree_sdk2/include/unitree/idl/hg/MotorState_.hpp", "degree": 0, "properties": {"description": "电机控制模式 (0=位置, 1=速度)", "field": "low_state.motor_state[1].mode", "name": "L_LEG_HIP_ROLL mode"}}, {"id": "unitree_g1_edu.event.motor.L_LEG_HIP_ROLL.temperature", "type": "StatusBit", "category": "event", "label": "L_LEG_HIP_ROLL temperature", "color": "#ff9800", "source_doc": "sdk_code: unitree_sdk2/include/unitree/idl/hg/MotorState_.hpp", "degree": 0, "properties": {"description": "电机温度 (℃)", "field": "low_state.motor_state[1].temperature", "name": "L_LEG_HIP_ROLL temperature"}}, {"id": "unitree_g1_edu.event.motor.L_LEG_HIP_ROLL.motorstate", "type": "StatusBit", "category": "event", "label": "L_LEG_HIP_ROLL motorstate", "color": "#ff9800", "source_doc": "sdk_code: unitree_sdk2/include/unitree/idl/hg/MotorState_.hpp", "degree": 0, "properties": {"description": "电机状态码", "field": "low_state.motor_state[1].motorstate", "name": "L_LEG_HIP_ROLL motorstate"}}, {"id": "unitree_g1_edu.event.motor.L_LEG_HIP_YAW.mode", "type": "StatusBit", "category": "event", "label": "L_LEG_HIP_YAW mode", "color": "#ff9800", "source_doc": "sdk_code: unitree_sdk2/include/unitree/idl/hg/MotorState_.hpp", "degree": 0, "properties": {"description": "电机控制模式 (0=位置, 1=速度)", "field": "low_state.motor_state[2].mode", "name": "L_LEG_HIP_YAW mode"}}, {"id": "unitree_g1_edu.event.motor.L_LEG_HIP_YAW.temperature", "type": "StatusBit", "category": "event", "label": "L_LEG_HIP_YAW temperature", "color": "#ff9800", "source_doc": "sdk_code: unitree_sdk2/include/unitree/idl/hg/MotorState_.hpp", "degree": 0, "properties": {"description": "电机温度 (℃)", "field": "low_state.motor_state[2].temperature", "name": "L_LEG_HIP_YAW temperature"}}, {"id": "unitree_g1_edu.event.motor.L_LEG_HIP_YAW.motorstate", "type": "StatusBit", "category": "event", "label": "L_LEG_HIP_YAW motorstate", "color": "#ff9800", "source_doc": "sdk_code: unitree_sdk2/include/unitree/idl/hg/MotorState_.hpp", "degree": 0, "properties": {"description": "电机状态码", "field": "low_state.motor_state[2].motorstate", "name": "L_LEG_HIP_YAW motorstate"}}, {"id": "unitree_g1_edu.event.motor.L_LEG_KNEE.mode", "type": "StatusBit", "category": "event", "label": "L_LEG_KNEE mode", "color": "#ff9800", "source_doc": "sdk_code: unitree_sdk2/include/unitree/idl/hg/MotorState_.hpp", "degree": 0, "properties": {"description": "电机控制模式 (0=位置, 1=速度)", "field": "low_state.motor_state[3].mode", "name": "L_LEG_KNEE mode"}}, {"id": "unitree_g1_edu.event.motor.L_LEG_KNEE.temperature", "type": "StatusBit", "category": "event", "label": "L_LEG_KNEE temperature", "color": "#ff9800", "source_doc": "sdk_code: unitree_sdk2/include/unitree/idl/hg/MotorState_.hpp", "degree": 0, "properties": {"description": "电机温度 (℃)", "field": "low_state.motor_state[3].temperature", "name": "L_LEG_KNEE temperature"}}, {"id": "unitree_g1_edu.event.motor.L_LEG_KNEE.motorstate", "type": "StatusBit", "category": "event", "label": "L_LEG_KNEE motorstate", "color": "#ff9800", "source_doc": "sdk_code: unitree_sdk2/include/unitree/idl/hg/MotorState_.hpp", "degree": 0, "properties": {"description": "电机状态码", "field": "low_state.motor_state[3].motorstate", "name": "L_LEG_KNEE motorstate"}}, {"id": "unitree_g1_edu.event.motor.L_LEG_ANKLE_PITCH.mode", "type": "StatusBit", "category": "event", "label": "L_LEG_ANKLE_PITCH mode", "color": "#ff9800", "source_doc": "sdk_code: unitree_sdk2/include/unitree/idl/hg/MotorState_.hpp", "degree": 0, "properties": {"description": "电机控制模式 (0=位置, 1=速度)", "field": "low_state.motor_state[4].mode", "name": "L_LEG_ANKLE_PITCH mode"}}, {"id": "unitree_g1_edu.event.motor.L_LEG_ANKLE_PITCH.temperature", "type": "StatusBit", "category": "event", "label": "L_LEG_ANKLE_PITCH temperature", "color": "#ff9800", "source_doc": "sdk_code: unitree_sdk2/include/unitree/idl/hg/MotorState_.hpp", "degree": 0, "properties": {"description": "电机温度 (℃)", "field": "low_state.motor_state[4].temperature", "name": "L_LEG_ANKLE_PITCH temperature"}}, {"id": "unitree_g1_edu.event.motor.L_LEG_ANKLE_PITCH.motorstate", "type": "StatusBit", "category": "event", "label": "L_LEG_ANKLE_PITCH motorstate", "color": "#ff9800", "source_doc": "sdk_code: unitree_sdk2/include/unitree/idl/hg/MotorState_.hpp", "degree": 0, "properties": {"description": "电机状态码", "field": "low_state.motor_state[4].motorstate", "name": "L_LEG_ANKLE_PITCH motorstate"}}, {"id": "unitree_g1_edu.event.motor.L_LEG_ANKLE_ROLL.mode", "type": "StatusBit", "category": "event", "label": "L_LEG_ANKLE_ROLL mode", "color": "#ff9800", "source_doc": "sdk_code: unitree_sdk2/include/unitree/idl/hg/MotorState_.hpp", "degree": 0, "properties": {"description": "电机控制模式 (0=位置, 1=速度)", "field": "low_state.motor_state[5].mode", "name": "L_LEG_ANKLE_ROLL mode"}}, {"id": "unitree_g1_edu.event.motor.L_LEG_ANKLE_ROLL.temperature", "type": "StatusBit", "category": "event", "label": "L_LEG_ANKLE_ROLL temperature", "color": "#ff9800", "source_doc": "sdk_code: unitree_sdk2/include/unitree/idl/hg/MotorState_.hpp", "degree": 0, "properties": {"description": "电机温度 (℃)", "field": "low_state.motor_state[5].temperature", "name": "L_LEG_ANKLE_ROLL temperature"}}, {"id": "unitree_g1_edu.event.motor.L_LEG_ANKLE_ROLL.motorstate", "type": "StatusBit", "category": "event", "label": "L_LEG_ANKLE_ROLL motorstate", "color": "#ff9800", "source_doc": "sdk_code: unitree_sdk2/include/unitree/idl/hg/MotorState_.hpp", "degree": 0, "properties": {"description": "电机状态码", "field": "low_state.motor_state[5].motorstate", "name": "L_LEG_ANKLE_ROLL motorstate"}}, {"id": "unitree_g1_edu.event.motor.R_LEG_HIP_PITCH.mode", "type": "StatusBit", "category": "event", "label": "R_LEG_HIP_PITCH mode", "color": "#ff9800", "source_doc": "sdk_code: unitree_sdk2/include/unitree/idl/hg/MotorState_.hpp", "degree": 0, "properties": {"description": "电机控制模式 (0=位置, 1=速度)", "field": "low_state.motor_state[6].mode", "name": "R_LEG_HIP_PITCH mode"}}, {"id": "unitree_g1_edu.event.motor.R_LEG_HIP_PITCH.temperature", "type": "StatusBit", "category": "event", "label": "R_LEG_HIP_PITCH temperature", "color": "#ff9800", "source_doc": "sdk_code: unitree_sdk2/include/unitree/idl/hg/MotorState_.hpp", "degree": 0, "properties": {"description": "电机温度 (℃)", "field": "low_state.motor_state[6].temperature", "name": "R_LEG_HIP_PITCH temperature"}}, {"id": "unitree_g1_edu.event.motor.R_LEG_HIP_PITCH.motorstate", "type": "StatusBit", "category": "event", "label": "R_LEG_HIP_PITCH motorstate", "color": "#ff9800", "source_doc": "sdk_code: unitree_sdk2/include/unitree/idl/hg/MotorState_.hpp", "degree": 0, "properties": {"description": "电机状态码", "field": "low_state.motor_state[6].motorstate", "name": "R_LEG_HIP_PITCH motorstate"}}, {"id": "unitree_g1_edu.event.motor.R_LEG_HIP_ROLL.mode", "type": "StatusBit", "category": "event", "label": "R_LEG_HIP_ROLL mode", "color": "#ff9800", "source_doc": "sdk_code: unitree_sdk2/include/unitree/idl/hg/MotorState_.hpp", "degree": 0, "properties": {"description": "电机控制模式 (0=位置, 1=速度)", "field": "low_state.motor_state[7].mode", "name": "R_LEG_HIP_ROLL mode"}}, {"id": "unitree_g1_edu.event.motor.R_LEG_HIP_ROLL.temperature", "type": "StatusBit", "category": "event", "label": "R_LEG_HIP_ROLL temperature", "color": "#ff9800", "source_doc": "sdk_code: unitree_sdk2/include/unitree/idl/hg/MotorState_.hpp", "degree": 0, "properties": {"description": "电机温度 (℃)", "field": "low_state.motor_state[7].temperature", "name": "R_LEG_HIP_ROLL temperature"}}, {"id": "unitree_g1_edu.event.motor.R_LEG_HIP_ROLL.motorstate", "type": "StatusBit", "category": "event", "label": "R_LEG_HIP_ROLL motorstate", "color": "#ff9800", "source_doc": "sdk_code: unitree_sdk2/include/unitree/idl/hg/MotorState_.hpp", "degree": 0, "properties": {"description": "电机状态码", "field": "low_state.motor_state[7].motorstate", "name": "R_LEG_HIP_ROLL motorstate"}}, {"id": "unitree_g1_edu.event.motor.R_LEG_HIP_YAW.mode", "type": "StatusBit", "category": "event", "label": "R_LEG_HIP_YAW mode", "color": "#ff9800", "source_doc": "sdk_code: unitree_sdk2/include/unitree/idl/hg/MotorState_.hpp", "degree": 0, "properties": {"description": "电机控制模式 (0=位置, 1=速度)", "field": "low_state.motor_state[8].mode", "name": "R_LEG_HIP_YAW mode"}}, {"id": "unitree_g1_edu.event.motor.R_LEG_HIP_YAW.temperature", "type": "StatusBit", "category": "event", "label": "R_LEG_HIP_YAW temperature", "color": "#ff9800", "source_doc": "sdk_code: unitree_sdk2/include/unitree/idl/hg/MotorState_.hpp", "degree": 0, "properties": {"description": "电机温度 (℃)", "field": "low_state.motor_state[8].temperature", "name": "R_LEG_HIP_YAW temperature"}}, {"id": "unitree_g1_edu.event.motor.R_LEG_HIP_YAW.motorstate", "type": "StatusBit", "category": "event", "label": "R_LEG_HIP_YAW motorstate", "color": "#ff9800", "source_doc": "sdk_code: unitree_sdk2/include/unitree/idl/hg/MotorState_.hpp", "degree": 0, "properties": {"description": "电机状态码", "field": "low_state.motor_state[8].motorstate", "name": "R_LEG_HIP_YAW motorstate"}}, {"id": "unitree_g1_edu.event.motor.R_LEG_KNEE.mode", "type": "StatusBit", "category": "event", "label": "R_LEG_KNEE mode", "color": "#ff9800", "source_doc": "sdk_code: unitree_sdk2/include/unitree/idl/hg/MotorState_.hpp", "degree": 0, "properties": {"description": "电机控制模式 (0=位置, 1=速度)", "field": "low_state.motor_state[9].mode", "name": "R_LEG_KNEE mode"}}, {"id": "unitree_g1_edu.event.motor.R_LEG_KNEE.temperature", "type": "StatusBit", "category": "event", "label": "R_LEG_KNEE temperature", "color": "#ff9800", "source_doc": "sdk_code: unitree_sdk2/include/unitree/idl/hg/MotorState_.hpp", "degree": 0, "properties": {"description": "电机温度 (℃)", "field": "low_state.motor_state[9].temperature", "name": "R_LEG_KNEE temperature"}}, {"id": "unitree_g1_edu.event.motor.R_LEG_KNEE.motorstate", "type": "StatusBit", "category": "event", "label": "R_LEG_KNEE motorstate", "color": "#ff9800", "source_doc": "sdk_code: unitree_sdk2/include/unitree/idl/hg/MotorState_.hpp", "degree": 0, "properties": {"description": "电机状态码", "field": "low_state.motor_state[9].motorstate", "name": "R_LEG_KNEE motorstate"}}, {"id": "unitree_g1_edu.event.motor.R_LEG_ANKLE_PITCH.mode", "type": "StatusBit", "category": "event", "label": "R_LEG_ANKLE_PITCH mode", "color": "#ff9800", "source_doc": "sdk_code: unitree_sdk2/include/unitree/idl/hg/MotorState_.hpp", "degree": 0, "properties": {"description": "电机控制模式 (0=位置, 1=速度)", "field": "low_state.motor_state[10].mode", "name": "R_LEG_ANKLE_PITCH mode"}}, {"id": "unitree_g1_edu.event.motor.R_LEG_ANKLE_PITCH.temperature", "type": "StatusBit", "category": "event", "label": "R_LEG_ANKLE_PITCH temperature", "color": "#ff9800", "source_doc": "sdk_code: unitree_sdk2/include/unitree/idl/hg/MotorState_.hpp", "degree": 0, "properties": {"description": "电机温度 (℃)", "field": "low_state.motor_state[10].temperature", "name": "R_LEG_ANKLE_PITCH temperature"}}, {"id": "unitree_g1_edu.event.motor.R_LEG_ANKLE_PITCH.motorstate", "type": "StatusBit", "category": "event", "label": "R_LEG_ANKLE_PITCH motorstate", "color": "#ff9800", "source_doc": "sdk_code: unitree_sdk2/include/unitree/idl/hg/MotorState_.hpp", "degree": 0, "properties": {"description": "电机状态码", "field": "low_state.motor_state[10].motorstate", "name": "R_LEG_ANKLE_PITCH motorstate"}}, {"id": "unitree_g1_edu.event.motor.R_LEG_ANKLE_ROLL.mode", "type": "StatusBit", "category": "event", "label": "R_LEG_ANKLE_ROLL mode", "color": "#ff9800", "source_doc": "sdk_code: unitree_sdk2/include/unitree/idl/hg/MotorState_.hpp", "degree": 0, "properties": {"description": "电机控制模式 (0=位置, 1=速度)", "field": "low_state.motor_state[11].mode", "name": "R_LEG_ANKLE_ROLL mode"}}, {"id": "unitree_g1_edu.event.motor.R_LEG_ANKLE_ROLL.temperature", "type": "StatusBit", "category": "event", "label": "R_LEG_ANKLE_ROLL temperature", "color": "#ff9800", "source_doc": "sdk_code: unitree_sdk2/include/unitree/idl/hg/MotorState_.hpp", "degree": 0, "properties": {"description": "电机温度 (℃)", "field": "low_state.motor_state[11].temperature", "name": "R_LEG_ANKLE_ROLL temperature"}}, {"id": "unitree_g1_edu.event.motor.R_LEG_ANKLE_ROLL.motorstate", "type": "StatusBit", "category": "event", "label": "R_LEG_ANKLE_ROLL motorstate", "color": "#ff9800", "source_doc": "sdk_code: unitree_sdk2/include/unitree/idl/hg/MotorState_.hpp", "degree": 0, "properties": {"description": "电机状态码", "field": "low_state.motor_state[11].motorstate", "name": "R_LEG_ANKLE_ROLL motorstate"}}, {"id": "unitree_g1_edu.event.motor.TORSO.mode", "type": "StatusBit", "category": "event", "label": "TORSO mode", "color": "#ff9800", "source_doc": "sdk_code: unitree_sdk2/include/unitree/idl/hg/MotorState_.hpp", "degree": 0, "properties": {"description": "电机控制模式 (0=位置, 1=速度)", "field": "low_state.motor_state[12].mode", "name": "TORSO mode"}}, {"id": "unitree_g1_edu.event.motor.TORSO.temperature", "type": "StatusBit", "category": "event", "label": "TORSO temperature", "color": "#ff9800", "source_doc": "sdk_code: unitree_sdk2/include/unitree/idl/hg/MotorState_.hpp", "degree": 0, "properties": {"description": "电机温度 (℃)", "field": "low_state.motor_state[12].temperature", "name": "TORSO temperature"}}, {"id": "unitree_g1_edu.event.motor.TORSO.motorstate", "type": "StatusBit", "category": "event", "label": "TORSO motorstate", "color": "#ff9800", "source_doc": "sdk_code: unitree_sdk2/include/unitree/idl/hg/MotorState_.hpp", "degree": 0, "properties": {"description": "电机状态码", "field": "low_state.motor_state[12].motorstate", "name": "TORSO motorstate"}}, {"id": "unitree_g1_edu.event.motor.L_SHOULDER_PITCH.mode", "type": "StatusBit", "category": "event", "label": "L_SHOULDER_PITCH mode", "color": "#ff9800", "source_doc": "sdk_code: unitree_sdk2/include/unitree/idl/hg/MotorState_.hpp", "degree": 0, "properties": {"description": "电机控制模式 (0=位置, 1=速度)", "field": "low_state.motor_state[13].mode", "name": "L_SHOULDER_PITCH mode"}}, {"id": "unitree_g1_edu.event.motor.L_SHOULDER_PITCH.temperature", "type": "StatusBit", "category": "event", "label": "L_SHOULDER_PITCH temperature", "color": "#ff9800", "source_doc": "sdk_code: unitree_sdk2/include/unitree/idl/hg/MotorState_.hpp", "degree": 0, "properties": {"description": "电机温度 (℃)", "field": "low_state.motor_state[13].temperature", "name": "L_SHOULDER_PITCH temperature"}}, {"id": "unitree_g1_edu.event.motor.L_SHOULDER_PITCH.motorstate", "type": "StatusBit", "category": "event", "label": "L_SHOULDER_PITCH motorstate", "color": "#ff9800", "source_doc": "sdk_code: unitree_sdk2/include/unitree/idl/hg/MotorState_.hpp", "degree": 0, "properties": {"description": "电机状态码", "field": "low_state.motor_state[13].motorstate", "name": "L_SHOULDER_PITCH motorstate"}}, {"id": "unitree_g1_edu.event.motor.L_SHOULDER_ROLL.mode", "type": "StatusBit", "category": "event", "label": "L_SHOULDER_ROLL mode", "color": "#ff9800", "source_doc": "sdk_code: unitree_sdk2/include/unitree/idl/hg/MotorState_.hpp", "degree": 0, "properties": {"description": "电机控制模式 (0=位置, 1=速度)", "field": "low_state.motor_state[14].mode", "name": "L_SHOULDER_ROLL mode"}}, {"id": "unitree_g1_edu.event.motor.L_SHOULDER_ROLL.temperature", "type": "StatusBit", "category": "event", "label": "L_SHOULDER_ROLL temperature", "color": "#ff9800", "source_doc": "sdk_code: unitree_sdk2/include/unitree/idl/hg/MotorState_.hpp", "degree": 0, "properties": {"description": "电机温度 (℃)", "field": "low_state.motor_state[14].temperature", "name": "L_SHOULDER_ROLL temperature"}}, {"id": "unitree_g1_edu.event.motor.L_SHOULDER_ROLL.motorstate", "type": "StatusBit", "category": "event", "label": "L_SHOULDER_ROLL motorstate", "color": "#ff9800", "source_doc": "sdk_code: unitree_sdk2/include/unitree/idl/hg/MotorState_.hpp", "degree": 0, "properties": {"description": "电机状态码", "field": "low_state.motor_state[14].motorstate", "name": "L_SHOULDER_ROLL motorstate"}}, {"id": "unitree_g1_edu.event.motor.L_SHOULDER_YAW.mode", "type": "StatusBit", "category": "event", "label": "L_SHOULDER_YAW mode", "color": "#ff9800", "source_doc": "sdk_code: unitree_sdk2/include/unitree/idl/hg/MotorState_.hpp", "degree": 0, "properties": {"description": "电机控制模式 (0=位置, 1=速度)", "field": "low_state.motor_state[15].mode", "name": "L_SHOULDER_YAW mode"}}, {"id": "unitree_g1_edu.event.motor.L_SHOULDER_YAW.temperature", "type": "StatusBit", "category": "event", "label": "L_SHOULDER_YAW temperature", "color": "#ff9800", "source_doc": "sdk_code: unitree_sdk2/include/unitree/idl/hg/MotorState_.hpp", "degree": 0, "properties": {"description": "电机温度 (℃)", "field": "low_state.motor_state[15].temperature", "name": "L_SHOULDER_YAW temperature"}}, {"id": "unitree_g1_edu.event.motor.L_SHOULDER_YAW.motorstate", "type": "StatusBit", "category": "event", "label": "L_SHOULDER_YAW motorstate", "color": "#ff9800", "source_doc": "sdk_code: unitree_sdk2/include/unitree/idl/hg/MotorState_.hpp", "degree": 0, "properties": {"description": "电机状态码", "field": "low_state.motor_state[15].motorstate", "name": "L_SHOULDER_YAW motorstate"}}, {"id": "unitree_g1_edu.event.motor.L_ELBOW_PITCH.mode", "type": "StatusBit", "category": "event", "label": "L_ELBOW_PITCH mode", "color": "#ff9800", "source_doc": "sdk_code: unitree_sdk2/include/unitree/idl/hg/MotorState_.hpp", "degree": 0, "properties": {"description": "电机控制模式 (0=位置, 1=速度)", "field": "low_state.motor_state[16].mode", "name": "L_ELBOW_PITCH mode"}}, {"id": "unitree_g1_edu.event.motor.L_ELBOW_PITCH.temperature", "type": "StatusBit", "category": "event", "label": "L_ELBOW_PITCH temperature", "color": "#ff9800", "source_doc": "sdk_code: unitree_sdk2/include/unitree/idl/hg/MotorState_.hpp", "degree": 0, "properties": {"description": "电机温度 (℃)", "field": "low_state.motor_state[16].temperature", "name": "L_ELBOW_PITCH temperature"}}, {"id": "unitree_g1_edu.event.motor.L_ELBOW_PITCH.motorstate", "type": "StatusBit", "category": "event", "label": "L_ELBOW_PITCH motorstate", "color": "#ff9800", "source_doc": "sdk_code: unitree_sdk2/include/unitree/idl/hg/MotorState_.hpp", "degree": 0, "properties": {"description": "电机状态码", "field": "low_state.motor_state[16].motorstate", "name": "L_ELBOW_PITCH motorstate"}}, {"id": "unitree_g1_edu.event.motor.L_ELBOW_ROLL.mode", "type": "StatusBit", "category": "event", "label": "L_ELBOW_ROLL mode", "color": "#ff9800", "source_doc": "sdk_code: unitree_sdk2/include/unitree/idl/hg/MotorState_.hpp", "degree": 0, "properties": {"description": "电机控制模式 (0=位置, 1=速度)", "field": "low_state.motor_state[17].mode", "name": "L_ELBOW_ROLL mode"}}, {"id": "unitree_g1_edu.event.motor.L_ELBOW_ROLL.temperature", "type": "StatusBit", "category": "event", "label": "L_ELBOW_ROLL temperature", "color": "#ff9800", "source_doc": "sdk_code: unitree_sdk2/include/unitree/idl/hg/MotorState_.hpp", "degree": 0, "properties": {"description": "电机温度 (℃)", "field": "low_state.motor_state[17].temperature", "name": "L_ELBOW_ROLL temperature"}}, {"id": "unitree_g1_edu.event.motor.L_ELBOW_ROLL.motorstate", "type": "StatusBit", "category": "event", "label": "L_ELBOW_ROLL motorstate", "color": "#ff9800", "source_doc": "sdk_code: unitree_sdk2/include/unitree/idl/hg/MotorState_.hpp", "degree": 0, "properties": {"description": "电机状态码", "field": "low_state.motor_state[17].motorstate", "name": "L_ELBOW_ROLL motorstate"}}, {"id": "unitree_g1_edu.event.motor.R_SHOULDER_PITCH.mode", "type": "StatusBit", "category": "event", "label": "R_SHOULDER_PITCH mode", "color": "#ff9800", "source_doc": "sdk_code: unitree_sdk2/include/unitree/idl/hg/MotorState_.hpp", "degree": 0, "properties": {"description": "电机控制模式 (0=位置, 1=速度)", "field": "low_state.motor_state[18].mode", "name": "R_SHOULDER_PITCH mode"}}, {"id": "unitree_g1_edu.event.motor.R_SHOULDER_PITCH.temperature", "type": "StatusBit", "category": "event", "label": "R_SHOULDER_PITCH temperature", "color": "#ff9800", "source_doc": "sdk_code: unitree_sdk2/include/unitree/idl/hg/MotorState_.hpp", "degree": 0, "properties": {"description": "电机温度 (℃)", "field": "low_state.motor_state[18].temperature", "name": "R_SHOULDER_PITCH temperature"}}, {"id": "unitree_g1_edu.event.motor.R_SHOULDER_PITCH.motorstate", "type": "StatusBit", "category": "event", "label": "R_SHOULDER_PITCH motorstate", "color": "#ff9800", "source_doc": "sdk_code: unitree_sdk2/include/unitree/idl/hg/MotorState_.hpp", "degree": 0, "properties": {"description": "电机状态码", "field": "low_state.motor_state[18].motorstate", "name": "R_SHOULDER_PITCH motorstate"}}, {"id": "unitree_g1_edu.event.motor.R_SHOULDER_ROLL.mode", "type": "StatusBit", "category": "event", "label": "R_SHOULDER_ROLL mode", "color": "#ff9800", "source_doc": "sdk_code: unitree_sdk2/include/unitree/idl/hg/MotorState_.hpp", "degree": 0, "properties": {"description": "电机控制模式 (0=位置, 1=速度)", "field": "low_state.motor_state[19].mode", "name": "R_SHOULDER_ROLL mode"}}, {"id": "unitree_g1_edu.event.motor.R_SHOULDER_ROLL.temperature", "type": "StatusBit", "category": "event", "label": "R_SHOULDER_ROLL temperature", "color": "#ff9800", "source_doc": "sdk_code: unitree_sdk2/include/unitree/idl/hg/MotorState_.hpp", "degree": 0, "properties": {"description": "电机温度 (℃)", "field": "low_state.motor_state[19].temperature", "name": "R_SHOULDER_ROLL temperature"}}, {"id": "unitree_g1_edu.event.motor.R_SHOULDER_ROLL.motorstate", "type": "StatusBit", "category": "event", "label": "R_SHOULDER_ROLL motorstate", "color": "#ff9800", "source_doc": "sdk_code: unitree_sdk2/include/unitree/idl/hg/MotorState_.hpp", "degree": 0, "properties": {"description": "电机状态码", "field": "low_state.motor_state[19].motorstate", "name": "R_SHOULDER_ROLL motorstate"}}, {"id": "unitree_g1_edu.event.motor.R_SHOULDER_YAW.mode", "type": "StatusBit", "category": "event", "label": "R_SHOULDER_YAW mode", "color": "#ff9800", "source_doc": "sdk_code: unitree_sdk2/include/unitree/idl/hg/MotorState_.hpp", "degree": 0, "properties": {"description": "电机控制模式 (0=位置, 1=速度)", "field": "low_state.motor_state[20].mode", "name": "R_SHOULDER_YAW mode"}}, {"id": "unitree_g1_edu.event.motor.R_SHOULDER_YAW.temperature", "type": "StatusBit", "category": "event", "label": "R_SHOULDER_YAW temperature", "color": "#ff9800", "source_doc": "sdk_code: unitree_sdk2/include/unitree/idl/hg/MotorState_.hpp", "degree": 0, "properties": {"description": "电机温度 (℃)", "field": "low_state.motor_state[20].temperature", "name": "R_SHOULDER_YAW temperature"}}, {"id": "unitree_g1_edu.event.motor.R_SHOULDER_YAW.motorstate", "type": "StatusBit", "category": "event", "label": "R_SHOULDER_YAW motorstate", "color": "#ff9800", "source_doc": "sdk_code: unitree_sdk2/include/unitree/idl/hg/MotorState_.hpp", "degree": 0, "properties": {"description": "电机状态码", "field": "low_state.motor_state[20].motorstate", "name": "R_SHOULDER_YAW motorstate"}}, {"id": "unitree_g1_edu.event.motor.R_ELBOW_PITCH.mode", "type": "StatusBit", "category": "event", "label": "R_ELBOW_PITCH mode", "color": "#ff9800", "source_doc": "sdk_code: unitree_sdk2/include/unitree/idl/hg/MotorState_.hpp", "degree": 0, "properties": {"description": "电机控制模式 (0=位置, 1=速度)", "field": "low_state.motor_state[21].mode", "name": "R_ELBOW_PITCH mode"}}, {"id": "unitree_g1_edu.event.motor.R_ELBOW_PITCH.temperature", "type": "StatusBit", "category": "event", "label": "R_ELBOW_PITCH temperature", "color": "#ff9800", "source_doc": "sdk_code: unitree_sdk2/include/unitree/idl/hg/MotorState_.hpp", "degree": 0, "properties": {"description": "电机温度 (℃)", "field": "low_state.motor_state[21].temperature", "name": "R_ELBOW_PITCH temperature"}}, {"id": "unitree_g1_edu.event.motor.R_ELBOW_PITCH.motorstate", "type": "StatusBit", "category": "event", "label": "R_ELBOW_PITCH motorstate", "color": "#ff9800", "source_doc": "sdk_code: unitree_sdk2/include/unitree/idl/hg/MotorState_.hpp", "degree": 0, "properties": {"description": "电机状态码", "field": "low_state.motor_state[21].motorstate", "name": "R_ELBOW_PITCH motorstate"}}, {"id": "unitree_g1_edu.event.motor.R_ELBOW_ROLL.mode", "type": "StatusBit", "category": "event", "label": "R_ELBOW_ROLL mode", "color": "#ff9800", "source_doc": "sdk_code: unitree_sdk2/include/unitree/idl/hg/MotorState_.hpp", "degree": 0, "properties": {"description": "电机控制模式 (0=位置, 1=速度)", "field": "low_state.motor_state[22].mode", "name": "R_ELBOW_ROLL mode"}}, {"id": "unitree_g1_edu.event.motor.R_ELBOW_ROLL.temperature", "type": "StatusBit", "category": "event", "label": "R_ELBOW_ROLL temperature", "color": "#ff9800", "source_doc": "sdk_code: unitree_sdk2/include/unitree/idl/hg/MotorState_.hpp", "degree": 0, "properties": {"description": "电机温度 (℃)", "field": "low_state.motor_state[22].temperature", "name": "R_ELBOW_ROLL temperature"}}, {"id": "unitree_g1_edu.event.motor.R_ELBOW_ROLL.motorstate", "type": "StatusBit", "category": "event", "label": "R_ELBOW_ROLL motorstate", "color": "#ff9800", "source_doc": "sdk_code: unitree_sdk2/include/unitree/idl/hg/MotorState_.hpp", "degree": 0, "properties": {"description": "电机状态码", "field": "low_state.motor_state[22].motorstate", "name": "R_ELBOW_ROLL motorstate"}}, {"id": "unitree_g1_edu.event.bms.soc", "type": "StatusBit", "category": "event", "label": "BMS soc", "color": "#ff9800", "source_doc": "sdk_code: unitree_sdk2/include/unitree/idl/hg/BmsState_.hpp", "degree": 1, "properties": {"description": "电池剩余电量 (%)", "field": "bms_state.soc", "name": "BMS soc"}}, {"id": "unitree_g1_edu.event.bms.soh", "type": "StatusBit", "category": "event", "label": "BMS soh", "color": "#ff9800", "source_doc": "sdk_code: unitree_sdk2/include/unitree/idl/hg/BmsState_.hpp", "degree": 0, "properties": {"description": "电池健康度 (%)", "field": "bms_state.soh", "name": "BMS soh"}}, {"id": "unitree_g1_edu.event.bms.temperature", "type": "StatusBit", "category": "event", "label": "BMS temperature", "color": "#ff9800", "source_doc": "sdk_code: unitree_sdk2/include/unitree/idl/hg/BmsState_.hpp", "degree": 1, "properties": {"description": "电池温度 (℃)", "field": "bms_state.temperature", "name": "BMS temperature"}}, {"id": "unitree_g1_edu.event.bms.current", "type": "StatusBit", "category": "event", "label": "BMS current", "color": "#ff9800", "source_doc": "sdk_code: unitree_sdk2/include/unitree/idl/hg/BmsState_.hpp", "degree": 1, "properties": {"description": "电池电流 (A)", "field": "bms_state.current", "name": "BMS current"}}, {"id": "unitree_g1_edu.event.bms.bmsvoltage", "type": "StatusBit", "category": "event", "label": "BMS bmsvoltage", "color": "#ff9800", "source_doc": "sdk_code: unitree_sdk2/include/unitree/idl/hg/BmsState_.hpp", "degree": 1, "properties": {"description": "电池电压 (V)", "field": "bms_state.bmsvoltage", "name": "BMS bmsvoltage"}}, {"id": "unitree_g1_edu.event.bms.cell_vol", "type": "StatusBit", "category": "event", "label": "BMS cell_vol", "color": "#ff9800", "source_doc": "sdk_code: unitree_sdk2/include/unitree/idl/hg/BmsState_.hpp", "degree": 0, "properties": {"description": "电芯电压 (V)", "field": "bms_state.cell_vol", "name": "BMS cell_vol"}}, {"id": "unitree_g1_edu.event.bms.cycle", "type": "StatusBit", "category": "event", "label": "BMS cycle", "color": "#ff9800", "source_doc": "sdk_code: unitree_sdk2/include/unitree/idl/hg/BmsState_.hpp", "degree": 0, "properties": {"description": "充放电循环次数", "field": "bms_state.cycle", "name": "BMS cycle"}}, {"id": "unitree_g1_edu.event.bms.fn", "type": "StatusBit", "category": "event", "label": "BMS fn", "color": "#ff9800", "source_doc": "sdk_code: unitree_sdk2/include/unitree/idl/hg/BmsState_.hpp", "degree": 0, "properties": {"description": "BMS 固件版本", "field": "bms_state.fn", "name": "BMS fn"}}, {"id": "unitree_g1_edu.event.bms.bmsstate", "type": "StatusBit", "category": "event", "label": "BMS bmsstate", "color": "#ff9800", "source_doc": "sdk_code: unitree_sdk2/include/unitree/idl/hg/BmsState_.hpp", "degree": 0, "properties": {"description": "BMS 状态码", "field": "bms_state.bmsstate", "name": "BMS bmsstate"}}, {"id": "unitree_g1_edu.event.imu.quaternion", "type": "StatusBit", "category": "event", "label": "IMU quaternion", "color": "#ff9800", "source_doc": "sdk_code: unitree_sdk2/include/unitree/idl/hg/IMUState_.hpp", "degree": 1, "properties": {"description": "姿态四元数", "field": "imu_state.quaternion", "name": "IMU quaternion"}}, {"id": "unitree_g1_edu.event.imu.gyroscope", "type": "StatusBit", "category": "event", "label": "IMU gyroscope", "color": "#ff9800", "source_doc": "sdk_code: unitree_sdk2/include/unitree/idl/hg/IMUState_.hpp", "degree": 1, "properties": {"description": "角速度", "field": "imu_state.gyroscope", "name": "IMU gyroscope"}}, {"id": "unitree_g1_edu.event.imu.accelerometer", "type": "StatusBit", "category": "event", "label": "IMU accelerometer", "color": "#ff9800", "source_doc": "sdk_code: unitree_sdk2/include/unitree/idl/hg/IMUState_.hpp", "degree": 1, "properties": {"description": "加速度", "field": "imu_state.accelerometer", "name": "IMU accelerometer"}}, {"id": "unitree_g1_edu.event.imu.rpy", "type": "StatusBit", "category": "event", "label": "IMU rpy", "color": "#ff9800", "source_doc": "sdk_code: unitree_sdk2/include/unitree/idl/hg/IMUState_.hpp", "degree": 1, "properties": {"description": "欧拉角", "field": "imu_state.rpy", "name": "IMU rpy"}}, {"id": "unitree_g1_edu.event.imu.temperature", "type": "StatusBit", "category": "event", "label": "IMU temperature", "color": "#ff9800", "source_doc": "sdk_code: unitree_sdk2/include/unitree/idl/hg/IMUState_.hpp", "degree": 0, "properties": {"description": "IMU温度", "field": "imu_state.temperature", "name": "IMU temperature"}}, {"id": "unitree_g1_edu.event.sport.fsm_id", "type": "StatusBit", "category": "event", "label": "Sport fsm_id", "color": "#ff9800", "source_doc": "sdk_code: unitree_sdk2/include/unitree/idl/hg/SportModeState_.hpp", "degree": 0, "properties": {"description": "状态机ID", "field": "sport_mode_state.fsm_id", "name": "Sport fsm_id"}}, {"id": "unitree_g1_edu.event.sport.fsm_mode", "type": "StatusBit", "category": "event", "label": "Sport fsm_mode", "color": "#ff9800", "source_doc": "sdk_code: unitree_sdk2/include/unitree/idl/hg/SportModeState_.hpp", "degree": 0, "properties": {"description": "状态机模式", "field": "sport_mode_state.fsm_mode", "name": "Sport fsm_mode"}}, {"id": "unitree_g1_edu.event.sport.task_id", "type": "StatusBit", "category": "event", "label": "Sport task_id", "color": "#ff9800", "source_doc": "sdk_code: unitree_sdk2/include/unitree/idl/hg/SportModeState_.hpp", "degree": 0, "properties": {"description": "当前任务ID", "field": "sport_mode_state.task_id", "name": "Sport task_id"}}, {"id": "unitree_g1_edu.event.sport.task_time", "type": "StatusBit", "category": "event", "label": "Sport task_time", "color": "#ff9800", "source_doc": "sdk_code: unitree_sdk2/include/unitree/idl/hg/SportModeState_.hpp", "degree": 0, "properties": {"description": "任务已执行时间", "field": "sport_mode_state.task_time", "name": "Sport task_time"}}, {"id": "unitree_g1_edu.event.board.fan_state_0", "type": "StatusBit", "category": "event", "label": "主板 fan_state[0]", "color": "#ff9800", "source_doc": "sdk_code: unitree_sdk2/include/unitree/idl/hg/MainBoardState_.hpp", "degree": 0, "properties": {"description": "风扇0状态", "field": "main_board_state.fan_state[0]", "name": "主板 fan_state[0]"}}, {"id": "unitree_g1_edu.event.board.temperature_0", "type": "StatusBit", "category": "event", "label": "主板 temperature[0]", "color": "#ff9800", "source_doc": "sdk_code: unitree_sdk2/include/unitree/idl/hg/MainBoardState_.hpp", "degree": 0, "properties": {"description": "主板温度传感器0", "field": "main_board_state.temperature[0]", "name": "主板 temperature[0]"}}, {"id": "unitree_g1_edu.event.board.state_0", "type": "StatusBit", "category": "event", "label": "主板 state[0]", "color": "#ff9800", "source_doc": "sdk_code: unitree_sdk2/include/unitree/idl/hg/MainBoardState_.hpp", "degree": 0, "properties": {"description": "主板状态位0", "field": "main_board_state.state[0]", "name": "主板 state[0]"}}, {"id": "unitree_g1_edu.event.board.fan_state_1", "type": "StatusBit", "category": "event", "label": "主板 fan_state[1]", "color": "#ff9800", "source_doc": "sdk_code: unitree_sdk2/include/unitree/idl/hg/MainBoardState_.hpp", "degree": 0, "properties": {"description": "风扇1状态", "field": "main_board_state.fan_state[1]", "name": "主板 fan_state[1]"}}, {"id": "unitree_g1_edu.event.board.temperature_1", "type": "StatusBit", "category": "event", "label": "主板 temperature[1]", "color": "#ff9800", "source_doc": "sdk_code: unitree_sdk2/include/unitree/idl/hg/MainBoardState_.hpp", "degree": 0, "properties": {"description": "主板温度传感器1", "field": "main_board_state.temperature[1]", "name": "主板 temperature[1]"}}, {"id": "unitree_g1_edu.event.board.state_1", "type": "StatusBit", "category": "event", "label": "主板 state[1]", "color": "#ff9800", "source_doc": "sdk_code: unitree_sdk2/include/unitree/idl/hg/MainBoardState_.hpp", "degree": 0, "properties": {"description": "主板状态位1", "field": "main_board_state.state[1]", "name": "主板 state[1]"}}, {"id": "unitree_g1_edu.event.board.fan_state_2", "type": "StatusBit", "category": "event", "label": "主板 fan_state[2]", "color": "#ff9800", "source_doc": "sdk_code: unitree_sdk2/include/unitree/idl/hg/MainBoardState_.hpp", "degree": 0, "properties": {"description": "风扇2状态", "field": "main_board_state.fan_state[2]", "name": "主板 fan_state[2]"}}, {"id": "unitree_g1_edu.event.board.temperature_2", "type": "StatusBit", "category": "event", "label": "主板 temperature[2]", "color": "#ff9800", "source_doc": "sdk_code: unitree_sdk2/include/unitree/idl/hg/MainBoardState_.hpp", "degree": 0, "properties": {"description": "主板温度传感器2", "field": "main_board_state.temperature[2]", "name": "主板 temperature[2]"}}, {"id": "unitree_g1_edu.event.board.state_2", "type": "StatusBit", "category": "event", "label": "主板 state[2]", "color": "#ff9800", "source_doc": "sdk_code: unitree_sdk2/include/unitree/idl/hg/MainBoardState_.hpp", "degree": 0, "properties": {"description": "主板状态位2", "field": "main_board_state.state[2]", "name": "主板 state[2]"}}, {"id": "unitree_g1_edu.event.board.fan_state_3", "type": "StatusBit", "category": "event", "label": "主板 fan_state[3]", "color": "#ff9800", "source_doc": "sdk_code: unitree_sdk2/include/unitree/idl/hg/MainBoardState_.hpp", "degree": 0, "properties": {"description": "风扇3状态", "field": "main_board_state.fan_state[3]", "name": "主板 fan_state[3]"}}, {"id": "unitree_g1_edu.event.board.temperature_3", "type": "StatusBit", "category": "event", "label": "主板 temperature[3]", "color": "#ff9800", "source_doc": "sdk_code: unitree_sdk2/include/unitree/idl/hg/MainBoardState_.hpp", "degree": 0, "properties": {"description": "主板温度传感器3", "field": "main_board_state.temperature[3]", "name": "主板 temperature[3]"}}, {"id": "unitree_g1_edu.event.board.state_3", "type": "StatusBit", "category": "event", "label": "主板 state[3]", "color": "#ff9800", "source_doc": "sdk_code: unitree_sdk2/include/unitree/idl/hg/MainBoardState_.hpp", "degree": 0, "properties": {"description": "主板状态位3", "field": "main_board_state.state[3]", "name": "主板 state[3]"}}, {"id": "unitree_g1_edu.event.board.fan_state_4", "type": "StatusBit", "category": "event", "label": "主板 fan_state[4]", "color": "#ff9800", "source_doc": "sdk_code: unitree_sdk2/include/unitree/idl/hg/MainBoardState_.hpp", "degree": 0, "properties": {"description": "风扇4状态", "field": "main_board_state.fan_state[4]", "name": "主板 fan_state[4]"}}, {"id": "unitree_g1_edu.event.board.temperature_4", "type": "StatusBit", "category": "event", "label": "主板 temperature[4]", "color": "#ff9800", "source_doc": "sdk_code: unitree_sdk2/include/unitree/idl/hg/MainBoardState_.hpp", "degree": 0, "properties": {"description": "主板温度传感器4", "field": "main_board_state.temperature[4]", "name": "主板 temperature[4]"}}, {"id": "unitree_g1_edu.event.board.state_4", "type": "StatusBit", "category": "event", "label": "主板 state[4]", "color": "#ff9800", "source_doc": "sdk_code: unitree_sdk2/include/unitree/idl/hg/MainBoardState_.hpp", "degree": 0, "properties": {"description": "主板状态位4", "field": "main_board_state.state[4]", "name": "主板 state[4]"}}, {"id": "unitree_g1_edu.event.board.fan_state_5", "type": "StatusBit", "category": "event", "label": "主板 fan_state[5]", "color": "#ff9800", "source_doc": "sdk_code: unitree_sdk2/include/unitree/idl/hg/MainBoardState_.hpp", "degree": 0, "properties": {"description": "风扇5状态", "field": "main_board_state.fan_state[5]", "name": "主板 fan_state[5]"}}, {"id": "unitree_g1_edu.event.board.temperature_5", "type": "StatusBit", "category": "event", "label": "主板 temperature[5]", "color": "#ff9800", "source_doc": "sdk_code: unitree_sdk2/include/unitree/idl/hg/MainBoardState_.hpp", "degree": 0, "properties": {"description": "主板温度传感器5", "field": "main_board_state.temperature[5]", "name": "主板 temperature[5]"}}, {"id": "unitree_g1_edu.event.board.state_5", "type": "StatusBit", "category": "event", "label": "主板 state[5]", "color": "#ff9800", "source_doc": "sdk_code: unitree_sdk2/include/unitree/idl/hg/MainBoardState_.hpp", "degree": 0, "properties": {"description": "主板状态位5", "field": "main_board_state.state[5]", "name": "主板 state[5]"}}, {"id": "unitree_g1_edu.event.loco_state_unavailable", "type": "FaultCode", "category": "event", "label": "Loco 状态不可用", "color": "#ff9800", "source_doc": "sdk_code: unitree_sdk2/include/unitree/robot/g1/loco/g1_loco_error.hpp", "degree": 1, "properties": {"code": 7301, "name": "Loco 状态不可用", "severity": "error"}}, {"id": "unitree_g1_edu.event.invalid_fsm_id", "type": "FaultCode", "category": "event", "label": "无效 FSM ID", "color": "#ff9800", "source_doc": "sdk_code: unitree_sdk2/include/unitree/robot/g1/loco/g1_loco_error.hpp", "degree": 1, "properties": {"code": 7302, "name": "无效 FSM ID", "severity": "error"}}, {"id": "unitree_g1_edu.event.invalid_task_id", "type": "FaultCode", "category": "event", "label": "无效任务 ID", "color": "#ff9800", "source_doc": "sdk_code: unitree_sdk2/include/unitree/robot/g1/loco/g1_loco_error.hpp", "degree": 1, "properties": {"code": 7303, "name": "无效任务 ID", "severity": "error"}}, {"id": "unitree_g1_edu.event.arm_topic_occupied", "type": "FaultCode", "category": "event", "label": "机械臂 DDS topic 被占用", "color": "#ff9800", "source_doc": "sdk_code: unitree_sdk2/include/unitree/robot/g1/arm/g1_arm_action_error.hpp", "degree": 1, "properties": {"code": 7400, "name": "机械臂 DDS topic 被占用", "severity": "error"}}, {"id": "unitree_g1_edu.event.arm_holding", "type": "FaultCode", "category": "event", "label": "机械臂正在持握中", "color": "#ff9800", "source_doc": "sdk_code: unitree_sdk2/include/unitree/robot/g1/arm/g1_arm_action_error.hpp", "degree": 1, "properties": {"code": 7401, "name": "机械臂正在持握中", "severity": "warning"}}, {"id": "unitree_g1_edu.event.arm_invalid_action", "type": "FaultCode", "category": "event", "label": "无效机械臂动作 ID", "color": "#ff9800", "source_doc": "sdk_code: unitree_sdk2/include/unitree/robot/g1/arm/g1_arm_action_error.hpp", "degree": 1, "properties": {"code": 7402, "name": "无效机械臂动作 ID", "severity": "error"}}, {"id": "unitree_g1_edu.event.arm_invalid_fsm", "type": "FaultCode", "category": "event", "label": "机械臂 FSM ID 不匹配", "color": "#ff9800", "source_doc": "sdk_code: unitree_sdk2/include/unitree/robot/g1/arm/g1_arm_action_error.hpp", "degree": 1, "properties": {"code": 7404, "name": "机械臂 FSM ID 不匹配", "severity": "error"}}, {"id": "unitree_g1_edu.event.audio_invalid_param", "type": "FaultCode", "category": "event", "label": "音频参数无效", "color": "#ff9800", "source_doc": "sdk_code: unitree_sdk2/include/unitree/robot/g1/audio/g1_audio_error.hpp", "degree": 1, "properties": {"code": 100, "name": "音频参数无效", "severity": "warning"}}, {"id": "unitree_g1_edu.if.sport", "type": "Service", "category": "interface", "label": "sport", "color": "#4dd0e1", "source_doc": "sdk_code: unitree_sdk2/include/unitree/robot/g1/loco/g1_loco_api.hpp", "degree": 4, "properties": {"name": "sport", "protocol": "DDS", "api_version": "1.0.0.0", "description": "运动控制服务 (loco) — FSM/速度/平衡/步态"}}, {"id": "unitree_g1_edu.if.arm", "type": "Service", "category": "interface", "label": "arm", "color": "#4dd0e1", "source_doc": "sdk_code: unitree_sdk2/include/unitree/robot/g1/arm/g1_arm_action_api.hpp", "degree": 6, "properties": {"name": "arm", "protocol": "DDS", "api_version": "1.0.0.14", "description": "机械臂控制服务 — 预设动作执行"}}, {"id": "unitree_g1_edu.if.audio", "type": "Service", "category": "interface", "label": "audio", "color": "#4dd0e1", "source_doc": "sdk_code: unitree_sdk2/include/unitree/robot/g1/audio/g1_audio_api.hpp", "degree": 2, "properties": {"name": "audio", "protocol": "DDS", "description": "音频+LED 服务 — TTS/ASR/音量/LED"}}, {"id": "unitree_g1_edu.if.low_state", "type": "Topic", "category": "interface", "label": "low_state", "color": "#4dd0e1", "source_doc": "sdk_code: unitree_sdk2/include/unitree/idl/hg/LowState_.hpp", "degree": 0, "properties": {"name": "low_state", "protocol": "DDS", "description": "低层状态数据 — 23 joint positions + velocities + IMU + BMS", "msg_type": "unitree/idl/hg/LowState", "rate_hz": 500}}, {"id": "unitree_g1_edu.if.low_cmd", "type": "Topic", "category": "interface", "label": "low_cmd", "color": "#4dd0e1", "source_doc": "sdk_code: unitree_sdk2/include/unitree/idl/hg/LowCmd_.hpp", "degree": 0, "properties": {"name": "low_cmd", "protocol": "DDS", "description": "低层指令 — 23 joint targets", "msg_type": "unitree/idl/hg/LowCmd", "rate_hz": 500}}, {"id": "unitree_g1_edu.if.imu_state", "type": "Topic", "category": "interface", "label": "imu_state", "color": "#4dd0e1", "source_doc": "sdk_code: unitree_sdk2/include/unitree/idl/hg/IMUState_.hpp", "degree": 0, "properties": {"name": "imu_state", "protocol": "DDS", "description": "IMU 状态 — 四元数 + 角速度 + 加速度", "msg_type": "unitree/idl/hg/IMUState", "rate_hz": 500}}, {"id": "unitree_g1_edu.if.bms_state", "type": "Topic", "category": "interface", "label": "bms_state", "color": "#4dd0e1", "source_doc": "sdk_code: unitree_sdk2/include/unitree/idl/hg/BmsState_.hpp", "degree": 0, "properties": {"name": "bms_state", "protocol": "DDS", "description": "电池状态 — 电压/电流/SOC/温度", "msg_type": "unitree/idl/hg/BmsState"}}, {"id": "unitree_g1_edu.if.sport_mode_state", "type": "Topic", "category": "interface", "label": "sport_mode_state", "color": "#4dd0e1", "source_doc": "sdk_code: unitree_sdk2/include/unitree/idl/hg/SportModeState_.hpp", "degree": 0, "properties": {"name": "sport_mode_state", "protocol": "DDS", "description": "运动模式状态反馈", "msg_type": "unitree/idl/hg/SportModeState"}}, {"id": "get_loco_fsm_mode", "type": "Action", "category": "action", "label": "get_loco_fsm_mode", "color": "#ec407a", "source_doc": "sdk_code: unitree_sdk2/include/unitree/robot/g1/loco/g1_loco_api.hpp", "degree": 0, "properties": {"safety_class": "INFO"}}, {"id": "get_loco_fsm_id", "type": "Action", "category": "action", "label": "get_loco_fsm_id", "color": "#ec407a", "source_doc": "sdk_code: unitree_sdk2/include/unitree/robot/g1/loco/g1_loco_api.hpp", "degree": 0, "properties": {"safety_class": "INFO"}}, {"id": "get_balance_mode", "type": "Action", "category": "action", "label": "get_balance_mode", "color": "#ec407a", "source_doc": "sdk_code: unitree_sdk2/include/unitree/robot/g1/loco/g1_loco_api.hpp", "degree": 0, "properties": {"safety_class": "INFO"}}, {"id": "set_loco_fsm_mode", "type": "Action", "category": "action", "label": "set_loco_fsm_mode", "color": "#ec407a", "source_doc": "sdk_code: unitree_sdk2/include/unitree/robot/g1/loco/g1_loco_api.hpp", "degree": 3, "properties": {"safety_class": "MOTION"}}, {"id": "set_velocity", "type": "Action", "category": "action", "label": "set_velocity", "color": "#ec407a", "source_doc": "sdk_code: unitree_sdk2/include/unitree/robot/g1/loco/g1_loco_api.hpp", "degree": 2, "properties": {"safety_class": "MOTION"}}, {"id": "set_balance_mode", "type": "Action", "category": "action", "label": "set_balance_mode", "color": "#ec407a", "source_doc": "sdk_code: unitree_sdk2/include/unitree/robot/g1/loco/g1_loco_api.hpp", "degree": 0, "properties": {"safety_class": "CONFIG"}}, {"id": "set_swing_height", "type": "Action", "category": "action", "label": "set_swing_height", "color": "#ec407a", "source_doc": "sdk_code: unitree_sdk2/include/unitree/robot/g1/loco/g1_loco_api.hpp", "degree": 0, "properties": {"safety_class": "CONFIG"}}, {"id": "set_stand_height", "type": "Action", "category": "action", "label": "set_stand_height", "color": "#ec407a", "source_doc": "sdk_code: unitree_sdk2/include/unitree/robot/g1/loco/g1_loco_api.hpp", "degree": 0, "properties": {"safety_class": "CONFIG"}}, {"id": "set_arm_task", "type": "Action", "category": "action", "label": "set_arm_task", "color": "#ec407a", "source_doc": "sdk_code: unitree_sdk2/include/unitree/robot/g1/loco/g1_loco_api.hpp", "degree": 0, "properties": {"safety_class": "MOTION"}}, {"id": "switch_to_user_ctrl", "type": "Action", "category": "action", "label": "switch_to_user_ctrl", "color": "#ec407a", "source_doc": "sdk_code: unitree_sdk2/include/unitree/robot/g1/loco/g1_loco_api.hpp", "degree": 1, "properties": {"safety_class": "CONFIG"}}, {"id": "switch_to_internal_ctrl", "type": "Action", "category": "action", "label": "switch_to_internal_ctrl", "color": "#ec407a", "source_doc": "sdk_code: unitree_sdk2/include/unitree/robot/g1/loco/g1_loco_api.hpp", "degree": 0, "properties": {"safety_class": "CONFIG"}}, {"id": "arm_execute_action", "type": "Action", "category": "action", "label": "arm_execute_action", "color": "#ec407a", "source_doc": "sdk_code: unitree_sdk2/include/unitree/robot/g1/arm/g1_arm_action_api.hpp", "degree": 1, "properties": {"safety_class": "MOTION"}}, {"id": "arm_get_action_list", "type": "Action", "category": "action", "label": "arm_get_action_list", "color": "#ec407a", "source_doc": "sdk_code: unitree_sdk2/include/unitree/robot/g1/arm/g1_arm_action_api.hpp", "degree": 0, "properties": {"safety_class": "INFO"}}, {"id": "play_tts", "type": "Action", "category": "action", "label": "play_tts", "color": "#ec407a", "source_doc": "sdk_code: unitree_sdk2/include/unitree/robot/g1/audio/g1_audio_api.hpp", "degree": 1, "properties": {"safety_class": "INFO"}}, {"id": "set_volume", "type": "Action", "category": "action", "label": "set_volume", "color": "#ec407a", "source_doc": "sdk_code: unitree_sdk2/include/unitree/robot/g1/audio/g1_audio_api.hpp", "degree": 0, "properties": {"safety_class": "CONFIG"}}, {"id": "get_volume", "type": "Action", "category": "action", "label": "get_volume", "color": "#ec407a", "source_doc": "sdk_code: unitree_sdk2/include/unitree/robot/g1/audio/g1_audio_api.hpp", "degree": 0, "properties": {"safety_class": "INFO"}}, {"id": "set_led", "type": "Action", "category": "action", "label": "set_led", "color": "#ec407a", "source_doc": "sdk_code: unitree_sdk2/include/unitree/robot/g1/audio/g1_audio_api.hpp", "degree": 0, "properties": {"safety_class": "CONFIG"}}], "links": [{"source": "unitree_g1_edu.hw.link.pelvis", "target": "unitree_g1_edu.hw.link.pelvis_contour_link", "type": "parent_of"}, {"source": "unitree_g1_edu.hw.link.pelvis", "target": "unitree_g1_edu.hw.link.left_hip_pitch_link", "type": "parent_of"}, {"source": "unitree_g1_edu.hw.link.left_hip_pitch_link", "target": "unitree_g1_edu.hw.link.left_hip_roll_link", "type": "parent_of"}, {"source": "unitree_g1_edu.hw.link.left_hip_roll_link", "target": "unitree_g1_edu.hw.link.left_hip_yaw_link", "type": "parent_of"}, {"source": "unitree_g1_edu.hw.link.left_hip_yaw_link", "target": "unitree_g1_edu.hw.link.left_knee_link", "type": "parent_of"}, {"source": "unitree_g1_edu.hw.link.left_knee_link", "target": "unitree_g1_edu.hw.link.left_ankle_pitch_link", "type": "parent_of"}, {"source": "unitree_g1_edu.hw.link.left_ankle_pitch_link", "target": "unitree_g1_edu.hw.link.left_ankle_roll_link", "type": "parent_of"}, {"source": "unitree_g1_edu.hw.link.pelvis", "target": "unitree_g1_edu.hw.link.right_hip_pitch_link", "type": "parent_of"}, {"source": "unitree_g1_edu.hw.link.right_hip_pitch_link", "target": "unitree_g1_edu.hw.link.right_hip_roll_link", "type": "parent_of"}, {"source": "unitree_g1_edu.hw.link.right_hip_roll_link", "target": "unitree_g1_edu.hw.link.right_hip_yaw_link", "type": "parent_of"}, {"source": "unitree_g1_edu.hw.link.right_hip_yaw_link", "target": "unitree_g1_edu.hw.link.right_knee_link", "type": "parent_of"}, {"source": "unitree_g1_edu.hw.link.right_knee_link", "target": "unitree_g1_edu.hw.link.right_ankle_pitch_link", "type": "parent_of"}, {"source": "unitree_g1_edu.hw.link.right_ankle_pitch_link", "target": "unitree_g1_edu.hw.link.right_ankle_roll_link", "type": "parent_of"}, {"source": "unitree_g1_edu.hw.link.pelvis", "target": "unitree_g1_edu.hw.link.torso_link", "type": "parent_of"}, {"source": "unitree_g1_edu.hw.link.torso_link", "target": "unitree_g1_edu.hw.link.logo_link", "type": "parent_of"}, {"source": "unitree_g1_edu.hw.link.torso_link", "target": "unitree_g1_edu.hw.link.head_link", "type": "parent_of"}, {"source": "unitree_g1_edu.hw.link.torso_link", "target": "unitree_g1_edu.hw.link.imu_in_torso", "type": "parent_of"}, {"source": "unitree_g1_edu.hw.link.pelvis", "target": "unitree_g1_edu.hw.link.imu_in_pelvis", "type": "parent_of"}, {"source": "unitree_g1_edu.hw.link.torso_link", "target": "unitree_g1_edu.hw.link.d435_link", "type": "parent_of"}, {"source": "unitree_g1_edu.hw.link.torso_link", "target": "unitree_g1_edu.hw.link.mid360_link", "type": "parent_of"}, {"source": "unitree_g1_edu.hw.link.torso_link", "target": "unitree_g1_edu.hw.link.left_shoulder_pitch_link", "type": "parent_of"}, {"source": "unitree_g1_edu.hw.link.left_shoulder_pitch_link", "target": "unitree_g1_edu.hw.link.left_shoulder_roll_link", "type": "parent_of"}, {"source": "unitree_g1_edu.hw.link.left_shoulder_roll_link", "target": "unitree_g1_edu.hw.link.left_shoulder_yaw_link", "type": "parent_of"}, {"source": "unitree_g1_edu.hw.link.left_shoulder_yaw_link", "target": "unitree_g1_edu.hw.link.left_elbow_link", "type": "parent_of"}, {"source": "unitree_g1_edu.hw.link.left_elbow_link", "target": "unitree_g1_edu.hw.link.left_wrist_roll_rubber_hand", "type": "parent_of"}, {"source": "unitree_g1_edu.hw.link.torso_link", "target": "unitree_g1_edu.hw.link.right_shoulder_pitch_link", "type": "parent_of"}, {"source": "unitree_g1_edu.hw.link.right_shoulder_pitch_link", "target": "unitree_g1_edu.hw.link.right_shoulder_roll_link", "type": "parent_of"}, {"source": "unitree_g1_edu.hw.link.right_shoulder_roll_link", "target": "unitree_g1_edu.hw.link.right_shoulder_yaw_link", "type": "parent_of"}, {"source": "unitree_g1_edu.hw.link.right_shoulder_yaw_link", "target": "unitree_g1_edu.hw.link.right_elbow_link", "type": "parent_of"}, {"source": "unitree_g1_edu.hw.link.right_elbow_link", "target": "unitree_g1_edu.hw.link.right_wrist_roll_rubber_hand", "type": "parent_of"}, {"source": "unitree_g1_edu.mode.passive", "target": "unitree_g1_edu.mode.walkrun", "type": "transitions_to"}, {"source": "unitree_g1_edu.mode.walkrun", "target": "unitree_g1_edu.mode.passive", "type": "transitions_to"}, {"source": "unitree_g1_edu.mode.walkrun", "target": "unitree_g1_edu.mode.user_ctrl", "type": "transitions_to"}, {"source": "unitree_g1_edu.mode.user_ctrl", "target": "unitree_g1_edu.mode.walkrun", "type": "transitions_to"}, {"source": "unitree_g1_edu.hw.sensor.bms", "target": "unitree_g1_edu.event.bms.soc", "type": "indicates"}, {"source": "unitree_g1_edu.hw.sensor.bms", "target": "unitree_g1_edu.event.bms.temperature", "type": "indicates"}, {"source": "unitree_g1_edu.hw.sensor.bms", "target": "unitree_g1_edu.event.bms.current", "type": "indicates"}, {"source": "unitree_g1_edu.hw.sensor.bms", "target": "unitree_g1_edu.event.bms.bmsvoltage", "type": "indicates"}, {"source": "unitree_g1_edu.hw.sensor.imu", "target": "unitree_g1_edu.event.imu.quaternion", "type": "indicates"}, {"source": "unitree_g1_edu.hw.sensor.imu", "target": "unitree_g1_edu.event.imu.gyroscope", "type": "indicates"}, {"source": "unitree_g1_edu.hw.sensor.imu", "target": "unitree_g1_edu.event.imu.accelerometer", "type": "indicates"}, {"source": "unitree_g1_edu.hw.sensor.imu", "target": "unitree_g1_edu.event.imu.rpy", "type": "indicates"}, {"source": "unitree_g1_edu.event.motor_overheat", "target": "unitree_g1_edu.hw.joint.left_knee", "type": "indicates"}, {"source": "unitree_g1_edu.event.battery_low", "target": "unitree_g1_edu.hw.power.battery", "type": "indicates"}, {"source": "unitree_g1_edu.event.loco_state_unavailable", "target": "unitree_g1_edu.if.sport", "type": "indicates"}, {"source": "unitree_g1_edu.event.invalid_fsm_id", "target": "unitree_g1_edu.mode.walkrun", "type": "indicates"}, {"source": "unitree_g1_edu.event.invalid_task_id", "target": "unitree_g1_edu.mode.walkrun", "type": "indicates"}, {"source": "unitree_g1_edu.event.arm_topic_occupied", "target": "unitree_g1_edu.if.arm", "type": "indicates"}, {"source": "unitree_g1_edu.event.arm_holding", "target": "unitree_g1_edu.if.arm", "type": "indicates"}, {"source": "unitree_g1_edu.event.arm_invalid_action", "target": "unitree_g1_edu.if.arm", "type": "indicates"}, {"source": "unitree_g1_edu.event.arm_invalid_fsm", "target": "unitree_g1_edu.if.arm", "type": "indicates"}, {"source": "unitree_g1_edu.event.audio_invalid_param", "target": "unitree_g1_edu.if.audio", "type": "indicates"}, {"source": "unitree_g1_edu.hw.link.pelvis", "target": "unitree_g1_edu.hw.link.left_hip_pitch_link", "type": "parent_of"}, {"source": "unitree_g1_edu.hw.link.left_hip_pitch_link", "target": "unitree_g1_edu.hw.link.left_hip_roll_link", "type": "parent_of"}, {"source": "unitree_g1_edu.hw.link.left_hip_roll_link", "target": "unitree_g1_edu.hw.link.left_hip_yaw_link", "type": "parent_of"}, {"source": "unitree_g1_edu.hw.link.left_hip_yaw_link", "target": "unitree_g1_edu.hw.link.left_knee_link", "type": "parent_of"}, {"source": "unitree_g1_edu.hw.link.left_knee_link", "target": "unitree_g1_edu.hw.link.left_ankle_pitch_link", "type": "parent_of"}, {"source": "unitree_g1_edu.hw.link.left_ankle_pitch_link", "target": "unitree_g1_edu.hw.link.left_ankle_roll_link", "type": "parent_of"}, {"source": "unitree_g1_edu.hw.link.pelvis", "target": "unitree_g1_edu.hw.link.right_hip_pitch_link", "type": "parent_of"}, {"source": "unitree_g1_edu.hw.link.right_hip_pitch_link", "target": "unitree_g1_edu.hw.link.right_hip_roll_link", "type": "parent_of"}, {"source": "unitree_g1_edu.hw.link.right_hip_roll_link", "target": "unitree_g1_edu.hw.link.right_hip_yaw_link", "type": "parent_of"}, {"source": "unitree_g1_edu.hw.link.right_hip_yaw_link", "target": "unitree_g1_edu.hw.link.right_knee_link", "type": "parent_of"}, {"source": "unitree_g1_edu.hw.link.right_knee_link", "target": "unitree_g1_edu.hw.link.right_ankle_pitch_link", "type": "parent_of"}, {"source": "unitree_g1_edu.hw.link.right_ankle_pitch_link", "target": "unitree_g1_edu.hw.link.right_ankle_roll_link", "type": "parent_of"}, {"source": "unitree_g1_edu.hw.link.pelvis", "target": "unitree_g1_edu.hw.link.torso_link", "type": "parent_of"}, {"source": "unitree_g1_edu.hw.link.torso_link", "target": "unitree_g1_edu.hw.link.left_shoulder_pitch_link", "type": "parent_of"}, {"source": "unitree_g1_edu.hw.link.left_shoulder_pitch_link", "target": "unitree_g1_edu.hw.link.left_shoulder_roll_link", "type": "parent_of"}, {"source": "unitree_g1_edu.hw.link.left_shoulder_roll_link", "target": "unitree_g1_edu.hw.link.left_shoulder_yaw_link", "type": "parent_of"}, {"source": "unitree_g1_edu.hw.link.left_shoulder_yaw_link", "target": "unitree_g1_edu.hw.link.left_elbow_link", "type": "parent_of"}, {"source": "unitree_g1_edu.hw.link.left_elbow_link", "target": "unitree_g1_edu.hw.link.left_wrist_roll_rubber_hand", "type": "parent_of"}, {"source": "unitree_g1_edu.hw.link.torso_link", "target": "unitree_g1_edu.hw.link.right_shoulder_pitch_link", "type": "parent_of"}, {"source": "unitree_g1_edu.hw.link.right_shoulder_pitch_link", "target": "unitree_g1_edu.hw.link.right_shoulder_roll_link", "type": "parent_of"}, {"source": "unitree_g1_edu.hw.link.right_shoulder_roll_link", "target": "unitree_g1_edu.hw.link.right_shoulder_yaw_link", "type": "parent_of"}, {"source": "unitree_g1_edu.hw.link.right_shoulder_yaw_link", "target": "unitree_g1_edu.hw.link.right_elbow_link", "type": "parent_of"}, {"source": "unitree_g1_edu.hw.link.right_elbow_link", "target": "unitree_g1_edu.hw.link.right_wrist_roll_rubber_hand", "type": "parent_of"}, {"source": "set_velocity", "target": "unitree_g1_edu.if.sport", "type": "calls"}, {"source": "set_loco_fsm_mode", "target": "unitree_g1_edu.if.sport", "type": "calls"}, {"source": "arm_execute_action", "target": "unitree_g1_edu.if.arm", "type": "calls"}, {"source": "play_tts", "target": "unitree_g1_edu.if.audio", "type": "calls"}, {"source": "unitree_g1_edu.hw.compute.main", "target": "unitree_g1_edu.if.sport", "type": "hosts"}, {"source": "unitree_g1_edu.hw.compute.orin", "target": "unitree_g1_edu.if.arm", "type": "hosts"}, {"source": "set_loco_fsm_mode", "target": "unitree_g1_edu.mode.passive", "type": "affects"}, {"source": "set_loco_fsm_mode", "target": "unitree_g1_edu.mode.walkrun", "type": "affects"}, {"source": "set_velocity", "target": "unitree_g1_edu.hw.link.pelvis", "type": "affects"}, {"source": "switch_to_user_ctrl", "target": "unitree_g1_edu.mode.user_ctrl", "type": "affects"}]};
+
+// ==================== Three.js bootstrap ====================
+(function() {
+  const status = document.querySelector('.loading-text');
+  function reportError(prefix, err) {
+    const msg = err && err.message ? err.message : String(err);
+    if (status) status.textContent = `${prefix}: ${msg}`.slice(0, 140);
+  }
+  window.addEventListener('error', (event) => {
+    reportError('runtime error', event.error || event.message);
+  });
+  window.addEventListener('unhandledrejection', (event) => {
+    reportError('promise error', event.reason);
+  });
+})();
+
+(function() {
+  const sources = [
+    './three.min.js',
+    'https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js',
+  ];
+  const status = document.querySelector('.loading-text');
+
+  function tryLoad(index) {
+    if (index >= sources.length) {
+      if (status) status.textContent = 'failed to load three.js';
+      return;
+    }
+    const script = document.createElement('script');
+    script.src = sources[index];
+    script.onload = () => {
+      try {
+        init();
+      } catch (err) {
+        if (status) {
+          const msg = err && err.message ? err.message : String(err);
+          status.textContent = `init failed: ${msg}`.slice(0, 140);
+        }
+      }
+    };
+    script.onerror = () => {
+      script.remove();
+      tryLoad(index + 1);
+    };
+    document.head.appendChild(script);
+  }
+
+  tryLoad(0);
+})();
+
+// ==================== App state ====================
+const app = {
+  scene: null, camera: null, renderer: null, raycaster: null,
+  nodes: [], links: [],
+  meshById: {},
+  nodeById: {},
+  adjacency: new Map(),
+  lineObjects: [],
+  selected: null,
+  hovered: null,
+  filteredOut: new Set(),
+  matchedIds: new Set(),
+  searchFocusIds: new Set(),
+  searchCenterId: null,
+  simStep: 0,
+  simActive: true,
+
+  // camera sphere coords
+  camRadius: 320,
+  camTheta: Math.PI * 0.35,   // horizontal
+  camPhi: Math.PI * 0.42,     // vertical (from +Y)
+  camTarget: { x: 0, y: 0, z: 0 },
+
+  // Force layout params
+  REPULSION: 1200,
+  SPRING: 0.06,
+  REST_LENGTH: 48,
+  CENTER_GRAVITY: 0.008,
+  DAMPING: 0.85,
+  MAX_SIM_STEPS: 600,
+};
+
+window.app = app;
+
+// ==================== Init ====================
+function init() {
+  const container = document.getElementById('canvas-container');
+  const W = window.innerWidth, H = window.innerHeight;
+
+  // Scene
+  app.scene = new THREE.Scene();
+  app.scene.fog = new THREE.FogExp2(0x0a0d14, 0.0018);
+
+  // Camera
+  app.camera = new THREE.PerspectiveCamera(50, W / H, 0.1, 2000);
+  updateCameraPos();
+
+  // Renderer
+  app.renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+  app.renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+  app.renderer.setSize(W, H);
+  app.renderer.setClearColor(0x0a0d14, 1);
+  container.appendChild(app.renderer.domElement);
+
+  // Lights
+  app.scene.add(new THREE.AmbientLight(0xffffff, 0.7));
+  const key = new THREE.DirectionalLight(0xffffff, 0.6);
+  key.position.set(120, 180, 120);
+  app.scene.add(key);
+  const rim = new THREE.DirectionalLight(0x60a5fa, 0.25);
+  rim.position.set(-180, -120, -100);
+  app.scene.add(rim);
+
+  // Build graph
+  buildGraph();
+
+  // Raycaster for hover/click
+  app.raycaster = new THREE.Raycaster();
+  app.mouse = new THREE.Vector2(-10, -10);
+
+  // UI
+  buildLegend();
+  buildStats();
+  bindInput();
+
+  // Hide loading
+  setTimeout(() => {
+    const loading = document.getElementById('loading');
+    loading.classList.add('done');
+    setTimeout(() => {
+      loading.style.display = 'none';
+    }, 420);
+  }, 400);
+
+  // Animation loop
+  animate();
+}
+
+// ==================== Camera ====================
+function updateCameraPos() {
+  const r = app.camRadius;
+  const x = app.camTarget.x + r * Math.sin(app.camPhi) * Math.cos(app.camTheta);
+  const y = app.camTarget.y + r * Math.cos(app.camPhi);
+  const z = app.camTarget.z + r * Math.sin(app.camPhi) * Math.sin(app.camTheta);
+  app.camera.position.set(x, y, z);
+  app.camera.lookAt(app.camTarget.x, app.camTarget.y, app.camTarget.z);
+}
+
+// ==================== Build graph ====================
+function buildGraph() {
+  const d = GRAPH_DATA;
+
+  // Initial layout: by category cluster
+  const cats = Object.keys(d.category_colors);
+  const catAngles = {};
+  cats.forEach((c, i) => {
+    catAngles[c] = (i / cats.length) * Math.PI * 2;
+  });
+
+  app.nodes = d.nodes.map((n, i) => {
+    // Initial position: cluster by category
+    const angle = catAngles[n.category] + (Math.random() - 0.5) * 0.6;
+    const clusterR = 100 + Math.random() * 60;
+    const y = (Math.random() - 0.5) * 100;
+    const x = Math.cos(angle) * clusterR + (Math.random() - 0.5) * 30;
+    const z = Math.sin(angle) * clusterR + (Math.random() - 0.5) * 30;
+
+    const size = 1.6 + Math.sqrt(n.degree) * 1.2;
+    const color = new THREE.Color(n.color);
+
+    const geometry = new THREE.SphereGeometry(size, 12, 10);
+    const material = new THREE.MeshStandardMaterial({
+      color: color,
+      emissive: color,
+      emissiveIntensity: 0.35,
+      transparent: true,
+      opacity: 0.95,
+      roughness: 0.4,
+      metalness: 0.2,
+    });
+    const mesh = new THREE.Mesh(geometry, material);
+    mesh.position.set(x, y, z);
+    mesh.userData = { node: n, baseColor: color.clone(), size };
+    app.scene.add(mesh);
+    app.meshById[n.id] = mesh;
+    app.nodeById[n.id] = n;
+
+    return {
+      ...n,
+      mesh,
+      x, y, z,
+      vx: 0, vy: 0, vz: 0,
+      size,
+    };
+  });
+
+  // Links
+  const lineMat = new THREE.LineBasicMaterial({
+    color: 0x8899aa,
+    transparent: true,
+    opacity: 0.18,
+  });
+
+  app.links = d.links.map(l => {
+    const src = app.nodes.find(n => n.id === l.source);
+    const tgt = app.nodes.find(n => n.id === l.target);
+    if (!src || !tgt) return null;
+
+    const geom = new THREE.BufferGeometry();
+    geom.setAttribute('position', new THREE.Float32BufferAttribute([
+      src.x, src.y, src.z, tgt.x, tgt.y, tgt.z,
+    ], 3));
+    const line = new THREE.Line(geom, lineMat.clone());
+    app.scene.add(line);
+    return { src, tgt, type: l.type, line };
+  }).filter(Boolean);
+
+  app.lineObjects = app.links.map(l => l.line);
+
+  for (const nd of app.nodes) {
+    app.adjacency.set(nd.id, new Set());
+  }
+  for (const l of app.links) {
+    app.adjacency.get(l.src.id)?.add(l.tgt.id);
+    app.adjacency.get(l.tgt.id)?.add(l.src.id);
+  }
+}
+
+// ==================== Force layout ====================
+function stepSimulation() {
+  const n = app.nodes.length;
+
+  // Repulsion (O(n^2) — 204 nodes is fine)
+  for (let i = 0; i < n; i++) {
+    const a = app.nodes[i];
+    for (let j = i + 1; j < n; j++) {
+      const b = app.nodes[j];
+      const dx = b.x - a.x, dy = b.y - a.y, dz = b.z - a.z;
+      let d2 = dx*dx + dy*dy + dz*dz;
+      if (d2 < 0.01) d2 = 0.01;
+      const d = Math.sqrt(d2);
+      const f = app.REPULSION / d2;
+      const fx = (dx / d) * f, fy = (dy / d) * f, fz = (dz / d) * f;
+      a.vx -= fx; a.vy -= fy; a.vz -= fz;
+      b.vx += fx; b.vy += fy; b.vz += fz;
+    }
+  }
+
+  // Spring (attractive) on links
+  for (const l of app.links) {
+    const a = l.src, b = l.tgt;
+    const dx = b.x - a.x, dy = b.y - a.y, dz = b.z - a.z;
+    const d = Math.sqrt(dx*dx + dy*dy + dz*dz) || 0.01;
+    const delta = d - app.REST_LENGTH;
+    const f = app.SPRING * delta;
+    const fx = (dx / d) * f, fy = (dy / d) * f, fz = (dz / d) * f;
+    a.vx += fx; a.vy += fy; a.vz += fz;
+    b.vx -= fx; b.vy -= fy; b.vz -= fz;
+  }
+
+  // Center gravity
+  for (const nd of app.nodes) {
+    nd.vx -= nd.x * app.CENTER_GRAVITY;
+    nd.vy -= nd.y * app.CENTER_GRAVITY;
+    nd.vz -= nd.z * app.CENTER_GRAVITY;
+  }
+
+  // Integrate
+  let maxV = 0;
+  for (const nd of app.nodes) {
+    nd.vx *= app.DAMPING; nd.vy *= app.DAMPING; nd.vz *= app.DAMPING;
+    nd.x += nd.vx; nd.y += nd.vy; nd.z += nd.vz;
+    nd.mesh.position.set(nd.x, nd.y, nd.z);
+    const v2 = nd.vx*nd.vx + nd.vy*nd.vy + nd.vz*nd.vz;
+    if (v2 > maxV) maxV = v2;
+  }
+
+  // Update link geometries
+  for (const l of app.links) {
+    const pos = l.line.geometry.attributes.position;
+    pos.setXYZ(0, l.src.x, l.src.y, l.src.z);
+    pos.setXYZ(1, l.tgt.x, l.tgt.y, l.tgt.z);
+    pos.needsUpdate = true;
+  }
+
+  app.simStep++;
+  // stop when stable or step cap
+  if (app.simStep > app.MAX_SIM_STEPS || maxV < 0.01) {
+    app.simActive = false;
+  }
+}
+
+// ==================== Animation loop ====================
+function animate() {
+  requestAnimationFrame(animate);
+  if (app.simActive) {
+    // multiple steps per frame at start for faster layout
+    const steps = app.simStep < 120 ? 3 : 1;
+    for (let s = 0; s < steps; s++) stepSimulation();
+  }
+
+  // Subtle rotation (scene breathes)
+  if (!app.isDragging && !app.simActive) {
+    app.camTheta += 0.0003;
+    updateCameraPos();
+  }
+
+  // Raycast for hover
+  app.raycaster.setFromCamera(app.mouse, app.camera);
+  const meshes = app.nodes.filter(n => !app.filteredOut.has(n.category)).map(n => n.mesh);
+  const intersects = app.raycaster.intersectObjects(meshes);
+  const newHover = intersects.length ? intersects[0].object.userData.node : null;
+
+  if (newHover !== app.hovered) {
+    app.hovered = newHover;
+    if (newHover) {
+      document.body.style.cursor = 'pointer';
+      showTooltip(newHover);
+    } else {
+      document.body.style.cursor = '';
+      hideTooltip();
+    }
+  }
+
+  // Apply filter visibility and search focus styling
+  const searchActive = app.matchedIds.size > 0;
+  for (const nd of app.nodes) {
+    const visible = !app.filteredOut.has(nd.category);
+    nd.mesh.visible = visible;
+    if (!visible) continue;
+
+    const mesh = nd.mesh;
+    const isCenter = searchActive && nd.id === app.searchCenterId;
+    const isMatched = searchActive && app.matchedIds.has(nd.id);
+    const inFocus = searchActive && app.searchFocusIds.has(nd.id);
+    const isSelected = app.selected && app.selected.id === nd.id;
+    const isHovered = app.hovered && app.hovered.id === nd.id;
+
+    let opacity = 0.95;
+    let emissive = 0.35;
+    let scale = 1.0;
+
+    if (searchActive) {
+      if (isCenter) {
+        opacity = 1.0;
+        emissive = 1.15;
+        scale = 1.95;
+      } else if (isMatched) {
+        opacity = 1.0;
+        emissive = 0.92;
+        scale = 1.55;
+      } else if (inFocus) {
+        opacity = 0.92;
+        emissive = 0.62;
+        scale = 1.18;
+      } else {
+        opacity = 0.14;
+        emissive = 0.08;
+        scale = 0.88;
+      }
+    }
+
+    if (isSelected) {
+      emissive = Math.max(emissive, 1.0);
+      opacity = Math.max(opacity, 0.98);
+      scale = Math.max(scale, isCenter ? 1.95 : 1.45);
+    }
+    if (isHovered) {
+      emissive = Math.max(emissive, 0.95);
+      opacity = Math.max(opacity, 1.0);
+      scale = Math.max(scale, isCenter ? 2.05 : 1.6);
+    }
+
+    mesh.material.opacity = opacity;
+    mesh.material.emissiveIntensity = emissive;
+    mesh.scale.set(scale, scale, scale);
+  }
+  for (const l of app.links) {
+    const visible = l.src.mesh.visible && l.tgt.mesh.visible;
+    l.line.visible = visible;
+    if (!visible) continue;
+
+    if (!searchActive) {
+      l.line.material.opacity = 0.18;
+      l.line.material.color.setHex(0x8899aa);
+      continue;
+    }
+
+    const srcFocus = app.searchFocusIds.has(l.src.id);
+    const tgtFocus = app.searchFocusIds.has(l.tgt.id);
+    const touchesCenter = l.src.id === app.searchCenterId || l.tgt.id === app.searchCenterId;
+
+    if (srcFocus && tgtFocus) {
+      l.line.material.opacity = touchesCenter ? 0.46 : 0.26;
+      l.line.material.color.setHex(touchesCenter ? 0xf4d35e : 0x9cc7ff);
+    } else if (srcFocus || tgtFocus) {
+      l.line.material.opacity = 0.08;
+      l.line.material.color.setHex(0x5f6b78);
+    } else {
+      l.line.material.opacity = 0.02;
+      l.line.material.color.setHex(0x44505c);
+    }
+  }
+
+  app.renderer.render(app.scene, app.camera);
+}
+
+// ==================== Tooltip ====================
+function showTooltip(node) {
+  const tt = document.getElementById('tooltip');
+  tt.innerHTML =
+    `<div class="tt-cat" style="color:${node.color}">${node.category} · ${node.type}</div>` +
+    `<div>${escapeHtml(node.label)}</div>`;
+  tt.style.display = 'block';
+}
+function hideTooltip() {
+  document.getElementById('tooltip').style.display = 'none';
+}
+
+// ==================== Input binding ====================
+function bindInput() {
+  const dom = app.renderer.domElement;
+  let dragStart = null;
+
+  dom.addEventListener('mousedown', (e) => {
+    dragStart = { x: e.clientX, y: e.clientY, theta: app.camTheta, phi: app.camPhi };
+    app.isDragging = true;
+  });
+  window.addEventListener('mouseup', () => {
+    app.isDragging = false;
+  });
+  window.addEventListener('mousemove', (e) => {
+    app.mouse.x = (e.clientX / window.innerWidth) * 2 - 1;
+    app.mouse.y = -(e.clientY / window.innerHeight) * 2 + 1;
+
+    const tt = document.getElementById('tooltip');
+    tt.style.left = (e.clientX + 14) + 'px';
+    tt.style.top = (e.clientY - 8) + 'px';
+
+    if (app.isDragging && dragStart) {
+      const dx = e.clientX - dragStart.x;
+      const dy = e.clientY - dragStart.y;
+      app.camTheta = dragStart.theta - dx * 0.005;
+      app.camPhi = dragStart.phi - dy * 0.005;
+      app.camPhi = Math.max(0.15, Math.min(Math.PI - 0.15, app.camPhi));
+      updateCameraPos();
+    }
+  });
+
+  dom.addEventListener('wheel', (e) => {
+    e.preventDefault();
+    app.camRadius *= (1 + e.deltaY * 0.0008);
+    app.camRadius = Math.max(80, Math.min(900, app.camRadius));
+    updateCameraPos();
+  }, { passive: false });
+
+  dom.addEventListener('click', (e) => {
+    if (app.isDragging) return;
+    // If we were dragging a lot, don't treat as click (simplified)
+    if (app.hovered) {
+      selectNode(app.hovered);
+    } else {
+      closeDetail();
+    }
+  });
+
+  // Touch (basic)
+  dom.addEventListener('touchstart', (e) => {
+    if (e.touches.length === 1) {
+      dragStart = { x: e.touches[0].clientX, y: e.touches[0].clientY,
+                    theta: app.camTheta, phi: app.camPhi };
+      app.isDragging = true;
+    }
+  });
+  dom.addEventListener('touchmove', (e) => {
+    if (e.touches.length === 1 && dragStart) {
+      const dx = e.touches[0].clientX - dragStart.x;
+      const dy = e.touches[0].clientY - dragStart.y;
+      app.camTheta = dragStart.theta - dx * 0.005;
+      app.camPhi = dragStart.phi - dy * 0.005;
+      app.camPhi = Math.max(0.15, Math.min(Math.PI - 0.15, app.camPhi));
+      updateCameraPos();
+      e.preventDefault();
+    }
+  }, { passive: false });
+  dom.addEventListener('touchend', () => { app.isDragging = false; });
+
+  window.addEventListener('resize', onResize);
+
+  // Search
+  const si = document.getElementById('search-input');
+  si.addEventListener('input', (e) => {
+    const q = e.target.value.trim().toLowerCase();
+    applySearch(q);
+  });
+}
+
+function onResize() {
+  const W = window.innerWidth, H = window.innerHeight;
+  app.camera.aspect = W / H;
+  app.camera.updateProjectionMatrix();
+  app.renderer.setSize(W, H);
+}
+
+// ==================== Legend / Filter ====================
+function buildLegend() {
+  const body = document.getElementById('legend-body');
+  const d = GRAPH_DATA;
+  const preferredOrder = [
+    'hardware',
+    'software',
+    'interface',
+    'behavior',
+    'event',
+    'frame',
+    'meta',
+    'action',
+  ];
+  const order = preferredOrder.filter(cat => cat in d.category_colors);
+  for (const cat of order) {
+    const count = d.stats.categories[cat] || 0;
+    const row = document.createElement('div');
+    row.className = 'legend-row';
+    if (count === 0) {
+      row.classList.add('dimmed');
+    }
+    row.innerHTML =
+      `<span class="legend-swatch" style="background:${d.category_colors[cat]}"></span>` +
+      `<span class="legend-label">${cat}</span>` +
+      `<span class="legend-count">${count}</span>`;
+    if (count > 0) {
+      row.addEventListener('click', () => toggleFilter(cat, row));
+    }
+    body.appendChild(row);
+  }
+}
+
+function toggleFilter(cat, row) {
+  if (app.filteredOut.has(cat)) {
+    app.filteredOut.delete(cat);
+    row.classList.remove('dimmed');
+  } else {
+    app.filteredOut.add(cat);
+    row.classList.add('dimmed');
+  }
+}
+
+function buildStats() {
+  const d = GRAPH_DATA;
+  document.getElementById('stat-nodes').textContent = d.stats.total_nodes;
+  document.getElementById('stat-links').textContent = d.stats.total_links;
+  document.getElementById('stat-types').textContent = Object.keys(d.stats.object_types).length + 1;
+  document.getElementById('stat-actions').textContent = d.stats.categories.action || 0;
+}
+
+function applySearch(query) {
+  app.matchedIds.clear();
+  app.searchFocusIds.clear();
+  app.searchCenterId = null;
+
+  if (!query) {
+    return;
+  }
+
+  const matches = app.nodes.filter(nd =>
+    nd.id.toLowerCase().includes(query) ||
+    nd.label.toLowerCase().includes(query) ||
+    nd.type.toLowerCase().includes(query)
+  );
+
+  if (!matches.length) {
+    return;
+  }
+
+  matches.sort((a, b) => scoreSearchMatch(b, query) - scoreSearchMatch(a, query));
+  const center = matches[0];
+  app.searchCenterId = center.id;
+
+  for (const nd of matches) {
+    app.matchedIds.add(nd.id);
+  }
+  for (const id of collectNeighborhood(center.id, 3)) {
+    app.searchFocusIds.add(id);
+  }
+  for (const nd of matches.slice(1, 4)) {
+    for (const id of collectNeighborhood(nd.id, 2)) {
+      app.searchFocusIds.add(id);
+    }
+  }
+  for (const id of app.matchedIds) {
+    app.searchFocusIds.add(id);
+  }
+
+  selectNode(center);
+  focusOnNode(center);
+}
+
+function scoreSearchMatch(node, query) {
+  const id = node.id.toLowerCase();
+  const label = node.label.toLowerCase();
+  const type = node.type.toLowerCase();
+
+  if (label === query || id === query || type === query) return 1000;
+  if (label.startsWith(query) || id.startsWith(query)) return 800;
+  if (label.includes(query)) return 500;
+  if (id.includes(query)) return 400;
+  if (type.includes(query)) return 250;
+  return 100 + (node.degree || 0);
+}
+
+function collectNeighborhood(startId, depth) {
+  const visited = new Set([startId]);
+  const queue = [{ id: startId, level: 0 }];
+
+  while (queue.length) {
+    const { id, level } = queue.shift();
+    if (level >= depth) continue;
+    for (const nextId of app.adjacency.get(id) || []) {
+      if (visited.has(nextId)) continue;
+      visited.add(nextId);
+      queue.push({ id: nextId, level: level + 1 });
+    }
+  }
+
+  return visited;
+}
+
+// ==================== Select / Detail panel ====================
+function selectNode(node) {
+  app.selected = node;
+  const panel = document.getElementById('detail');
+
+  document.getElementById('d-catdot').style.background = node.color;
+  document.getElementById('d-cat').textContent = node.category + ' · ' + node.type;
+  document.getElementById('d-label').textContent = node.label;
+  document.getElementById('d-id').textContent = node.id;
+
+  // props
+  const propsEl = document.getElementById('d-props');
+  propsEl.innerHTML = '';
+  const props = node.props || {};
+  for (const [k, v] of Object.entries(props)) {
+    if (v == null || v === '') continue;
+    const row = document.createElement('div');
+    row.className = 'detail-prop';
+    let vHtml = escapeHtml(formatVal(v));
+    if (k === 'severity') {
+      vHtml = `<span class="severity-${v}">${vHtml}</span>`;
+    }
+    row.innerHTML =
+      `<span class="detail-prop-key">${escapeHtml(k)}</span>` +
+      `<span class="detail-prop-val">${vHtml}</span>`;
+    propsEl.appendChild(row);
+  }
+
+  // connections
+  const connsEl = document.getElementById('d-conns');
+  const outgoing = app.links.filter(l => l.src.id === node.id);
+  const incoming = app.links.filter(l => l.tgt.id === node.id);
+  let connHtml = '';
+  if (outgoing.length) {
+    connHtml += `<div class="detail-connections-title">outgoing (${outgoing.length})</div>`;
+    for (const l of outgoing.slice(0, 12)) {
+      connHtml += `<div class="detail-link" data-id="${l.tgt.id}">` +
+                  `<span class="detail-link-type">${l.type}</span>→ ${escapeHtml(l.tgt.label)}</div>`;
+    }
+  }
+  if (incoming.length) {
+    connHtml += `<div class="detail-connections-title" style="margin-top:10px">incoming (${incoming.length})</div>`;
+    for (const l of incoming.slice(0, 12)) {
+      connHtml += `<div class="detail-link" data-id="${l.src.id}">` +
+                  `<span class="detail-link-type">← ${l.type}</span>${escapeHtml(l.src.label)}</div>`;
+    }
+  }
+  connsEl.innerHTML = connHtml;
+  connsEl.querySelectorAll('.detail-link').forEach(el => {
+    el.addEventListener('click', () => {
+      const nid = el.getAttribute('data-id');
+      const n = app.nodes.find(x => x.id === nid);
+      if (n) { selectNode(n); focusOnNode(n); }
+    });
+  });
+
+  panel.classList.add('visible');
+}
+
+app.closeDetail = function() {
+  document.getElementById('detail').classList.remove('visible');
+  app.selected = null;
+};
+
+function focusOnNode(node) {
+  app.camTarget = { x: node.x, y: node.y, z: node.z };
+  const offset = new THREE.Vector3(
+    app.camera.position.x - node.x,
+    app.camera.position.y - node.y,
+    app.camera.position.z - node.z
+  );
+  if (offset.lengthSq() < 1e-6) {
+    offset.set(0, 30, 180);
+  }
+  const dir = offset.normalize();
+  app.camTheta = Math.atan2(dir.z, dir.x);
+  app.camPhi = Math.acos(dir.y);
+  app.camRadius = Math.max(140, Math.min(360, node.size * 28 + 170));
+  updateCameraPos();
+}
+
+// ==================== Utilities ====================
+function formatVal(v) {
+  if (typeof v === 'object') return JSON.stringify(v);
+  return String(v);
+}
+function escapeHtml(s) {
+  return String(s).replace(/[&<>"']/g, c => ({
+    '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;',
+  })[c]);
+}
+
+</script>
+</body>
+</html>

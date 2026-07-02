@@ -1,0 +1,214 @@
+# Unitree G1 EDU — Capability Layer
+# Component/Sensor -> provides Capability -> exposed_via Topic/Service/Action
+# Drafted with `roboonto infer-capabilities`, then hand-reviewed:
+# providers, boundaries (from capability_boundary.yaml), and standard mappings added.
+
+objects:
+  # Software components/providers
+  - type: SoftwareComponent
+    id: unitree_g1_edu.sw.loco_service
+    properties:
+      name_human: Locomotion (sport) service
+      component_kind: control
+      runs_on: unitree_g1_edu.hw.compute.main
+      implementation: unitree_sdk2 g1 loco client (DDS service `sport`, api 7xxx)
+      lifecycle: managed
+      standard_mappings:
+        - {standard: RoSO, term: Component}
+        - {standard: IEEE 1872.2/AuR, term: AutonomousSystem}
+    source: {type: sdk_code, locator: "unitree_sdk2/include/unitree/robot/g1/loco/g1_loco_api.hpp"}
+
+  - type: SoftwareComponent
+    id: unitree_g1_edu.sw.arm_service
+    properties:
+      name_human: Arm action service
+      component_kind: control
+      runs_on: unitree_g1_edu.hw.compute.main
+      implementation: unitree_sdk2 g1 arm action client (DDS service `arm`)
+      lifecycle: managed
+      standard_mappings:
+        - {standard: RoSO, term: Component}
+    source: {type: sdk_code, locator: "unitree_sdk2/include/unitree/robot/g1/arm/g1_arm_action_client.hpp"}
+
+  - type: SoftwareComponent
+    id: unitree_g1_edu.sw.audio_service
+    properties:
+      name_human: Audio and LED service
+      component_kind: ui
+      runs_on: unitree_g1_edu.hw.compute.main
+      implementation: unitree_sdk2 audio client (DDS service `audio`)
+      lifecycle: managed
+      standard_mappings:
+        - {standard: RoSO, term: Component}
+    source: {type: sdk_code, locator: "unitree_sdk2/include/unitree/robot/g1/audio/g1_audio_api.hpp"}
+
+  - type: SoftwareComponent
+    id: unitree_g1_edu.sw.state_publisher
+    properties:
+      name_human: DDS state publisher
+      component_kind: middleware
+      runs_on: unitree_g1_edu.hw.compute.main
+      implementation: firmware DDS publishers (low_state / imu_state / bms_state / sport_mode_state)
+      lifecycle: managed
+      standard_mappings:
+        - {standard: RoSO, term: Component}
+    source: {type: sdk_code, locator: "unitree_sdk2/include/unitree/idl/hg/"}
+
+  # Capabilities
+  - type: Capability
+    id: unitree_g1_edu.cap.mode_management
+    properties:
+      name_human: Mode management
+      capability_kind: planning
+      description: Query and switch the locomotion FSM mode and the high/low-level control ownership.
+      produces: [current_mode, mode_transition]
+      boundaries:
+        - PASSIVE <-> WALKRUN transitions go through set_loco_fsm_mode only.
+        - switch_to_user_ctrl hands control to low-level low_cmd; sport-service commands stop applying until switch_to_internal_ctrl.
+        - G1 talks Cyclone DDS directly (no ROS2 middleware in between).
+      standard_mappings:
+        - {standard: IEEE 1872.2/AuR, term: Task}
+        - {standard: RoSO, term: Function}
+    source: {type: sdk_code, locator: "unitree_sdk2 g1_loco_api.hpp; behaviors.yaml transitions"}
+
+  - type: Capability
+    id: unitree_g1_edu.cap.locomotion_velocity_control
+    properties:
+      name_human: Locomotion velocity control
+      capability_kind: navigation
+      description: Command base velocity (vx, vy, omega) for a bounded duration while walking.
+      consumes: [forward_velocity, lateral_velocity, angular_velocity, duration]
+      produces: [base_motion]
+      environment_requirements: [flat_walkable_ground, walkrun_mode]
+      boundaries:
+        - Only effective in WALKRUN FSM mode; ignored in PASSIVE and user_ctrl.
+        - MOTION safety class; affects pelvis and both legs.
+      standard_mappings:
+        - {standard: RoSO, term: Actuation}
+        - {standard: IEEE 1872.2/AuR, term: AutonomousCapability}
+    source: {type: sdk_code, locator: "unitree_sdk2 g1_loco_api.hpp SetVelocity (api 7105)"}
+
+  - type: Capability
+    id: unitree_g1_edu.cap.gait_configuration
+    properties:
+      name_human: Gait and posture configuration
+      capability_kind: actuation
+      description: Configure balance mode, swing height, and stand height for the walking controller.
+      consumes: [balance_mode, swing_height, stand_height]
+      produces: [gait_parameters]
+      boundaries:
+        - Configuration persists across steps until changed.
+        - Value ranges are firmware-version sensitive; validate against ontology limits before sending.
+      standard_mappings:
+        - {standard: RoSO, term: Function}
+    source: {type: sdk_code, locator: "unitree_sdk2 g1_loco_api.hpp SetBalanceMode/SetSwingHeight/SetStandHeight"}
+
+  - type: Capability
+    id: unitree_g1_edu.cap.arm_motion_presets
+    properties:
+      name_human: Arm motion presets
+      capability_kind: manipulation
+      description: Execute predefined arm motions from the firmware action library.
+      produces: [arm_motion]
+      boundaries:
+        - Preset library only; no free-space trajectory control through this capability.
+        - MOTION safety class; ensure clearance around both arms before execution.
+      standard_mappings:
+        - {standard: RoSO, term: Actuation}
+        - {standard: IEEE 1872.2/AuR, term: AutonomousCapability}
+    source: {type: sdk_code, locator: "unitree_sdk2 g1 arm action client; g1_loco_api.hpp SetTaskId"}
+
+  - type: Capability
+    id: unitree_g1_edu.cap.speech_and_led_output
+    properties:
+      name_human: Speech and LED output
+      capability_kind: interaction
+      description: Play TTS audio, control volume, and set the head LED color.
+      consumes: [tts_text, volume, led_rgb]
+      produces: [speech_audio, led_state]
+      boundaries:
+        - Output-only interaction surface; no microphone/ASR capability is declared for this robot.
+      standard_mappings:
+        - {standard: RoSO, term: Function}
+    source: {type: sdk_code, locator: "unitree_sdk2 g1_audio_api.hpp"}
+
+  - type: Capability
+    id: unitree_g1_edu.cap.power_monitoring
+    properties:
+      name_human: Power monitoring
+      capability_kind: diagnosis
+      description: Observe battery state of charge, voltage, current, and temperature.
+      produces: [battery_soc, battery_voltage, battery_current, battery_temperature]
+      boundaries:
+        - Read-only observation; no charge/power control is exposed through the SDK.
+      standard_mappings:
+        - {standard: RoSO, term: Sensing}
+    source: {type: sdk_code, locator: "unitree_sdk2 BmsState_.hpp; capability_boundary.yaml battery_data"}
+
+  - type: Capability
+    id: unitree_g1_edu.cap.body_state_observation
+    properties:
+      name_human: Body state observation
+      capability_kind: sensing
+      description: Observe joint states, IMU orientation, and the sport-mode state estimate in real time.
+      produces: [joint_state, imu_orientation, angular_velocity, linear_acceleration, base_velocity_estimate]
+      qos: {imu_rate_hz: 500}
+      boundaries:
+        - Realtime DDS only; joint history is not recorded to mcap — collect at runtime if you need to look back.
+      standard_mappings:
+        - {standard: RoSO, term: Sensing}
+        - {standard: IEEE 1872.2/AuR, term: AutonomousCapability}
+    source: {type: document, locator: "capability_boundary.yaml observability; unitree_sdk2 LowState_/IMUState_/SportModeState_.hpp"}
+
+links:
+  # Providers
+  - {type: provides_capability, source: unitree_g1_edu.sw.loco_service, target: unitree_g1_edu.cap.mode_management}
+  - {type: provides_capability, source: unitree_g1_edu.sw.loco_service, target: unitree_g1_edu.cap.locomotion_velocity_control}
+  - {type: provides_capability, source: unitree_g1_edu.sw.loco_service, target: unitree_g1_edu.cap.gait_configuration}
+  - {type: provides_capability, source: unitree_g1_edu.sw.loco_service, target: unitree_g1_edu.cap.arm_motion_presets}
+  - {type: provides_capability, source: unitree_g1_edu.sw.arm_service, target: unitree_g1_edu.cap.arm_motion_presets}
+  - {type: provides_capability, source: unitree_g1_edu.sw.audio_service, target: unitree_g1_edu.cap.speech_and_led_output}
+  - {type: provides_capability, source: unitree_g1_edu.sw.state_publisher, target: unitree_g1_edu.cap.power_monitoring}
+  - {type: provides_capability, source: unitree_g1_edu.sw.state_publisher, target: unitree_g1_edu.cap.body_state_observation}
+  - {type: provides_capability, source: unitree_g1_edu.hw.sensor.bms, target: unitree_g1_edu.cap.power_monitoring}
+  - {type: provides_capability, source: unitree_g1_edu.hw.sensor.imu, target: unitree_g1_edu.cap.body_state_observation}
+
+  # Mode management — actions + service
+  - {type: exposed_via, source: unitree_g1_edu.cap.mode_management, target: get_loco_fsm_mode}
+  - {type: exposed_via, source: unitree_g1_edu.cap.mode_management, target: get_loco_fsm_id}
+  - {type: exposed_via, source: unitree_g1_edu.cap.mode_management, target: set_loco_fsm_mode}
+  - {type: exposed_via, source: unitree_g1_edu.cap.mode_management, target: switch_to_user_ctrl}
+  - {type: exposed_via, source: unitree_g1_edu.cap.mode_management, target: switch_to_internal_ctrl}
+  - {type: exposed_via, source: unitree_g1_edu.cap.mode_management, target: unitree_g1_edu.if.sport}
+
+  # Locomotion velocity control
+  - {type: exposed_via, source: unitree_g1_edu.cap.locomotion_velocity_control, target: set_velocity}
+  - {type: exposed_via, source: unitree_g1_edu.cap.locomotion_velocity_control, target: unitree_g1_edu.if.sport}
+
+  # Gait configuration
+  - {type: exposed_via, source: unitree_g1_edu.cap.gait_configuration, target: set_balance_mode}
+  - {type: exposed_via, source: unitree_g1_edu.cap.gait_configuration, target: get_balance_mode}
+  - {type: exposed_via, source: unitree_g1_edu.cap.gait_configuration, target: set_swing_height}
+  - {type: exposed_via, source: unitree_g1_edu.cap.gait_configuration, target: set_stand_height}
+  - {type: exposed_via, source: unitree_g1_edu.cap.gait_configuration, target: unitree_g1_edu.if.sport}
+
+  # Arm motion presets
+  - {type: exposed_via, source: unitree_g1_edu.cap.arm_motion_presets, target: set_arm_task}
+  - {type: exposed_via, source: unitree_g1_edu.cap.arm_motion_presets, target: arm_execute_action}
+  - {type: exposed_via, source: unitree_g1_edu.cap.arm_motion_presets, target: arm_get_action_list}
+  - {type: exposed_via, source: unitree_g1_edu.cap.arm_motion_presets, target: unitree_g1_edu.if.arm}
+
+  # Speech and LED output
+  - {type: exposed_via, source: unitree_g1_edu.cap.speech_and_led_output, target: play_tts}
+  - {type: exposed_via, source: unitree_g1_edu.cap.speech_and_led_output, target: set_volume}
+  - {type: exposed_via, source: unitree_g1_edu.cap.speech_and_led_output, target: get_volume}
+  - {type: exposed_via, source: unitree_g1_edu.cap.speech_and_led_output, target: set_led}
+  - {type: exposed_via, source: unitree_g1_edu.cap.speech_and_led_output, target: unitree_g1_edu.if.audio}
+
+  # Power monitoring
+  - {type: exposed_via, source: unitree_g1_edu.cap.power_monitoring, target: unitree_g1_edu.if.bms_state}
+
+  # Body state observation
+  - {type: exposed_via, source: unitree_g1_edu.cap.body_state_observation, target: unitree_g1_edu.if.low_state}
+  - {type: exposed_via, source: unitree_g1_edu.cap.body_state_observation, target: unitree_g1_edu.if.imu_state}
+  - {type: exposed_via, source: unitree_g1_edu.cap.body_state_observation, target: unitree_g1_edu.if.sport_mode_state}

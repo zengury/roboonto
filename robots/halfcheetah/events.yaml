@@ -1,0 +1,52 @@
+# Half-Cheetah — Events. Failure modes the policy/learning loop must
+# recognize. dark_knowledge accumulates against these.
+
+objects:
+  - type: StatusBit
+    id: halfcheetah.event.pitch_violation
+    properties:
+      carrier_field: episode_termination
+      bit_index: 0
+      bit_name: pitchViolation
+      severity: error
+      semantic: |
+        |body_pitch| 超过 hard 约束阈值（默认 0.5 rad）。
+        触发 episode 提前终止。多见于 stance 阶段后期 / 落地不稳。
+      polarity: high_means_fault
+    source: {type: document, locator: "goals.yaml constraint stay_upright"}
+
+  - type: StatusBit
+    id: halfcheetah.event.high_action_norm
+    properties:
+      carrier_field: action_efficiency
+      bit_index: 1
+      bit_name: highActionNorm
+      severity: warn
+      semantic: |
+        ‖action‖² 持续过大 → 软 penalty 主导 reward；策略在用蛮力换速度。
+      polarity: high_means_fault
+    source: {type: document, locator: "goals.yaml constraint action_efficiency"}
+
+  - type: StatusBit
+    id: halfcheetah.event.no_progress
+    properties:
+      carrier_field: forward_progress
+      bit_index: 2
+      bit_name: noProgress
+      severity: warn
+      semantic: |
+        episode 后半段平均 forward_velocity < 0.1 → 策略卡死或退化为站立。
+      polarity: high_means_fault
+    source: {type: document, locator: "self (heuristic)"}
+
+  - type: StatusBit
+    id: halfcheetah.event.joint_limit_clamped
+    properties:
+      carrier_field: kinematic_safety
+      bit_index: 3
+      bit_name: jointLimitClamped
+      severity: warn
+      semantic: |
+        某关节命令值长时间贴位置极限 → 策略试图越过物理限制。
+      polarity: high_means_fault
+    source: {type: document, locator: "kinematics.yaml position_limit"}

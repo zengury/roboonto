@@ -1,0 +1,177 @@
+# Learning-Ready Framework Profile v1
+#
+# Extends `customer_v1` with two new must rules: goals.yaml + at least one
+# policy. A robot ontology that grades `customer-ready` on this profile
+# is ready to participate in the LLM-only learning loop:
+#   - has a measurable objective (goals.yaml)
+#   - has at least one editable policy (policies/<name>.{py,yaml})
+#
+# Use this profile for:
+#   - Half-cheetah (Track B Phase 1+)
+#   - X2 digital-twin (Track B Phase 4)
+#   - Any new robot we want to put inside the learning loop
+#
+# Does NOT replace customer_v1 — customer_v1 stays the "ready to ship to a
+# customer" gate for governance-only deployments (X2 today, where firmware
+# owns the policy).
+
+id: learning_v1
+description: |
+  Customer-ready governance + has the two artifacts learning-loop needs:
+  measurable goals and editable policies.
+reference_robot: agibot_x2
+
+rules:
+  # ─── must (governance baseline, copied from customer_v1) ─────────────
+  - id: meta.id
+    severity: must
+    check: robot_meta_field
+    args: {field: id}
+    description: robot.id is set
+    hint: edit ontology.yaml → robot.id
+
+  - id: meta.vendor
+    severity: must
+    check: robot_meta_field
+    args: {field: vendor}
+    description: robot.vendor is set
+
+  - id: meta.model
+    severity: must
+    check: robot_meta_field
+    args: {field: model}
+    description: robot.model is set
+
+  - id: loader.clean
+    severity: must
+    check: loader_clean
+    description: roboonto loader reports zero errors
+
+  - id: hardware.compute
+    severity: must
+    check: object_count
+    args: {type: ComputeUnit, min: 1}
+    description: at least one ComputeUnit declared
+
+  - id: hardware.power
+    severity: must
+    check: object_count
+    args: {type: PowerSubsystem, min: 1}
+    description: at least one PowerSubsystem declared
+    hint: 'simulators count: declare a simulated PowerSubsystem'
+
+  - id: behaviors.modes
+    severity: must
+    check: object_count
+    args: {type: Mode, min: 1}
+    description: at least one operating Mode declared
+
+  - id: actions.exist
+    severity: must
+    check: action_count
+    args: {min: 1}
+    description: at least one Action declared
+
+  - id: actions.invoker_type
+    severity: must
+    check: action_invokers
+    args: {allowed: [ros2_topic, ros2_service, cli, compound, mujoco_torque, mujoco_position]}
+    description: every Action invoker.type is one of the standard kinds
+
+  - id: actions.safety_class
+    severity: must
+    check: actions_have_field
+    args: {field: safety_class, non_empty: true}
+    description: every Action declares safety_class
+
+  # ─── must (learning-specific) ───────────────────────────────────────
+  - id: goals.defined
+    severity: must
+    check: goals_defined
+    description: goals.yaml exists with primary_goal block
+    hint: 'add goals.yaml: primary_goal {metric, direction}; loop needs a target'
+
+  - id: policies.exist
+    severity: must
+    check: policies_count
+    args: {min: 1}
+    description: at least one policy in policies/ (state→action code)
+    hint: 'add policies/<name>.py + policies/<name>.yaml — this is what the LLM patches'
+
+  - id: policies.have_code
+    severity: must
+    check: policies_have_code
+    description: every policy has both .py code and .yaml params
+
+  # ─── should ─────────────────────────────────────────────────────────
+  - id: hardware.sensors
+    severity: should
+    check: object_count
+    args: {type: Sensor, min: 1}
+    description: at least one Sensor declared
+
+  - id: hardware.joints
+    severity: should
+    check: object_count
+    args: {type: Joint, min: 1}
+    description: at least one Joint declared
+
+  - id: hardware.links
+    severity: should
+    check: object_count
+    args: {type: Link, min: 1}
+    description: at least one Link declared
+
+  - id: kinematics.joint_limits
+    severity: should
+    check: joints_have_position_limit
+    description: every Joint has a position_limit
+
+  - id: events.declared
+    severity: should
+    check: object_count
+    args: {type: StatusBit, min: 1}
+    description: at least one StatusBit (failure mode taxonomy seed)
+
+  - id: actions.affects_modeled
+    severity: should
+    check: actions_have_field
+    args: {field: affects}
+    description: every Action declares what it affects
+
+  - id: provenance.source_coverage
+    severity: should
+    check: objects_have_source
+    args: {min_pct: 60}
+    description: ≥60% of objects carry a source field
+
+  - id: capability_boundary.populated
+    severity: should
+    check: capability_boundary
+    args: {min_declarations: 1}
+    description: capability_boundary.yaml has ≥1 declaration
+
+  - id: capabilities.exist
+    severity: should
+    check: object_count
+    args: {type: Capability, min: 1}
+    description: at least one Capability declares what the robot can do
+
+  - id: capabilities.exposed_via
+    severity: should
+    check: capabilities_have_link
+    args: {link_type: exposed_via, direction: out}
+    description: every Capability is exposed through at least one Topic, Service, or Action
+
+  # ─── may ────────────────────────────────────────────────────────────
+  - id: derived_links.exist
+    severity: may
+    check: link_count
+    args: {min: 1}
+    description: at least one derived link
+
+  - id: provenance.high_source_coverage
+    severity: may
+    check: objects_have_source
+    args: {min_pct: 90}
+    description: ≥90% of objects carry source field

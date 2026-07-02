@@ -1,0 +1,13 @@
+# MY_ROBOT — Kinematics (URDF-imported or hand-written)
+# ======================================================================
+# 来源: roboonto import urdf <path/to/robot.urdf>
+#
+# 此文件由 URDF Importer 自动生成。不要手写。
+# 生成后检查:
+#   1. Link 的 name_human 是否正确 (中文名)
+#   2. Joint 的 dof_axis 是否正确 (pitch/roll/yaw)
+#   3. 固定关节 (fixed) 是否正确标记
+# ======================================================================
+
+objects: []
+links: []

@@ -1,0 +1,53 @@
+# Half-Cheetah — Behaviors. Modes are gait phases / locomotion regimes.
+# Each Mode is a state the policy can be in. Mode transitions are managed
+# by the policy itself (no external mode-switching service like X2 has).
+
+objects:
+  - type: Mode
+    id: halfcheetah.mode.idle
+    properties:
+      mode_value: IDLE
+      name_human: 静止
+      description: 所有关节零扭矩
+      use_case: 初始化、reset 后等待
+      safety_note: 无支撑会 sag
+    source: {type: document, locator: "self"}
+
+  - type: Mode
+    id: halfcheetah.mode.trot
+    properties:
+      mode_value: TROT
+      name_human: 快走步态
+      description: 对角腿协调（前左+后右 vs 前右+后左）周期摆动
+      use_case: 中速前进
+    source: {type: document, locator: "self"}
+
+  - type: Mode
+    id: halfcheetah.mode.gallop
+    properties:
+      mode_value: GALLOP
+      name_human: 飞奔步态
+      description: 后腿同相蓄力 + 前腿同相落地，含腾空相
+      use_case: 高速前进
+    source: {type: document, locator: "self"}
+
+  - type: Mode
+    id: halfcheetah.mode.recovery
+    properties:
+      mode_value: RECOVERY
+      name_human: 摔倒恢复
+      description: 检测到大角度 pitch 后回正
+      use_case: pitch_violation 前的最后挽救
+    source: {type: document, locator: "self"}
+
+  # ── Gait phase as a sub-state inside locomotion modes ──
+  - type: ControlLoop
+    id: halfcheetah.behavior.gait_loop
+    properties:
+      name_human: 步态周期相位
+      frequency_hz: variable
+      phases: [stance_back, swing_back, stance_front, swing_front]
+      notes: |
+        Phase index = (t * gait.frequency) % 1.0. Stance/swing thresholds
+        are policy parameters in policies/gait.yaml.
+    source: {type: document, locator: "self"}

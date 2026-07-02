@@ -1,0 +1,12 @@
+# MY_ROBOT — Derived Links
+# ======================================================================
+# 跨 shard 派生关系。在硬件/接口/行为 shards 加载后建立。
+#
+# 典型关系:
+#   indicates:   StatusBit → 硬件 (故障指向哪个硬件)
+#   carried_by:  StatusBit → Topic (故障由哪个 topic 承载)
+#   allows:      Mode → Action (某模式下允许什么动作)
+#   forbids:     Action → Mode (某动作在什么模式下被禁止)
+# ======================================================================
+
+links: []

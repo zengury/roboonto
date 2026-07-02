@@ -1,0 +1,63 @@
+{
+  "session_id": "20260516-235845",
+  "started_at": 1778947125.516083,
+  "operator": "zengury",
+  "ontology_dir": "robots/unitree_g1_edu",
+  "completed_steps": [],
+  "recommended_steps": [
+    "init",
+    "scaffold",
+    "import_urdf",
+    "import_sdk",
+    "doc_ingest",
+    "hand_edit",
+    "validate",
+    "readiness",
+    "probe",
+    "refine",
+    "sign_off"
+  ],
+  "current_step": null,
+  "last_files": {
+    "actions.yaml": {
+      "size": 1168,
+      "sha256": "b2b2c1c7e593706d"
+    },
+    "behaviors.yaml": {
+      "size": 546,
+      "sha256": "808c8bc02bb1dd11"
+    },
+    "capability_boundary.yaml": {
+      "size": 1471,
+      "sha256": "5b7551d6c3b16117"
+    },
+    "derived_links.yaml": {
+      "size": 552,
+      "sha256": "3635b1221ec1d0bd"
+    },
+    "events.yaml": {
+      "size": 293,
+      "sha256": "255043ae51f56064"
+    },
+    "hardware.yaml": {
+      "size": 2605,
+      "sha256": "ddf051079b11cdf0"
+    },
+    "interfaces.yaml": {
+      "size": 921,
+      "sha256": "42c9e481003d2eea"
+    },
+    "joints_patch.yaml": {
+      "size": 15698,
+      "sha256": "8a368faa78ef3e2e"
+    },
+    "kinematics.yaml": {
+      "size": 22705,
+      "sha256": "e5725c57033a471d"
+    },
+    "ontology.yaml": {
+      "size": 439,
+      "sha256": "fc475b17075d89db"
+    }
+  }
+}

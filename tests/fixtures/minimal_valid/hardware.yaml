@@ -1,0 +1,23 @@
+objects:
+  - type: ComputeUnit
+    id: minibot.hw.compute.main
+    properties:
+      role: development
+      soc: "Demo SoC"
+    source: {type: document, locator: "minibot manual §1"}
+
+  - type: PowerSubsystem
+    id: minibot.hw.power
+    properties:
+      battery_wh: 100
+      battery_voltage_nominal: 24
+    source: {type: document, locator: "minibot manual §2"}
+
+  - type: Sensor
+    id: minibot.hw.sensor.imu
+    properties:
+      sensor_kind: imu
+      vendor: Demo
+      model: IMU-100
+      mount_link: minibot.hw.link.base
+    source: {type: document, locator: "minibot manual §3"}

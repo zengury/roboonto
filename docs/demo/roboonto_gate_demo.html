@@ -1,0 +1,250 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>RoboOnto — the ontology gate between agents and robots</title>
+<style>
+  :root {
+    --bg: #0e1116; --panel: #161b23; --panel2: #1c2330; --line: #2a3242;
+    --text: #e6ebf2; --dim: #8b96a8; --accent: #5b9dff; --ok: #34c98e;
+    --bad: #ff5d6c; --warn: #f5b83d; --mono: "SF Mono", ui-monospace, Menlo, Consolas, monospace;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    background: var(--bg); color: var(--text);
+    font: 15px/1.55 -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    min-height: 100vh; display: flex; flex-direction: column; align-items: center; padding: 28px 16px;
+  }
+  header { text-align: center; margin-bottom: 18px; }
+  header h1 { font-size: 22px; font-weight: 650; letter-spacing: .2px; }
+  header h1 b { color: var(--accent); font-weight: 650; }
+  header p { color: var(--dim); font-size: 13.5px; margin-top: 4px; }
+
+  #stage { display: grid; grid-template-columns: 270px 380px 270px; gap: 18px; align-items: stretch; }
+  @media (max-width: 980px) { #stage { grid-template-columns: 1fr; max-width: 420px; } }
+
+  .panel { background: var(--panel); border: 1px solid var(--line); border-radius: 14px; padding: 16px; position: relative; }
+  .panel h2 { font-size: 11px; letter-spacing: 1.4px; text-transform: uppercase; color: var(--dim); margin-bottom: 12px; }
+
+  /* Agent */
+  .bubble {
+    background: var(--panel2); border: 1px solid var(--line); border-radius: 12px;
+    padding: 10px 12px; font-size: 13.5px; margin-bottom: 10px;
+    opacity: 0; transform: translateY(6px); transition: opacity .5s, transform .5s;
+  }
+  .bubble.show { opacity: 1; transform: none; }
+  .bubble.agent { border-left: 3px solid var(--accent); }
+  .bubble.verdict-bad { border-left: 3px solid var(--bad); }
+  .bubble.verdict-ok { border-left: 3px solid var(--ok); }
+  .bubble .who { font-size: 10.5px; letter-spacing: 1px; text-transform: uppercase; color: var(--dim); margin-bottom: 3px; }
+  .bubble code { font-family: var(--mono); font-size: 12px; color: var(--accent); }
+
+  /* Gate */
+  #gate { border-color: #33415c; }
+  #gate h2 { color: var(--accent); }
+  .spec {
+    font-family: var(--mono); font-size: 11.5px; color: var(--dim);
+    background: var(--panel2); border: 1px solid var(--line); border-radius: 10px;
+    padding: 10px 12px; margin-bottom: 12px; opacity: 0; transition: opacity .5s;
+  }
+  .spec.show { opacity: 1; }
+  .spec .k { color: var(--text); }
+  .spec .v { color: var(--warn); }
+  .check {
+    display: flex; align-items: baseline; gap: 9px; padding: 7px 10px; border-radius: 9px;
+    font-size: 13px; margin-bottom: 6px; opacity: .25; transition: opacity .4s, background .4s;
+  }
+  .check .icon { font-family: var(--mono); width: 15px; }
+  .check.pending .icon::before { content: "·"; color: var(--dim); }
+  .check.pass { opacity: 1; background: rgba(52,201,142,.09); }
+  .check.pass .icon::before { content: "✓"; color: var(--ok); }
+  .check.fail { opacity: 1; background: rgba(255,93,108,.10); }
+  .check.fail .icon::before { content: "✗"; color: var(--bad); }
+  .check small { display: block; color: var(--dim); font-size: 11.5px; }
+  .check code { font-family: var(--mono); font-size: 11.5px; }
+  #verdict {
+    text-align: center; font-weight: 700; font-size: 15px; letter-spacing: 2px;
+    border-radius: 10px; padding: 10px; margin-top: 10px; opacity: 0; transition: opacity .5s;
+  }
+  #verdict.bad { opacity: 1; background: rgba(255,93,108,.14); color: var(--bad); }
+  #verdict.ok  { opacity: 1; background: rgba(52,201,142,.14); color: var(--ok); }
+  .src { font-family: var(--mono); font-size: 10.5px; color: var(--dim); margin-top: 8px; text-align: center; opacity: 0; transition: opacity .5s; }
+  .src.show { opacity: 1; }
+
+  /* Robot */
+  #statebox {
+    font-family: var(--mono); font-size: 12.5px; background: var(--panel2);
+    border: 1px solid var(--line); border-radius: 10px; padding: 9px 12px; margin-bottom: 14px;
+  }
+  #fsm { color: var(--warn); transition: color .4s; }
+  #fsm.walk { color: var(--ok); }
+  #robotwrap { display: flex; justify-content: center; padding: 6px 0 2px; overflow: hidden; }
+  #robot { transition: transform 1.6s ease-in-out; }
+  #robot .limb { stroke: var(--text); stroke-width: 5; stroke-linecap: round; fill: none; }
+  #robot .body { fill: var(--panel2); stroke: var(--text); stroke-width: 4; }
+  #robot .led { fill: var(--warn); transition: fill .4s; }
+  #robot.walking .led { fill: var(--ok); }
+  #robot.walking { transform: translateX(56px); }
+  #robot.walking #legL { animation: swingL 0.7s ease-in-out infinite alternate; }
+  #robot.walking #legR { animation: swingR 0.7s ease-in-out infinite alternate; }
+  #robot.walking #armL { animation: swingR 0.7s ease-in-out infinite alternate; }
+  #robot.walking #armR { animation: swingL 0.7s ease-in-out infinite alternate; }
+  @keyframes swingL { from { transform: rotate(-16deg); } to { transform: rotate(16deg); } }
+  @keyframes swingR { from { transform: rotate(16deg); } to { transform: rotate(-16deg); } }
+  #legL, #legR { transform-origin: 60px 96px; }
+  #armL, #armR { transform-origin: 60px 58px; }
+  #shake { display: inline-block; }
+  #shake.no { animation: shake .5s; }
+  @keyframes shake { 0%,100%{transform:translateX(0)} 25%{transform:translateX(-5px)} 75%{transform:translateX(5px)} }
+  #robotcap { text-align: center; color: var(--dim); font-size: 12px; margin-top: 8px; min-height: 18px; }
+
+  /* Caption + controls */
+  #caption {
+    max-width: 860px; text-align: center; color: var(--text); font-size: 15px;
+    margin-top: 22px; min-height: 48px; transition: opacity .4s;
+  }
+  #caption .zh { display: block; color: var(--dim); font-size: 13px; margin-top: 2px; }
+  #bar { width: 340px; height: 3px; background: var(--line); border-radius: 2px; margin-top: 14px; overflow: hidden; }
+  #bar > div { height: 100%; width: 0; background: var(--accent); transition: width .3s linear; }
+  #replay {
+    margin-top: 16px; background: var(--accent); color: #fff; border: 0; border-radius: 9px;
+    padding: 9px 22px; font-size: 14px; font-weight: 600; cursor: pointer; opacity: .25; transition: opacity .3s;
+  }
+  #replay.ready { opacity: 1; }
+  footer { color: var(--dim); font-size: 12px; margin-top: 18px; font-family: var(--mono); }
+  footer a { color: var(--accent); text-decoration: none; }
+</style>
+</head>
+<body>
+
+<header>
+  <h1><b>RoboOnto</b> — the ontology gate between agents and robots</h1>
+  <p>Real data from the open <code>unitree_g1_edu</code> pack · every fact traceable to a source</p>
+</header>
+
+<div id="stage">
+  <!-- AGENT -->
+  <section class="panel">
+    <h2>AI Agent</h2>
+    <div class="bubble agent" id="b1"><div class="who">agent → intent</div>
+      “Make the robot walk forward at <code>3&nbsp;m/s</code>.”</div>
+    <div class="bubble verdict-bad" id="b2"><div class="who">gate → agent</div>
+      Rejected. Robot is <code>PASSIVE</code> — joints relaxed. <code>set_velocity</code> requires <code>fsm_mode&nbsp;==&nbsp;WALKRUN</code>.</div>
+    <div class="bubble agent" id="b3"><div class="who">agent → corrected plan</div>
+      “Switch mode first: <code>set_loco_fsm_mode(WALKRUN)</code>, then <code>set_velocity([0.5,0,0])</code>.”</div>
+    <div class="bubble verdict-ok" id="b4"><div class="who">gate → agent</div>
+      All checks pass. Cleared for execution.</div>
+  </section>
+
+  <!-- GATE -->
+  <section class="panel" id="gate">
+    <h2>RoboOnto Gate — check_action()</h2>
+    <div class="spec" id="spec">
+      <span class="k">action</span>: set_velocity<br>
+      <span class="k">invoker</span>: dds_service <span class="v">sport · api 7105</span><br>
+      <span class="k">safety_class</span>: <span class="v">MOTION</span> · affects: pelvis, legs<br>
+      <span class="k">precondition</span>: fsm_mode == WALKRUN
+    </div>
+    <div class="check pending" id="c1"><span class="icon"></span><div>Action exists in ontology<small><code>set_velocity</code> · unitree_g1_edu pack</small></div></div>
+    <div class="check pending" id="c2"><span class="icon"></span><div>Parameters typed &amp; bounded<small><code>velocity: float[3]</code> · <code>duration: float</code></small></div></div>
+    <div class="check pending" id="c3"><span class="icon"></span><div>Precondition: <code>fsm_mode == WALKRUN</code><small id="c3note">current state: fsm_mode = PASSIVE</small></div></div>
+    <div class="check pending" id="c4"><span class="icon"></span><div>Safety class acknowledged<small>MOTION — requires capability mapping ✓</small></div></div>
+    <div id="verdict"></div>
+    <div class="src" id="src">source: unitree_sdk2/…/g1/loco/g1_loco_api.hpp</div>
+  </section>
+
+  <!-- ROBOT -->
+  <section class="panel">
+    <h2>Robot · Unitree G1</h2>
+    <div id="statebox">fsm_mode: <span id="fsm">PASSIVE</span></div>
+    <div id="robotwrap">
+      <span id="shake">
+      <svg id="robot" width="120" height="150" viewBox="0 0 120 150">
+        <g id="armL" class="limb"><path d="M60 58 L44 84"/></g>
+        <g id="legL" class="limb"><path d="M60 96 L48 128 L46 134"/></g>
+        <rect class="body" x="47" y="52" width="26" height="46" rx="9"/>
+        <g id="armR" class="limb"><path d="M60 58 L76 84"/></g>
+        <g id="legR" class="limb"><path d="M60 96 L72 128 L74 134"/></g>
+        <circle class="body" cx="60" cy="34" r="14"/>
+        <circle class="led" cx="60" cy="34" r="4"/>
+      </svg>
+      </span>
+    </div>
+    <div id="robotcap">idle — joints relaxed</div>
+  </section>
+</div>
+
+<div id="caption"></div>
+<div id="bar"><div id="barfill"></div></div>
+<button id="replay" onclick="play()">▶ Replay</button>
+
+<footer>github.com/zengury/roboonto · <a href="../QUICKSTART.md">quickstart</a> · apache-2.0</footer>
+
+<script>
+const $ = id => document.getElementById(id);
+const cap = (en, zh) => { $("caption").innerHTML = en + (zh ? `<span class="zh">${zh}</span>` : ""); };
+
+const STEPS = [
+  [0,    () => cap("An LLM agent wants to drive a real humanoid robot…",
+                   "一个 LLM agent 想要驱动一台真实的人形机器人……")],
+  [1400, () => { $("b1").classList.add("show");
+                 cap("The intent sounds harmless. But 3 m/s is a run — and the robot is in PASSIVE mode.",
+                     "意图听起来无害。但 3 m/s 是奔跑速度——而机器人正处于 PASSIVE 模式。"); }],
+  [3600, () => { $("spec").classList.add("show");
+                 cap("RoboOnto looks up the action's full spec: invoker, safety class, preconditions.",
+                     "RoboOnto 查出该动作的完整规格:调用方式、安全等级、前置条件。"); }],
+  [5800, () => $("c1").className = "check pass"],
+  [6500, () => $("c2").className = "check pass"],
+  [7300, () => { $("c3").className = "check fail"; $("shake").classList.add("no");
+                 cap("The precondition fails: the walking controller isn't active. A bad command never reaches hardware.",
+                     "前置条件不满足:行走控制器未激活。坏指令永远到不了硬件。"); }],
+  [8100, () => { $("verdict").className = "bad"; $("verdict").textContent = "REJECTED — with reasons";
+                 $("src").classList.add("show"); $("b2").classList.add("show"); }],
+  [11000,() => { $("b3").classList.add("show"); $("shake").classList.remove("no");
+                 cap("The rejection explains itself, so the agent can fix the plan: switch mode, use a safe speed.",
+                     "拒绝自带原因,agent 据此修正计划:先切模式,再用安全速度。"); }],
+  [13500,() => { $("fsm").textContent = "WALKRUN"; $("fsm").classList.add("walk");
+                 $("c3").className = "check pass"; $("c3note").textContent = "current state: fsm_mode = WALKRUN";
+                 cap("Mode switched. The gate re-evaluates against live state — not against assumptions.",
+                     "模式已切换。安全门基于实时状态重新评估——而不是基于假设。"); }],
+  [15200,() => $("c4").className = "check pass"],
+  [16000,() => { $("verdict").className = "ok"; $("verdict").textContent = "PASS — cleared to execute";
+                 $("b4").classList.add("show"); }],
+  [17200,() => { $("robot").classList.add("walking"); $("robotcap").textContent = "walking · 0.5 m/s · dds sport 7105";
+                 cap("Only validated behavior touches the physical world.",
+                     "只有经过验证的行为才会进入物理世界。"); }],
+  [20500,() => { cap("RoboOnto — open, IEEE-anchored robot ontologies that let agents act safely. <b>github.com/zengury/roboonto</b>",
+                     "开放的、IEEE 锚定的机器人本体,让 agent 安全行动。");
+                 $("replay").classList.add("ready"); }],
+];
+const TOTAL = 21500;
+let timers = [];
+
+function reset() {
+  timers.forEach(clearTimeout); timers = [];
+  ["b1","b2","b3","b4","spec","src"].forEach(id => $(id).classList.remove("show"));
+  ["c1","c2","c3","c4"].forEach(id => $(id).className = "check pending");
+  $("verdict").className = ""; $("verdict").textContent = "";
+  $("fsm").textContent = "PASSIVE"; $("fsm").classList.remove("walk");
+  $("c3note").textContent = "current state: fsm_mode = PASSIVE";
+  $("robot").classList.remove("walking"); $("shake").classList.remove("no");
+  $("robotcap").textContent = "idle — joints relaxed";
+  $("replay").classList.remove("ready"); $("barfill").style.width = "0";
+}
+
+function play() {
+  reset();
+  const t0 = performance.now();
+  STEPS.forEach(([t, fn]) => timers.push(setTimeout(fn, t)));
+  const tick = () => {
+    const p = Math.min(1, (performance.now() - t0) / TOTAL);
+    $("barfill").style.width = (p * 100) + "%";
+    if (p < 1) requestAnimationFrame(tick);
+  };
+  requestAnimationFrame(tick);
+}
+play();
+</script>
+</body>
+</html>

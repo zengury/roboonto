@@ -1,0 +1,35 @@
+actions:
+  - type_id: get_mode
+    description: query current mode
+    invoker:
+      type: ros2_service
+      name: "/minibot/srv/get_mode"
+      srv_type: "minibot_msgs/srv/GetMode"
+    parameters: []
+    preconditions: []
+    affects: []
+    safety_class: INFO
+    idempotent: true
+    source: {type: document, locator: "minibot SDK §5.1"}
+
+  - type_id: set_velocity
+    description: command linear velocity
+    invoker:
+      type: ros2_topic
+      name: "/minibot/cmd_vel"
+      msg_type: "geometry_msgs/msg/Twist"
+      field: linear_x
+    parameters:
+      - name: linear_x
+        type: float
+        unit: m/s
+        required: true
+        constraints:
+          - {type: range, min: -1.0, max: 1.0}
+    preconditions:
+      - expr: '@state.mode == "ACTIVE"'
+        error: must be in ACTIVE mode
+    affects:
+      - minibot.hw.link.base
+    safety_class: MOTION
+    source: {type: document, locator: "minibot SDK §5.2"}

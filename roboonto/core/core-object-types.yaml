@@ -1,0 +1,410 @@
+# RoboOnto Core Object Types v0.1
+#
+# 跨机器人通用的 7 类一等公民对象。
+# 具体机器人可以 extends 这些类型,或增加厂家方言子类型。
+#
+# 分类:
+#   hardware    物理实体        Joint, Link, Sensor, ComputeUnit, Battery, EndEffector
+#   software    软件实体        SoftwareComponent, ROSNode, Process, App, OTAPackage
+#   interface   通信/交互端点    Topic, Service, MsgSchema, SrvSchema
+#   behavior    模态/状态机      Mode, Motion, ControlLoop
+#   event       离散事件         FaultCode, StatusBit, TouchEvent
+#   frame       参考系           CoordinateFrame, TF
+#   capability  能力/功能语义    Capability, CapabilityParameter, ServiceRequirement
+#   meta        元数据           InputSource, PriorityLevel, SafetyClass
+
+object_types:
+
+  # ==========================================================
+  # HARDWARE
+  # ==========================================================
+
+  - id: Link
+    category: hardware
+    description: 机器人刚体连杆,URDF 中的 <link>
+    properties:
+      id:           { type: string, unique: true, required: true }
+      name_human:   { type: string }                    # "左上臂"
+      mass:         { type: float, unit: kg }
+      inertia:      { type: matrix3x3, unit: "kg·m²" }
+      visual_mesh:  { type: string }                    # 文件路径或 URI
+      collision_mesh: { type: string }
+    sources_hint:
+      - urdf: "link"
+
+  - id: Joint
+    category: hardware
+    description: 单自由度关节,URDF 中的 <joint>,机器人最重要的可控对象之一
+    properties:
+      id:              { type: string, unique: true, required: true }
+      name_human:      { type: string }                 # "左肘关节"
+      joint_kind:      { type: enum, values: [revolute, continuous, prismatic, fixed] }
+      dof_axis:        { type: enum, values: [pitch, roll, yaw, prismatic_x, prismatic_y, prismatic_z] }
+      parent_link:     { type: ref, target: Link }
+      child_link:      { type: ref, target: Link }
+      position_limit:  { type: range, unit: rad }
+      velocity_limit:  { type: float, unit: rad/s }
+      effort_limit:    { type: float, unit: Nm }        # 连续扭矩
+      torque_peak:     { type: float, unit: Nm }        # 峰值扭矩
+      origin:          { type: frame_spec }             # xyz + rpy
+    sources_hint:
+      - urdf: "joint"
+      - doc_section: "§1.7 关节活动范围"
+
+  - id: Sensor
+    category: hardware
+    description: 传感器的通用描述,具体类型通过 sensor_kind 区分
+    properties:
+      id:              { type: string, unique: true }
+      name_human:      { type: string }
+      sensor_kind:     { type: enum, values: [rgb_camera, depth_camera, stereo_camera, imu, lidar, touch, force_torque] }
+      vendor:          { type: string }                 # "速腾聚创", "奥比中光"
+      model:           { type: string }                 # "E1R", "Gemini335"
+      mount_link:      { type: ref, target: Link }
+      mount_frame:     { type: ref, target: CoordinateFrame }
+      # 具体指标(resolution/fov/frequency)通过 sensor_kind 专用子对象或 properties.extra
+      specs:           { type: map }                    # 自由属性,用于方言
+    sources_hint:
+      - urdf: "sensor"
+      - doc_section: "§1.6 传感器参数"
+
+  - id: ComputeUnit
+    category: hardware
+    description: 计算单元,包含 SoC/CPU/GPU/内存等
+    properties:
+      id:              { type: string, unique: true }
+      role:            { type: enum, values: [motion_control, interaction, development, perception] }
+      network_address: { type: string }                 # IP 或 hostname
+      soc:             { type: string }                 # "Jetson Orin NX"
+      cpu:             { type: string }
+      gpu:             { type: string }
+      ai_tops:         { type: float }
+      memory_gb:       { type: float }
+      storage_gb:      { type: float }
+      os:              { type: string }                 # "Ubuntu 22.04"
+    sources_hint:
+      - doc_section: "§1.3 计算单元"
+
+  - id: PowerSubsystem
+    category: hardware
+    description: 电源子系统(电池 + PMU),agent 做诊断的关键对象
+    properties:
+      id:              { type: string, unique: true }
+      battery_wh:      { type: float, unit: Wh }
+      battery_voltage_nominal: { type: float, unit: V }
+      charging_input_v: { type: range, unit: V }
+      pmu_bus_voltages: { type: list }                  # ["48V", "12V", "5V"]
+    sources_hint:
+      - doc_section: "§1.2 规格表; §5.4.2 PMU"
+
+  - id: EndEffector
+    category: hardware
+    description: 末端执行器(夹爪/灵巧手),插拔式附件
+    properties:
+      id:              { type: string, unique: true }
+      ee_kind:         { type: enum, values: [gripper, dexterous_hand, tool_plate] }
+      mount_joint:     { type: ref, target: Joint }     # 通常是 wrist_roll
+      dof:             { type: int }
+      payload_kg:      { type: float }
+    sources_hint:
+      - doc_section: "§5.1.5 末端执行器控制"
+
+
+  # ==========================================================
+  # SOFTWARE
+  # ==========================================================
+
+  - id: SoftwareComponent
+    category: software
+    description: 软件组件的语义边界,用于说明组件是什么、提供什么能力,而不只是如何调用 API
+    properties:
+      id:              { type: string, unique: true }
+      name_human:      { type: string }
+      component_kind:  { type: enum, values: [perception, localization, mapping, planning, control, diagnostics, ui, middleware, runtime] }
+      runs_on:         { type: ref, target: ComputeUnit }
+      implementation:  { type: string }                 # package/module/binary 名称
+      lifecycle:       { type: enum, values: [managed, unmanaged, external] }
+      source_uri:      { type: string }
+      standard_mappings: { type: list }                 # IEEE/RoSO/CORA 等术语锚点
+
+  - id: Process
+    category: software
+    description: 运行在某个 ComputeUnit 上的进程
+    properties:
+      id:              { type: string, unique: true }
+      runs_on:         { type: ref, target: ComputeUnit }
+      kind:            { type: enum, values: [ros_node, system_daemon, app, user_program] }
+      lifecycle:       { type: enum, values: [managed, unmanaged] }
+      auto_start:      { type: bool }
+
+  - id: ROSNode
+    category: software
+    extends: Process
+    description: ROS2 节点,发布/订阅 Topic,提供/调用 Service
+    properties:
+      namespace:       { type: string }
+      ros_package:     { type: string }
+
+  - id: App
+    category: software
+    description: 外部 App(手机端/平板/遥控器 firmware)
+    properties:
+      id:              { type: string, unique: true }
+      platform:        { type: enum, values: [ios, android, controller_fw, web] }
+      min_firmware:    { type: string }
+
+  - id: OTAPackage
+    category: software
+    description: 整机 OTA 升级包
+    properties:
+      version:         { type: string }
+      release_date:    { type: string }
+      affects_components: { type: ref_list }            # 指向 Process/App
+
+
+  # ==========================================================
+  # INTERFACE
+  # ==========================================================
+
+  - id: Topic
+    category: interface
+    description: ROS2 话题
+    properties:
+      name:            { type: string, unique: true }   # "/aima/hal/pmu/state"
+      msg_type:        { type: ref, target: MsgSchema }
+      qos:             { type: enum, values: [RELIABLE, BEST_EFFORT, TRANSIENT_LOCAL] }
+      frequency_hz:    { type: float }
+      publisher:       { type: ref, target: ROSNode }
+      compute_unit:    { type: ref, target: ComputeUnit }
+      bandwidth_mb_s:  { type: float }
+      cross_unit_safe: { type: bool }                   # 是否允许跨计算单元订阅
+    sources_hint:
+      - ros2_introspect: "ros2 topic list -t"
+      - doc_section: "§5.x tables"
+
+  - id: Service
+    category: interface
+    description: ROS2 服务
+    properties:
+      name:            { type: string, unique: true }   # "/aimdk_msgs/srv/SetMcAction"
+      srv_type:        { type: ref, target: SrvSchema }
+      provider:        { type: ref, target: ROSNode }
+      compute_unit:    { type: ref, target: ComputeUnit }
+      cross_unit_reliable: { type: bool }               # 跨计算单元调用可靠性
+
+  - id: MsgSchema
+    category: interface
+    description: 消息类型定义,例如 aimdk_msgs/msg/PmuState
+    properties:
+      name:            { type: string, unique: true }
+      fields:          { type: list }                   # [{name, type, unit, description}]
+      source_file:     { type: string }
+
+  - id: SrvSchema
+    category: interface
+    description: 服务类型定义
+    properties:
+      name:            { type: string, unique: true }
+      request_fields:  { type: list }
+      response_fields: { type: list }
+
+
+  # ==========================================================
+  # BEHAVIOR
+  # ==========================================================
+
+  - id: Mode
+    category: behavior
+    description: 机器人整体模态,模式之间的可迁移关系由 transitions link 描述
+    properties:
+      id:              { type: string, unique: true }   # "LOCOMOTION_DEFAULT"
+      name_human:      { type: string }
+      description:     { type: string }
+      allows_actions:  { type: ref_list, target: ActionType }
+      required_preconditions: { type: list }            # 进入该模式的前置
+      safety_note:     { type: string }
+    sources_hint:
+      - doc_section: "§5.1.1 运动模式切换"
+
+  - id: PresetMotion
+    category: behavior
+    description: 厂商预设的原子动作(坐下站起、平躺站起、挥手等)
+    properties:
+      id:              { type: string, unique: true }
+      name_human:      { type: string }
+      duration_s:      { type: float }
+      environment_requirements: { type: list }          # 文字约束
+      forbidden_contexts: { type: list }                # "末端执行器为灵巧手时禁用"
+
+  - id: ControlLoop
+    category: behavior
+    description: 运行中的控制回路(如走跑仲裁、PID 回路)
+    properties:
+      id:              { type: string, unique: true }
+      frequency_hz:    { type: float }
+      arbitrates:      { type: ref_list, target: Topic }
+
+
+  # ==========================================================
+  # EVENT
+  # ==========================================================
+
+  - id: StatusBit
+    category: event
+    description: 状态字某一位,典型如 PMU 的 bus48vOverCurrent
+    properties:
+      id:              { type: string, unique: true }
+      carrier_field:   { type: string }                 # "pmu_bool_status"
+      bit_index:       { type: int }
+      severity:        { type: enum, values: [info, warn, error, fatal] }
+      semantic:        { type: string }                 # "48V 总线过流"
+      recommended_action: { type: ref, target: ActionType }
+    sources_hint:
+      - doc_section: "§5.4.2 PMU 位状态"
+
+  - id: FaultCode
+    category: event
+    description: 显式故障码
+
+  - id: TouchEvent
+    category: event
+    description: 触摸事件(单击/双击/三击/滑动)
+    properties:
+      event_code:      { type: int }                    # 对应 event_type 取值
+      semantic:        { type: string }
+
+
+  # ==========================================================
+  # CAPABILITY / SERVICE SEMANTICS
+  # ==========================================================
+
+  - id: Capability
+    category: capability
+    description: 组件或传感器提供的功能语义,回答“能做什么”,再由 Topic/Service/Action 说明“怎么调用”
+    properties:
+      id:              { type: string, unique: true }
+      name_human:      { type: string }
+      capability_kind: { type: enum, values: [sensing, actuation, perception, localization, mapping, planning, navigation, manipulation, diagnosis, communication, interaction] }
+      description:     { type: string }
+      detects:         { type: list }                   # 例如 [person, obstacle, qr_code]
+      produces:        { type: list }                   # 例如 [pose, bounding_box, occupancy_grid]
+      consumes:        { type: list }
+      environment_requirements: { type: list }
+      qos:             { type: map }                    # latency/frequency/reliability 等
+      boundaries:      { type: list }                   # safety/compute/cross-unit 限制
+      standard_mappings: { type: list }                 # IEEE 1872.2/AuR, CORA, RoSO 等锚点
+
+  - id: CapabilityParameter
+    category: capability
+    description: Capability 的语义参数,用于描述检测区域、阈值、周期、精度等能力条件
+    properties:
+      id:              { type: string, unique: true }
+      name:            { type: string }
+      value_type:      { type: string }
+      unit:            { type: string }
+      required:        { type: bool }
+      default:         { type: any }
+      constraints:     { type: list }
+      description:     { type: string }
+
+  - id: ServiceRequirement
+    category: capability
+    description: 任务或服务需求,用于把外部需求映射到机器人能力和约束
+    properties:
+      id:              { type: string, unique: true }
+      name_human:      { type: string }
+      required_capabilities: { type: list }             # capability_kind 或 Capability id
+      required_outputs: { type: list }
+      environment:     { type: list }
+      safety_constraints: { type: list }
+      qos:             { type: map }
+      description:     { type: string }
+
+
+  # ==========================================================
+  # FRAME
+  # ==========================================================
+
+  - id: CoordinateFrame
+    category: frame
+    description: 坐标系,X=红 Y=绿 Z=蓝
+    properties:
+      id:              { type: string, unique: true }   # "base_link", "left_arm_wrist"
+      parent:          { type: ref, target: CoordinateFrame }
+      origin:          { type: frame_spec }
+
+
+  # ==========================================================
+  # META(用于声明跨 Action 的全局概念)
+  # ==========================================================
+
+  - id: InputSource
+    category: meta
+    description: 控制输入源(遥控/APP/二开程序等),参与优先级仲裁
+    properties:
+      id:              { type: string, unique: true }
+      display_name:    { type: string }
+      requires_registration: { type: bool }
+      registration_service: { type: ref, target: Service }
+
+  - id: PriorityLevel
+    category: meta
+    description: 优先级级别(如 TTS 的 L1-L10)
+    properties:
+      id:              { type: string, unique: true }
+      value:           { type: int }
+      description:     { type: string }
+      preemptable:     { type: bool }
+
+  - id: SafetyClass
+    category: meta
+    description: Action 的安全分级
+    properties:
+      id:              { type: string, unique: true, values: [INFO, CONFIG, MOTION, POWER, IRREVERSIBLE] }
+
+
+# ============================================================
+# 标准关系(LinkType)
+# ============================================================
+link_types:
+
+  # 结构
+  - { id: parent_of,        source: Link,          target: Link,          cardinality: one_to_many }
+  - { id: actuated_by,      source: Joint,         target: Joint,         cardinality: one_to_one }   # 并联/耦合关节
+  - { id: mounted_on,       source: Sensor,        target: Link,          cardinality: many_to_one }
+  - { id: mounted_on,       source: EndEffector,   target: Joint,         cardinality: one_to_one }
+  - { id: co_located_in,    source: Process,       target: ComputeUnit,   cardinality: many_to_one }
+
+  # 通信
+  - { id: publishes,        source: ROSNode,       target: Topic,         cardinality: one_to_many }
+  - { id: subscribes,       source: ROSNode,       target: Topic,         cardinality: many_to_many }
+  - { id: provides,         source: ROSNode,       target: Service,       cardinality: one_to_many }
+
+  # 能力语义
+  - { id: provides_capability, source: "*",        target: Capability,    cardinality: many_to_many, description: "Component/Sensor/Process 提供的能力" }
+  - { id: exposed_via,      source: Capability,    target: "*",           cardinality: many_to_many, description: "Capability 通过 Topic/Service/Action 暴露" }
+  - { id: has_parameter,    source: Capability,    target: CapabilityParameter, cardinality: one_to_many }
+  - { id: detects,          source: Capability,    target: "*",           cardinality: many_to_many, description: "感知能力检测的对象或语义类别" }
+  - { id: satisfies_requirement, source: Capability, target: ServiceRequirement, cardinality: many_to_many }
+
+  # 控制
+  - { id: controls,         source: ActionType,    target: Joint,         cardinality: many_to_many }
+  - { id: reads,            source: ActionType,    target: Sensor,        cardinality: many_to_many }
+  - { id: affects,          source: ActionType,    target: "*",           cardinality: many_to_many }  # 通用副作用
+
+  # 模态
+  - { id: allows,           source: Mode,          target: ActionType,    cardinality: many_to_many }
+  - { id: transitions_to,   source: Mode,          target: Mode,          cardinality: many_to_many, description: "模式迁移图" }
+  - { id: forbidden_in,     source: ActionType,    target: Mode,          cardinality: many_to_many }
+
+  # 故障
+  - { id: indicates,        source: StatusBit,     target: Hardware,      cardinality: many_to_one }
+  - { id: resolves,         source: ActionType,    target: StatusBit,     cardinality: many_to_many, description: "可以清除/响应该故障的 Action" }
+
+  # 依赖
+  - { id: depends_on,       source: Process,       target: Process,       cardinality: many_to_many }
+  - { id: depends_on_hw,    source: Process,       target: Hardware,      cardinality: many_to_many }
+
+  # 仲裁
+  - { id: arbitrates,       source: ControlLoop,   target: Topic,         cardinality: many_to_many }
+  - { id: participates_in,  source: InputSource,   target: ControlLoop,   cardinality: many_to_many }

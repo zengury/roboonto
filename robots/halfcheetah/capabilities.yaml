@@ -1,0 +1,43 @@
+objects:
+  - type: SoftwareComponent
+    id: halfcheetah.sw.mujoco_env
+    properties:
+      name_human: MuJoCo HalfCheetah environment
+      component_kind: runtime
+      runs_on: halfcheetah.hw.compute.sim
+      implementation: gymnasium HalfCheetah-v5
+      lifecycle: managed
+      standard_mappings:
+        - {standard: RoSO, term: Component}
+    source: {type: derived, locator: "HalfCheetah-v5 environment"}
+
+  - type: Capability
+    id: halfcheetah.cap.torque_control
+    properties:
+      name_human: Torque control
+      capability_kind: actuation
+      description: Apply normalized torques to the six HalfCheetah actuated joints.
+      consumes: [joint_torques]
+      produces: [simulated_locomotion]
+      boundaries:
+        - torque commands are bounded to [-1, 1]
+        - stay_upright hard constraint terminates invalid episodes
+      standard_mappings:
+        - {standard: RoSO, term: Actuation}
+        - {standard: IEEE 1872.2/AuR, term: AutonomousCapability}
+    source: {type: derived, locator: "actions.yaml apply_torques; goals.yaml"}
+
+  - type: ServiceRequirement
+    id: halfcheetah.req.learn_forward_locomotion
+    properties:
+      name_human: Learn forward locomotion
+      required_capabilities: [actuation]
+      required_outputs: [simulated_locomotion]
+      safety_constraints:
+        - enforce stay_upright hard constraint
+    source: {type: derived, locator: "goals.yaml primary_goal"}
+
+links:
+  - {type: provides_capability, source: halfcheetah.sw.mujoco_env, target: halfcheetah.cap.torque_control}
+  - {type: exposed_via, source: halfcheetah.cap.torque_control, target: apply_torques}
+  - {type: satisfies_requirement, source: halfcheetah.cap.torque_control, target: halfcheetah.req.learn_forward_locomotion}

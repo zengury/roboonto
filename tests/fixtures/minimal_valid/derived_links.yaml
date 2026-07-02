@@ -1,0 +1,2 @@
+links:
+  - {type: carried_by, source: minibot.event.power_good, target: minibot.if.topic.cmd_vel}

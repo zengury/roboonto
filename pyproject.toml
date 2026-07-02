@@ -1,0 +1,38 @@
+[build-system]
+requires = ["setuptools>=61"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "roboonto"
+version = "0.3.0"
+description = "Robot Ontology Framework — machine-readable robot specification for LLM agents"
+readme = "README.md"
+license = {text = "Apache-2.0"}
+authors = [{name = "zengury"}]
+requires-python = ">=3.10"
+dependencies = [
+    "pyyaml>=6.0",
+]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Developers",
+    "Topic :: Scientific/Engineering :: Artificial Intelligence",
+    "Programming Language :: Python :: 3",
+]
+
+[project.optional-dependencies]
+dev = ["pytest>=7.0"]
+
+[project.scripts]
+roboonto = "roboonto.cli:main"
+
+[tool.setuptools.packages.find]
+include = ["roboonto*"]
+exclude = ["tests*", "robots*", "examples*"]
+
+[tool.setuptools.package-data]
+roboonto = ["framework/profiles/*.yaml"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+python_files = ["test_*.py"]

@@ -1,0 +1,27 @@
+objects:
+  - type: Link
+    id: minibot.hw.link.base
+    properties:
+      name_urdf: base
+      mass: 1.0
+    source: {type: urdf, locator: "minibot.urdf#link[base]"}
+
+  - type: Link
+    id: minibot.hw.link.arm
+    properties:
+      name_urdf: arm
+      mass: 0.5
+    source: {type: urdf, locator: "minibot.urdf#link[arm]"}
+
+  - type: Joint
+    id: minibot.hw.joint.shoulder
+    properties:
+      name_urdf: shoulder
+      joint_kind: revolute
+      dof_axis: pitch
+      parent_link: minibot.hw.link.base
+      child_link: minibot.hw.link.arm
+      position_limit: {min: -1.5, max: 1.5}
+      velocity_limit: 2.0
+      effort_limit: 10.0
+    source: {type: urdf, locator: "minibot.urdf#joint[shoulder]"}

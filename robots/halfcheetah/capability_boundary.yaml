@@ -1,0 +1,52 @@
+# Half-Cheetah — Capability Boundary
+# Honest declaration of what we can / cannot observe in the simulator.
+# Same shape as customer ontologies so framework rules apply uniformly.
+
+robot_id: halfcheetah
+version: "0.1"
+last_updated: 2026-05-10
+
+declared_sensors:
+  - id: halfcheetah.hw.sensor.proprioception
+    topic: "mjData/observation"
+    msg_type: "halfcheetah/Obs"
+    qos_expected: RELIABLE
+    frequency_hz_expected: 50
+
+declared_joint_groups:
+  - name: leg_back
+    expected_count: 3
+    topic: "mjData/observation[2:5]"
+    members: [bthigh, bshin, bfoot]
+  - name: leg_front
+    expected_count: 3
+    topic: "mjData/observation[5:8]"
+    members: [fthigh, fshin, ffoot]
+
+log_sources: []
+
+observability:
+  joint_state:
+    realtime_topic: "mjData.qpos / mjData.qvel"
+    recorded_in_mcap: false
+    reason: "no MCAP in sim; ledger captures every step"
+    impact: ""
+    discovered: 2026-05-10
+    workaround: "rollout runner writes Observation to ledger every step"
+    fix: "n/a"
+    status: closed
+
+  ground_contact:
+    realtime_topic: "mjData.contact"
+    reason: "available but unused in v0.1; could feed event detection in Phase 2"
+    discovered: 2026-05-10
+    status: open
+    workaround: "infer stance from joint positions"
+    fix: "expose contact info to policy in Phase 2"
+
+known_gaps:
+  - "v0.1 policy is pure feedforward gait; no contact-based phase detection"
+  - "no perception modeled (cheetah is blind)"
+
+uncovered_domains:
+  - "vision / external scene understanding (irrelevant for this benchmark)"

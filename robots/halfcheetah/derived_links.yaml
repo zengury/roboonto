@@ -1,0 +1,13 @@
+# Half-Cheetah — Derived links. Cross-shard relationships needed for queries.
+
+links:
+  # action ↔ joint (apply_torques affects all 6)
+  - {type: invocable_via, source: halfcheetah.action.apply_torques, target: halfcheetah.if.topic.action}
+
+  # mode ↔ event coupling — each failure can occur during locomotion modes
+  - {type: indicates, source: halfcheetah.event.pitch_violation, target: halfcheetah.hw.link.torso}
+  - {type: indicates, source: halfcheetah.event.no_progress, target: halfcheetah.hw.link.torso}
+  - {type: indicates, source: halfcheetah.event.joint_limit_clamped, target: halfcheetah.hw.joint.bthigh}
+
+  # observation topic carries the proprioception sensor's readings
+  - {type: carried_by, source: halfcheetah.hw.sensor.proprioception, target: halfcheetah.if.topic.observation}

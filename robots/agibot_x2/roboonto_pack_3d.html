@@ -1,0 +1,6693 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<title>RoboOnto · AgiBot X2 · 3D Ontology Atlas · v0.3.0</title>
+<style>
+:root {
+  --bg-deep: #0a0e1a;
+  --bg-mid: #131829;
+  --fg: #e8eef9;
+  --fg-mute: #7f8aa3;
+  --accent: #ff6b35;
+  --accent-2: #4dd0e1;
+  --line: #1f2740;
+  /* Layer colors */
+  --c-hardware: #ef5350;
+  --c-kinematics: #ff9800;
+  --c-compute: #ffd54f;
+  --c-interfaces: #66bb6a;
+  --c-behaviors: #42a5f5;
+  --c-events: #ab47bc;
+  --c-actions: #ec407a;
+  --c-capabilities: #00bcd4;
+  --c-requirements: #ffffff;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html, body { width: 100%; height: 100%; overflow: hidden;
+  background: var(--bg-deep); color: var(--fg);
+  font-family: 'JetBrains Mono', 'SF Mono', Menlo, Consolas, monospace;
+}
+body {
+  display: grid;
+  grid-template-columns: 1fr 420px;
+  height: 100vh;
+}
+/* ===== Left: 3D canvas ===== */
+#canvas-wrap {
+  position: relative;
+  background: radial-gradient(ellipse at center,
+    #14182a 0%, #0a0e1a 70%);
+  overflow: hidden;
+}
+#three-canvas { display: block; cursor: grab; }
+#three-canvas:active { cursor: grabbing; }
+
+#title {
+  position: absolute; top: 24px; left: 28px;
+  z-index: 10; pointer-events: none;
+}
+#title h1 {
+  font-size: 22px; font-weight: 700; letter-spacing: -0.02em;
+  color: var(--fg); margin-bottom: 4px;
+}
+#title h1 span { color: var(--accent); }
+#title .sub {
+  font-size: 11px; color: var(--fg-mute); letter-spacing: 0.05em;
+}
+
+#stats {
+  position: absolute; bottom: 24px; left: 28px;
+  z-index: 10; pointer-events: none;
+  font-size: 10px; line-height: 1.7;
+  color: var(--fg-mute);
+}
+#stats .kv span { color: var(--fg); }
+
+#search-box {
+  position: absolute; top: 132px; left: 28px;
+  z-index: 12; width: 360px;
+  background: rgba(10, 14, 26, 0.78);
+  backdrop-filter: blur(10px);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 12px 14px;
+  pointer-events: auto;
+}
+.search-head {
+  display: flex; align-items: center; justify-content: space-between;
+  gap: 10px; margin-bottom: 8px;
+  color: var(--fg-mute); font-size: 9px; letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+.search-count { color: var(--accent-2); letter-spacing: 0; text-transform: none; }
+.search-input {
+  width: 100%;
+  background: rgba(255,255,255,0.03);
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  color: var(--fg);
+  padding: 8px 10px;
+  outline: none;
+  font-family: inherit;
+  font-size: 11px;
+}
+.search-input:focus { border-color: var(--accent-2); }
+.search-hint {
+  margin-top: 7px; color: var(--fg-mute); font-size: 9px; line-height: 1.4;
+}
+.search-results {
+  margin-top: 8px; max-height: 168px; overflow-y: auto;
+  display: none;
+  border-top: 1px solid var(--line);
+  padding-top: 6px;
+}
+.search-results.visible { display: block; }
+.search-result {
+  display: grid; grid-template-columns: 78px 1fr;
+  gap: 8px; padding: 5px 0;
+  border-bottom: 1px dashed rgba(232,238,249,0.08);
+  cursor: pointer; font-size: 10px;
+}
+.search-result:last-child { border-bottom: none; }
+.search-result:hover { color: var(--accent-2); }
+.search-result-type { color: var(--fg-mute); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.search-result-label { color: var(--fg); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+#legend {
+  position: absolute; top: 24px; right: 24px;
+  z-index: 10; pointer-events: auto;
+  background: rgba(10, 14, 26, 0.7);
+  backdrop-filter: blur(8px);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 14px 16px;
+  font-size: 10px;
+  min-width: 160px;
+}
+#legend .lg-title {
+  color: var(--fg-mute); letter-spacing: 0.1em;
+  font-size: 9px; margin-bottom: 8px;
+  text-transform: uppercase;
+}
+.lg-row {
+  display: flex; align-items: center; gap: 8px;
+  padding: 3px 0; cursor: pointer;
+  user-select: none;
+  transition: opacity 0.2s;
+}
+.lg-row.dim { opacity: 0.3; }
+.lg-dot {
+  width: 10px; height: 10px; border-radius: 50%;
+  flex-shrink: 0;
+  box-shadow: 0 0 6px currentColor;
+}
+.lg-name { color: var(--fg); flex: 1; }
+.lg-count { color: var(--fg-mute); font-size: 9px; }
+
+#tooltip {
+  position: absolute;
+  pointer-events: none;
+  background: rgba(10, 14, 26, 0.95);
+  backdrop-filter: blur(8px);
+  border: 1px solid var(--accent-2);
+  border-radius: 6px;
+  padding: 10px 14px;
+  font-size: 11px;
+  max-width: 280px;
+  z-index: 20;
+  display: none;
+  box-shadow: 0 6px 20px rgba(0,0,0,0.5);
+}
+#tooltip .tt-id {
+  color: var(--accent-2); font-weight: 600;
+  margin-bottom: 4px; word-break: break-all;
+}
+#tooltip .tt-type {
+  color: var(--fg-mute); font-size: 9px; letter-spacing: 0.1em;
+  text-transform: uppercase; margin-bottom: 6px;
+}
+#tooltip .tt-row { color: var(--fg-mute); margin-top: 4px; }
+#tooltip .tt-row span { color: var(--fg); }
+
+#detail-panel {
+  position: absolute; top: 292px; left: 28px;
+  z-index: 12; width: 390px;
+  max-height: calc(100vh - 340px);
+  overflow-y: auto;
+  background: rgba(10, 14, 26, 0.86);
+  backdrop-filter: blur(10px);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 14px 16px;
+  pointer-events: auto;
+  display: none;
+  box-shadow: 0 10px 28px rgba(0,0,0,0.35);
+}
+#detail-panel.visible { display: block; }
+.detail-close {
+  position: absolute; top: 10px; right: 10px;
+  border: 0; background: transparent; color: var(--fg-mute);
+  cursor: pointer; font-family: inherit; font-size: 13px;
+}
+.detail-close:hover { color: var(--fg); }
+.detail-kicker {
+  color: var(--accent-2); font-size: 9px; letter-spacing: 0.1em;
+  text-transform: uppercase; margin-bottom: 5px;
+}
+.detail-title {
+  padding-right: 24px; font-size: 15px; font-weight: 700;
+  color: var(--fg); line-height: 1.25;
+}
+.detail-id {
+  color: var(--fg-mute); font-size: 9px; line-height: 1.45;
+  word-break: break-all; margin: 6px 0 12px;
+}
+.detail-props {
+  display: grid; grid-template-columns: 112px 1fr;
+  gap: 5px 10px; font-size: 10px; line-height: 1.45;
+  padding-bottom: 12px; border-bottom: 1px solid var(--line);
+}
+.detail-prop-key { color: var(--fg-mute); }
+.detail-prop-val { color: var(--fg); word-break: break-word; }
+.detail-conns { margin-top: 12px; font-size: 10px; }
+.detail-conns-title {
+  color: var(--fg-mute); letter-spacing: 0.08em; text-transform: uppercase;
+  margin: 10px 0 5px;
+}
+.detail-link {
+  display: grid; grid-template-columns: 116px 1fr;
+  gap: 8px; padding: 4px 0;
+  border-bottom: 1px dashed rgba(232,238,249,0.08);
+  cursor: pointer;
+}
+.detail-link:hover { color: var(--accent-2); }
+.detail-link-type { color: var(--accent); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.detail-link-label { color: var(--fg); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+#controls {
+  position: absolute; bottom: 24px; right: 24px;
+  z-index: 10;
+  display: flex; gap: 8px;
+}
+#view-mode {
+  position: absolute; top: 24px; left: 28px;
+  transform: translateY(58px);
+  z-index: 11;
+  display: inline-flex; gap: 4px; padding: 4px;
+  background: rgba(10, 14, 26, 0.74);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  backdrop-filter: blur(8px);
+  pointer-events: auto;
+}
+.btn {
+  background: rgba(10, 14, 26, 0.7);
+  backdrop-filter: blur(8px);
+  border: 1px solid var(--line);
+  color: var(--fg-mute);
+  padding: 8px 14px;
+  font-size: 10px; letter-spacing: 0.08em;
+  text-transform: uppercase;
+  cursor: pointer;
+  border-radius: 6px;
+  font-family: inherit;
+  transition: all 0.2s;
+}
+.btn:hover { color: var(--fg); border-color: var(--accent-2); }
+.btn.active { color: var(--accent); border-color: var(--accent); }
+.mode-btn.active { color: #071019; background: var(--accent-2); border-color: var(--accent-2); }
+
+/* ===== Right: CLAUDE.md sidebar ===== */
+#sidebar {
+  background: var(--bg-mid);
+  border-left: 1px solid var(--line);
+  overflow-y: auto;
+  padding: 28px 24px;
+}
+#sidebar::-webkit-scrollbar { width: 6px; }
+#sidebar::-webkit-scrollbar-thumb { background: var(--line); }
+
+#sidebar .doc-tag {
+  font-size: 9px; letter-spacing: 0.15em;
+  color: var(--accent); text-transform: uppercase;
+  margin-bottom: 6px;
+}
+#sidebar h2 {
+  font-size: 18px; font-weight: 700; letter-spacing: -0.02em;
+  margin-bottom: 4px;
+}
+#sidebar .doc-sub {
+  font-size: 11px; color: var(--fg-mute);
+  margin-bottom: 24px; line-height: 1.6;
+}
+
+.section {
+  margin-bottom: 22px;
+  padding-bottom: 22px;
+  border-bottom: 1px solid var(--line);
+}
+.section:last-child { border-bottom: none; }
+.section .num {
+  display: inline-block;
+  font-size: 10px; color: var(--accent-2);
+  letter-spacing: 0.1em;
+  margin-bottom: 6px;
+}
+.section h3 {
+  font-size: 13px; font-weight: 600;
+  margin-bottom: 8px; color: var(--fg);
+  letter-spacing: -0.01em;
+}
+.section p {
+  font-size: 11px; line-height: 1.6;
+  color: var(--fg-mute);
+  margin-bottom: 6px;
+}
+.section .api-row {
+  display: grid;
+  grid-template-columns: 132px 1fr;
+  gap: 10px;
+  font-size: 10px;
+  padding: 4px 0;
+  border-bottom: 1px dashed var(--line);
+}
+.section .api-row:last-child { border-bottom: none; }
+.section .api-name {
+  color: var(--accent); font-weight: 600;
+  word-break: break-word;
+}
+.section .api-desc { color: var(--fg-mute); line-height: 1.5; }
+
+.section .resp-row {
+  display: grid;
+  grid-template-columns: 90px 1fr;
+  gap: 8px;
+  font-size: 10px; padding: 3px 0;
+  align-items: start;
+}
+.section .resp-name {
+  font-family: inherit;
+  padding: 1px 6px; border-radius: 3px;
+  text-align: center;
+  font-size: 9px;
+  letter-spacing: 0.05em;
+}
+.resp-valid { background: rgba(102, 187, 106, 0.2); color: #66bb6a; }
+.resp-invalid { background: rgba(239, 83, 80, 0.2); color: #ef5350; }
+.resp-unsupported { background: rgba(255, 152, 0, 0.2); color: #ff9800; }
+.resp-evidence { background: rgba(77, 208, 225, 0.2); color: #4dd0e1; }
+.resp-unknown { background: rgba(127, 138, 163, 0.2); color: #7f8aa3; }
+.section .resp-desc { color: var(--fg-mute); line-height: 1.4; }
+
+.section .check-row {
+  display: flex; align-items: flex-start; gap: 6px;
+  padding: 3px 0;
+  font-size: 10px;
+  color: var(--fg-mute);
+  line-height: 1.5;
+}
+.section .check-row .check {
+  flex-shrink: 0;
+  font-weight: 700;
+}
+.check-yes { color: #66bb6a; }
+.check-no { color: #ef5350; }
+.check-row b { color: var(--fg); font-weight: 600; }
+</style>
+</head>
+<body>
+
+<!-- ============== LEFT: 3D Canvas ============== -->
+<div id="canvas-wrap">
+  <canvas id="three-canvas"></canvas>
+
+  <div id="title">
+    <h1>RoboOnto · <span>AgiBot X2</span> · 3D Atlas · v0.3.0</h1>
+    <div class="sub" id="view-subtitle">LAYERED VIEW · 287 NODES · 430 LINKS · 9 LAYERS</div>
+  </div>
+
+  <div id="view-mode">
+    <button class="btn mode-btn" data-view="graph">Graph</button>
+    <button class="btn mode-btn active" data-view="layered">Layered</button>
+  </div>
+
+  <div id="search-box">
+    <div class="search-head">
+      <span>Search nodes</span>
+      <span class="search-count" id="search-count">all nodes</span>
+    </div>
+    <input class="search-input" id="search-input" placeholder="try: capability, velocity, PMU, elbow, service_fit..." autocomplete="off">
+    <div class="search-hint">Search id, label, type, layer, properties and generated node explanation.</div>
+    <div class="search-results" id="search-results"></div>
+  </div>
+
+  <div id="legend">
+    <div class="lg-title">Layers</div>
+    <div class="lg-row" data-layer="requirements">
+      <div class="lg-dot" style="background: var(--c-requirements); color: var(--c-requirements)"></div>
+      <div class="lg-name">Requirements</div>
+      <div class="lg-count" id="ct-requirements">0</div>
+    </div>
+    <div class="lg-row" data-layer="capabilities">
+      <div class="lg-dot" style="background: var(--c-capabilities); color: var(--c-capabilities)"></div>
+      <div class="lg-name">Capabilities</div>
+      <div class="lg-count" id="ct-capabilities">0</div>
+    </div>
+    <div class="lg-row" data-layer="actions">
+      <div class="lg-dot" style="background: var(--c-actions); color: var(--c-actions)"></div>
+      <div class="lg-name">Actions</div>
+      <div class="lg-count" id="ct-actions">0</div>
+    </div>
+    <div class="lg-row" data-layer="interfaces">
+      <div class="lg-dot" style="background: var(--c-interfaces); color: var(--c-interfaces)"></div>
+      <div class="lg-name">Interfaces</div>
+      <div class="lg-count" id="ct-interfaces">0</div>
+    </div>
+    <div class="lg-row" data-layer="behaviors">
+      <div class="lg-dot" style="background: var(--c-behaviors); color: var(--c-behaviors)"></div>
+      <div class="lg-name">Behaviors</div>
+      <div class="lg-count" id="ct-behaviors">0</div>
+    </div>
+    <div class="lg-row" data-layer="events">
+      <div class="lg-dot" style="background: var(--c-events); color: var(--c-events)"></div>
+      <div class="lg-name">Events</div>
+      <div class="lg-count" id="ct-events">0</div>
+    </div>
+    <div class="lg-row" data-layer="compute">
+      <div class="lg-dot" style="background: var(--c-compute); color: var(--c-compute)"></div>
+      <div class="lg-name">Compute/Software</div>
+      <div class="lg-count" id="ct-compute">0</div>
+    </div>
+    <div class="lg-row" data-layer="kinematics">
+      <div class="lg-dot" style="background: var(--c-kinematics); color: var(--c-kinematics)"></div>
+      <div class="lg-name">Kinematics</div>
+      <div class="lg-count" id="ct-kinematics">0</div>
+    </div>
+    <div class="lg-row" data-layer="hardware">
+      <div class="lg-dot" style="background: var(--c-hardware); color: var(--c-hardware)"></div>
+      <div class="lg-name">Hardware</div>
+      <div class="lg-count" id="ct-hardware">0</div>
+    </div>
+  </div>
+
+  <div id="tooltip"></div>
+
+  <div id="detail-panel">
+    <button class="detail-close" id="detail-close">x</button>
+    <div class="detail-kicker" id="detail-kicker"></div>
+    <div class="detail-title" id="detail-title"></div>
+    <div class="detail-id" id="detail-id"></div>
+    <div class="detail-props" id="detail-props"></div>
+    <div class="detail-conns" id="detail-conns"></div>
+  </div>
+
+  <div id="stats">
+    <div class="kv">drag: rotate · scroll: zoom · hover: summary · click: detail · search: locate node · legend: isolate layers</div>
+  </div>
+
+  <div id="controls">
+    <button class="btn active" id="btn-rotate">Auto-rotate</button>
+    <button class="btn" id="btn-reset">Reset view</button>
+  </div>
+</div>
+
+<!-- ============== RIGHT: Guide ============== -->
+<div id="sidebar">
+  <div class="doc-tag">RoboOnto 3D Guide</div>
+  <h2>AgiBot X2 Ontology</h2>
+  <div class="doc-sub">
+    这是 AgiBot X2 ontology 的交互式索引。它把硬件、接口、行为、事件、动作、能力、服务需求放在同一张可检索关系图里。<br>
+    目标是帮助人和 Agent 快速回答：有什么、能做什么、从哪里调用、受什么约束。
+  </div>
+
+  <div class="section">
+    <div class="num">§ 1</div>
+    <h3>怎么看</h3>
+    <p><b>Graph</b> 用来观察整体网络密度、关键枢纽和跨域连接。</p>
+    <p><b>Layered</b> 用来追踪从硬件/计算到接口、动作、能力、服务需求的分层路径。</p>
+    <p>图例可以隐藏某一层，搜索可以定位节点，点击节点会打开说明和一跳关系。</p>
+  </div>
+
+  <div class="section">
+    <div class="num">§ 2</div>
+    <h3>怎么查</h3>
+    <div class="api-row"><div class="api-name">搜索节点</div><div class="api-desc">输入 capability、velocity、PMU、elbow、topic、action 等关键词。</div></div>
+    <div class="api-row"><div class="api-name">查看详情</div><div class="api-desc">点击节点查看说明、属性、入边、出边和相邻节点。</div></div>
+    <div class="api-row"><div class="api-name">追踪关系</div><div class="api-desc">在详情里的关系列表继续点击，可以沿 provider、exposed_via、affects、satisfies_requirement 等关系跳转。</div></div>
+    <div class="api-row"><div class="api-name">过滤层级</div><div class="api-desc">隐藏不相关层，单独查看接口、动作、能力、事件或硬件。</div></div>
+  </div>
+
+  <div class="section">
+    <div class="num">§ 3</div>
+    <h3>数据范围</h3>
+    <div class="resp-row"><span class="resp-name resp-valid">nodes</span><span class="resp-desc">287 ontology nodes, including virtual endpoints for wildcard action targets</span></div>
+    <div class="resp-row"><span class="resp-name resp-evidence">links</span><span class="resp-desc">430 links across structural, invocation, provider, capability and service-fit relations</span></div>
+    <div class="resp-row"><span class="resp-name resp-valid">caps</span><span class="resp-desc">11 capabilities, 4 software providers, 3 service requirements</span></div>
+  </div>
+
+  <div class="section">
+    <div class="num">§ 4</div>
+    <h3>主要用途</h3>
+    <div class="check-row"><span class="check check-yes">✓</span><span><b>减少盲选接口</b> — 先看能力和服务需求，再落到 action/topic/service。</span></div>
+    <div class="check-row"><span class="check check-yes">✓</span><span><b>解释调用来源</b> — 从能力追到 SoftwareComponent、Sensor、ComputeUnit 或具体接口。</span></div>
+    <div class="check-row"><span class="check check-yes">✓</span><span><b>检查影响范围</b> — 通过 affects、requires_mode、allows 等关系查看动作约束。</span></div>
+    <div class="check-row"><span class="check check-yes">✓</span><span><b>辅助 Agent 菜单</b> — 把任务转换成可解释的候选能力，而不是只暴露一堆动作名。</span></div>
+  </div>
+
+  <div class="section">
+    <div class="num">§ 5</div>
+    <h3>边界</h3>
+    <p>这是一份静态 ontology 展示，不是 runtime controller。</p>
+    <p>它能说明结构、能力、接口和约束；不能替代实时传感器读数、动作执行结果或故障根因分析。</p>
+    <p>高风险 motion 调用仍需要 runtime validator、模式检查和执行证据。</p>
+  </div>
+
+  <div class="section" style="border: 1px solid var(--accent); border-radius: 6px; padding: 14px;">
+    <div class="num" style="color: var(--accent);">建议使用路径</div>
+    <p style="color: var(--fg);">搜索任务关键词 → 打开相关节点 → 查看说明和一跳关系 → 沿关系跳到接口/动作/约束 → 再决定是否调用工具或 CLI。</p>
+  </div>
+</div>
+
+<!-- ============== Three.js (loaded inline) ============== -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script>
+// ==== Embedded graph data ====
+const GRAPH_DATA = {
+  "robot": {
+    "id": "agibot_x2",
+    "meta": {
+      "id": "agibot_x2",
+      "vendor": "AgiBot",
+      "model": "X2 Ultra (旗舰版)",
+      "firmware_version": "0.8",
+      "roboonto_version": "0.3.0",
+      "ros2_version": "Humble",
+      "description": "智元 X2 Ultra 旗舰版人形机器人。30 主动 DOF,三套计算单元\n(PC1 运控 / PC2 开发 / PC3 交互),激光雷达 + RGBD + 双目 + 交互 + 后视相机,\n可选 OmniPicker 夹爪 / OmniHand 灵巧手。\n"
+    }
+  },
+  "nodes": [
+    {
+      "id": "agibot_x2.hw.compute.pc1",
+      "type": "ComputeUnit",
+      "layer": "compute",
+      "label": "pc1",
+      "props": {
+        "source": "aimdk.docx#§1.3.1"
+      },
+      "degree": 4
+    },
+    {
+      "id": "agibot_x2.hw.compute.pc2",
+      "type": "ComputeUnit",
+      "layer": "compute",
+      "label": "pc2",
+      "props": {
+        "source": "aimdk.docx#§1.3.2"
+      },
+      "degree": 8
+    },
+    {
+      "id": "agibot_x2.hw.compute.pc3",
+      "type": "ComputeUnit",
+      "layer": "compute",
+      "label": "pc3",
+      "props": {
+        "source": "aimdk.docx#§5.2.1"
+      },
+      "degree": 2
+    },
+    {
+      "id": "agibot_x2.hw.power",
+      "type": "PowerSubsystem",
+      "layer": "hardware",
+      "label": "power",
+      "props": {
+        "source": "aimdk.docx#§1.2.1;§5.4.2"
+      },
+      "degree": 22
+    },
+    {
+      "id": "agibot_x2.hw.sensor.lidar_chest_front",
+      "type": "Sensor",
+      "layer": "hardware",
+      "label": "lidar_chest_front",
+      "props": {
+        "source": "aimdk.docx#§1.6.2 激光雷达"
+      },
+      "degree": 3
+    },
+    {
+      "id": "agibot_x2.hw.sensor.rgbd_head_front",
+      "type": "Sensor",
+      "layer": "hardware",
+      "label": "rgbd_head_front",
+      "props": {
+        "source": "aimdk.docx#§1.6.2 RGBD"
+      },
+      "degree": 4
+    },
+    {
+      "id": "agibot_x2.hw.sensor.stereo_head_front_left",
+      "type": "Sensor",
+      "layer": "hardware",
+      "label": "stereo_head_front_left",
+      "props": {
+        "source": "aimdk.docx#§1.6.2 前视双目"
+      },
+      "degree": 2
+    },
+    {
+      "id": "agibot_x2.hw.sensor.stereo_head_front_right",
+      "type": "Sensor",
+      "layer": "hardware",
+      "label": "stereo_head_front_right",
+      "props": {
+        "source": "aimdk.docx#§1.6.2 前视双目"
+      },
+      "degree": 1
+    },
+    {
+      "id": "agibot_x2.hw.sensor.rgb_head_front_interaction",
+      "type": "Sensor",
+      "layer": "hardware",
+      "label": "rgb_head_front_interaction",
+      "props": {
+        "source": "aimdk.docx#§1.6.2 前视交互"
+      },
+      "degree": 2
+    },
+    {
+      "id": "agibot_x2.hw.sensor.rgb_head_rear",
+      "type": "Sensor",
+      "layer": "hardware",
+      "label": "rgb_head_rear",
+      "props": {
+        "source": "aimdk.docx#§1.6.2 后视"
+      },
+      "degree": 1
+    },
+    {
+      "id": "agibot_x2.hw.sensor.imu_chest",
+      "type": "Sensor",
+      "layer": "hardware",
+      "label": "imu_chest",
+      "props": {
+        "source": "aimdk.docx#§1.6.2 独立IMU"
+      },
+      "degree": 2
+    },
+    {
+      "id": "agibot_x2.hw.sensor.imu_torso",
+      "type": "Sensor",
+      "layer": "hardware",
+      "label": "imu_torso",
+      "props": {
+        "source": "aimdk.docx#§1.6.2 独立IMU"
+      },
+      "degree": 3
+    },
+    {
+      "id": "agibot_x2.hw.sensor.touch_head",
+      "type": "Sensor",
+      "layer": "hardware",
+      "label": "touch_head",
+      "props": {
+        "source": "aimdk.docx#§1.6.2 触摸; §5.4.1 头部触摸"
+      },
+      "degree": 2
+    },
+    {
+      "id": "agibot_x2.hw.body",
+      "type": "RobotBody",
+      "layer": "hardware",
+      "label": "body",
+      "props": {
+        "source": "aimdk.docx#§1.2.1"
+      },
+      "degree": 1
+    },
+    {
+      "id": "agibot_x2.hw.left_leg.hip_pitch",
+      "type": "Joint",
+      "layer": "hardware",
+      "label": "左Hip pitch",
+      "props": {
+        "name_human": "左Hip pitch",
+        "source": "x2_ultra.urdf#joint[left_hip_pitch_joint]"
+      },
+      "degree": 2
+    },
+    {
+      "id": "agibot_x2.hw.left_leg.hip_roll",
+      "type": "Joint",
+      "layer": "hardware",
+      "label": "左Hip roll",
+      "props": {
+        "name_human": "左Hip roll",
+        "source": "x2_ultra.urdf#joint[left_hip_roll_joint]"
+      },
+      "degree": 2
+    },
+    {
+      "id": "agibot_x2.hw.left_leg.hip_yaw",
+      "type": "Joint",
+      "layer": "hardware",
+      "label": "左Hip yaw",
+      "props": {
+        "name_human": "左Hip yaw",
+        "source": "x2_ultra.urdf#joint[left_hip_yaw_joint]"
+      },
+      "degree": 2
+    },
+    {
+      "id": "agibot_x2.hw.left_leg.knee",
+      "type": "Joint",
+      "layer": "hardware",
+      "label": "左Knee",
+      "props": {
+        "name_human": "左Knee",
+        "source": "x2_ultra.urdf#joint[left_knee_joint]"
+      },
+      "degree": 2
+    },
+    {
+      "id": "agibot_x2.hw.left_leg.ankle_pitch",
+      "type": "Joint",
+      "layer": "hardware",
+      "label": "左Ankle pitch",
+      "props": {
+        "name_human": "左Ankle pitch",
+        "source": "x2_ultra.urdf#joint[left_ankle_pitch_joint]"
+      },
+      "degree": 2
+    },
+    {
+      "id": "agibot_x2.hw.left_leg.ankle_roll",
+      "type": "Joint",
+      "layer": "hardware",
+      "label": "左Ankle roll",
+      "props": {
+        "name_human": "左Ankle roll",
+        "source": "x2_ultra.urdf#joint[left_ankle_roll_joint]"
+      },
+      "degree": 2
+    },
+    {
+      "id": "agibot_x2.hw.right_leg.hip_pitch",
+      "type": "Joint",
+      "layer": "hardware",
+      "label": "右Hip pitch",
+      "props": {
+        "name_human": "右Hip pitch",
+        "source": "x2_ultra.urdf#joint[right_hip_pitch_joint]"
+      },
+      "degree": 2
+    },
+    {
+      "id": "agibot_x2.hw.right_leg.hip_roll",
+      "type": "Joint",
+      "layer": "hardware",
+      "label": "右Hip roll",
+      "props": {
+        "name_human": "右Hip roll",
+        "source": "x2_ultra.urdf#joint[right_hip_roll_joint]"
+      },
+      "degree": 2
+    },
+    {
+      "id": "agibot_x2.hw.right_leg.hip_yaw",
+      "type": "Joint",
+      "layer": "hardware",
+      "label": "右Hip yaw",
+      "props": {
+        "name_human": "右Hip yaw",
+        "source": "x2_ultra.urdf#joint[right_hip_yaw_joint]"
+      },
+      "degree": 2
+    },
+    {
+      "id": "agibot_x2.hw.right_leg.knee",
+      "type": "Joint",
+      "layer": "hardware",
+      "label": "右Knee",
+      "props": {
+        "name_human": "右Knee",
+        "source": "x2_ultra.urdf#joint[right_knee_joint]"
+      },
+      "degree": 2
+    },
+    {
+      "id": "agibot_x2.hw.right_leg.ankle_pitch",
+      "type": "Joint",
+      "layer": "hardware",
+      "label": "右Ankle pitch",
+      "props": {
+        "name_human": "右Ankle pitch",
+        "source": "x2_ultra.urdf#joint[right_ankle_pitch_joint]"
+      },
+      "degree": 2
+    },
+    {
+      "id": "agibot_x2.hw.right_leg.ankle_roll",
+      "type": "Joint",
+      "layer": "hardware",
+      "label": "右Ankle roll",
+      "props": {
+        "name_human": "右Ankle roll",
+        "source": "x2_ultra.urdf#joint[right_ankle_roll_joint]"
+      },
+      "degree": 2
+    },
+    {
+      "id": "agibot_x2.hw.waist.waist_yaw",
+      "type": "Joint",
+      "layer": "hardware",
+      "label": "腰yaw",
+      "props": {
+        "name_human": "腰yaw",
+        "source": "x2_ultra.urdf#joint[waist_yaw_joint]"
+      },
+      "degree": 2
+    },
+    {
+      "id": "agibot_x2.hw.waist.waist_pitch",
+      "type": "Joint",
+      "layer": "hardware",
+      "label": "腰pitch",
+      "props": {
+        "name_human": "腰pitch",
+        "source": "x2_ultra.urdf#joint[waist_pitch_joint]"
+      },
+      "degree": 2
+    },
+    {
+      "id": "agibot_x2.hw.waist.waist_roll",
+      "type": "Joint",
+      "layer": "hardware",
+      "label": "腰roll",
+      "props": {
+        "name_human": "腰roll",
+        "source": "x2_ultra.urdf#joint[waist_roll_joint]"
+      },
+      "degree": 2
+    },
+    {
+      "id": "agibot_x2.hw.left_arm.shoulder_pitch",
+      "type": "Joint",
+      "layer": "hardware",
+      "label": "左Shoulder pitch",
+      "props": {
+        "name_human": "左Shoulder pitch",
+        "source": "x2_ultra.urdf#joint[left_shoulder_pitch_joint]"
+      },
+      "degree": 2
+    },
+    {
+      "id": "agibot_x2.hw.left_arm.shoulder_roll",
+      "type": "Joint",
+      "layer": "hardware",
+      "label": "左Shoulder roll",
+      "props": {
+        "name_human": "左Shoulder roll",
+        "source": "x2_ultra.urdf#joint[left_shoulder_roll_joint]"
+      },
+      "degree": 2
+    },
+    {
+      "id": "agibot_x2.hw.left_arm.shoulder_yaw",
+      "type": "Joint",
+      "layer": "hardware",
+      "label": "左Shoulder yaw",
+      "props": {
+        "name_human": "左Shoulder yaw",
+        "source": "x2_ultra.urdf#joint[left_shoulder_yaw_joint]"
+      },
+      "degree": 2
+    },
+    {
+      "id": "agibot_x2.hw.left_arm.elbow",
+      "type": "Joint",
+      "layer": "hardware",
+      "label": "左Elbow",
+      "props": {
+        "name_human": "左Elbow",
+        "source": "x2_ultra.urdf#joint[left_elbow_joint]"
+      },
+      "degree": 2
+    },
+    {
+      "id": "agibot_x2.hw.left_arm.wrist_yaw",
+      "type": "Joint",
+      "layer": "hardware",
+      "label": "左Wrist yaw",
+      "props": {
+        "name_human": "左Wrist yaw",
+        "source": "x2_ultra.urdf#joint[left_wrist_yaw_joint]"
+      },
+      "degree": 2
+    },
+    {
+      "id": "agibot_x2.hw.left_arm.wrist_pitch",
+      "type": "Joint",
+      "layer": "hardware",
+      "label": "左Wrist pitch",
+      "props": {
+        "name_human": "左Wrist pitch",
+        "source": "x2_ultra.urdf#joint[left_wrist_pitch_joint]"
+      },
+      "degree": 2
+    },
+    {
+      "id": "agibot_x2.hw.left_arm.wrist_roll",
+      "type": "Joint",
+      "layer": "hardware",
+      "label": "左Wrist roll",
+      "props": {
+        "name_human": "左Wrist roll",
+        "source": "x2_ultra.urdf#joint[left_wrist_roll_joint]"
+      },
+      "degree": 2
+    },
+    {
+      "id": "agibot_x2.hw.right_arm.shoulder_pitch",
+      "type": "Joint",
+      "layer": "hardware",
+      "label": "右Shoulder pitch",
+      "props": {
+        "name_human": "右Shoulder pitch",
+        "source": "x2_ultra.urdf#joint[right_shoulder_pitch_joint]"
+      },
+      "degree": 2
+    },
+    {
+      "id": "agibot_x2.hw.right_arm.shoulder_roll",
+      "type": "Joint",
+      "layer": "hardware",
+      "label": "右Shoulder roll",
+      "props": {
+        "name_human": "右Shoulder roll",
+        "source": "x2_ultra.urdf#joint[right_shoulder_roll_joint]"
+      },
+      "degree": 2
+    },
+    {
+      "id": "agibot_x2.hw.right_arm.shoulder_yaw",
+      "type": "Joint",
+      "layer": "hardware",
+      "label": "右Shoulder yaw",
+      "props": {
+        "name_human": "右Shoulder yaw",
+        "source": "x2_ultra.urdf#joint[right_shoulder_yaw_joint]"
+      },
+      "degree": 2
+    },
+    {
+      "id": "agibot_x2.hw.right_arm.elbow",
+      "type": "Joint",
+      "layer": "hardware",
+      "label": "右Elbow",
+      "props": {
+        "name_human": "右Elbow",
+        "source": "x2_ultra.urdf#joint[right_elbow_joint]"
+      },
+      "degree": 2
+    },
+    {
+      "id": "agibot_x2.hw.right_arm.wrist_yaw",
+      "type": "Joint",
+      "layer": "hardware",
+      "label": "右Wrist yaw",
+      "props": {
+        "name_human": "右Wrist yaw",
+        "source": "x2_ultra.urdf#joint[right_wrist_yaw_joint]"
+      },
+      "degree": 2
+    },
+    {
+      "id": "agibot_x2.hw.right_arm.wrist_pitch",
+      "type": "Joint",
+      "layer": "hardware",
+      "label": "右Wrist pitch",
+      "props": {
+        "name_human": "右Wrist pitch",
+        "source": "x2_ultra.urdf#joint[right_wrist_pitch_joint]"
+      },
+      "degree": 2
+    },
+    {
+      "id": "agibot_x2.hw.right_arm.wrist_roll",
+      "type": "Joint",
+      "layer": "hardware",
+      "label": "右Wrist roll",
+      "props": {
+        "name_human": "右Wrist roll",
+        "source": "x2_ultra.urdf#joint[right_wrist_roll_joint]"
+      },
+      "degree": 2
+    },
+    {
+      "id": "agibot_x2.hw.head.head_yaw",
+      "type": "Joint",
+      "layer": "hardware",
+      "label": "头yaw",
+      "props": {
+        "name_human": "头yaw",
+        "source": "x2_ultra.urdf#joint[head_yaw_joint]"
+      },
+      "degree": 2
+    },
+    {
+      "id": "agibot_x2.hw.head.head_pitch",
+      "type": "Joint",
+      "layer": "hardware",
+      "label": "头pitch",
+      "props": {
+        "name_human": "头pitch",
+        "source": "x2_ultra.urdf#joint[head_pitch_joint]"
+      },
+      "degree": 2
+    },
+    {
+      "id": "agibot_x2.hw.motor.protect.over_current",
+      "type": "ProtectionThreshold",
+      "layer": "hardware",
+      "label": "over_current",
+      "props": {
+        "unit": "A",
+        "source": "session_2026_04_08, hal_ethercat_x2.log line ~1084"
+      },
+      "degree": 0
+    },
+    {
+      "id": "agibot_x2.hw.motor.protect.over_voltage",
+      "type": "ProtectionThreshold",
+      "layer": "hardware",
+      "label": "over_voltage",
+      "props": {
+        "unit": "V",
+        "source": "session_2026_04_08, hal_ethercat_x2.log line ~3147"
+      },
+      "degree": 0
+    },
+    {
+      "id": "agibot_x2.hw.link.pelvis",
+      "type": "Link",
+      "layer": "kinematics",
+      "label": "pelvis",
+      "props": {
+        "source": "x2_ultra.urdf#link[pelvis]"
+      },
+      "degree": 9
+    },
+    {
+      "id": "agibot_x2.hw.link.imu_in_pelvis_link",
+      "type": "Link",
+      "layer": "kinematics",
+      "label": "imu_in_pelvis_link",
+      "props": {
+        "source": "x2_ultra.urdf#link[imu_in_pelvis_link]"
+      },
+      "degree": 1
+    },
+    {
+      "id": "agibot_x2.hw.link.left_hip_pitch_link",
+      "type": "Link",
+      "layer": "kinematics",
+      "label": "left_hip_pitch_link",
+      "props": {
+        "source": "x2_ultra.urdf#link[left_hip_pitch_link]"
+      },
+      "degree": 4
+    },
+    {
+      "id": "agibot_x2.hw.link.left_hip_roll_link",
+      "type": "Link",
+      "layer": "kinematics",
+      "label": "left_hip_roll_link",
+      "props": {
+        "source": "x2_ultra.urdf#link[left_hip_roll_link]"
+      },
+      "degree": 4
+    },
+    {
+      "id": "agibot_x2.hw.link.left_hip_yaw_link",
+      "type": "Link",
+      "layer": "kinematics",
+      "label": "left_hip_yaw_link",
+      "props": {
+        "source": "x2_ultra.urdf#link[left_hip_yaw_link]"
+      },
+      "degree": 4
+    },
+    {
+      "id": "agibot_x2.hw.link.left_knee_link",
+      "type": "Link",
+      "layer": "kinematics",
+      "label": "left_knee_link",
+      "props": {
+        "source": "x2_ultra.urdf#link[left_knee_link]"
+      },
+      "degree": 4
+    },
+    {
+      "id": "agibot_x2.hw.link.left_ankle_pitch_link",
+      "type": "Link",
+      "layer": "kinematics",
+      "label": "left_ankle_pitch_link",
+      "props": {
+        "source": "x2_ultra.urdf#link[left_ankle_pitch_link]"
+      },
+      "degree": 4
+    },
+    {
+      "id": "agibot_x2.hw.link.left_ankle_roll_link",
+      "type": "Link",
+      "layer": "kinematics",
+      "label": "left_ankle_roll_link",
+      "props": {
+        "source": "x2_ultra.urdf#link[left_ankle_roll_link]"
+      },
+      "degree": 2
+    },
+    {
+      "id": "agibot_x2.hw.link.right_hip_pitch_link",
+      "type": "Link",
+      "layer": "kinematics",
+      "label": "right_hip_pitch_link",
+      "props": {
+        "source": "x2_ultra.urdf#link[right_hip_pitch_link]"
+      },
+      "degree": 4
+    },
+    {
+      "id": "agibot_x2.hw.link.right_hip_roll_link",
+      "type": "Link",
+      "layer": "kinematics",
+      "label": "right_hip_roll_link",
+      "props": {
+        "source": "x2_ultra.urdf#link[right_hip_roll_link]"
+      },
+      "degree": 4
+    },
+    {
+      "id": "agibot_x2.hw.link.right_hip_yaw_link",
+      "type": "Link",
+      "layer": "kinematics",
+      "label": "right_hip_yaw_link",
+      "props": {
+        "source": "x2_ultra.urdf#link[right_hip_yaw_link]"
+      },
+      "degree": 4
+    },
+    {
+      "id": "agibot_x2.hw.link.right_knee_link",
+      "type": "Link",
+      "layer": "kinematics",
+      "label": "right_knee_link",
+      "props": {
+        "source": "x2_ultra.urdf#link[right_knee_link]"
+      },
+      "degree": 4
+    },
+    {
+      "id": "agibot_x2.hw.link.right_ankle_pitch_link",
+      "type": "Link",
+      "layer": "kinematics",
+      "label": "right_ankle_pitch_link",
+      "props": {
+        "source": "x2_ultra.urdf#link[right_ankle_pitch_link]"
+      },
+      "degree": 4
+    },
+    {
+      "id": "agibot_x2.hw.link.right_ankle_roll_link",
+      "type": "Link",
+      "layer": "kinematics",
+      "label": "right_ankle_roll_link",
+      "props": {
+        "source": "x2_ultra.urdf#link[right_ankle_roll_link]"
+      },
+      "degree": 2
+    },
+    {
+      "id": "agibot_x2.hw.link.waist_yaw_link",
+      "type": "Link",
+      "layer": "kinematics",
+      "label": "waist_yaw_link",
+      "props": {
+        "source": "x2_ultra.urdf#link[waist_yaw_link]"
+      },
+      "degree": 4
+    },
+    {
+      "id": "agibot_x2.hw.link.waist_pitch_link",
+      "type": "Link",
+      "layer": "kinematics",
+      "label": "waist_pitch_link",
+      "props": {
+        "source": "x2_ultra.urdf#link[waist_pitch_link]"
+      },
+      "degree": 4
+    },
+    {
+      "id": "agibot_x2.hw.link.torso_link",
+      "type": "Link",
+      "layer": "kinematics",
+      "label": "torso_link",
+      "props": {
+        "source": "x2_ultra.urdf#link[torso_link]"
+      },
+      "degree": 11
+    },
+    {
+      "id": "agibot_x2.hw.link.imu_in_torso_link",
+      "type": "Link",
+      "layer": "kinematics",
+      "label": "imu_in_torso_link",
+      "props": {
+        "source": "x2_ultra.urdf#link[imu_in_torso_link]"
+      },
+      "degree": 1
+    },
+    {
+      "id": "agibot_x2.hw.link.left_shoulder_pitch_link",
+      "type": "Link",
+      "layer": "kinematics",
+      "label": "left_shoulder_pitch_link",
+      "props": {
+        "source": "x2_ultra.urdf#link[left_shoulder_pitch_link]"
+      },
+      "degree": 4
+    },
+    {
+      "id": "agibot_x2.hw.link.left_shoulder_roll_link",
+      "type": "Link",
+      "layer": "kinematics",
+      "label": "left_shoulder_roll_link",
+      "props": {
+        "source": "x2_ultra.urdf#link[left_shoulder_roll_link]"
+      },
+      "degree": 4
+    },
+    {
+      "id": "agibot_x2.hw.link.left_shoulder_yaw_link",
+      "type": "Link",
+      "layer": "kinematics",
+      "label": "left_shoulder_yaw_link",
+      "props": {
+        "source": "x2_ultra.urdf#link[left_shoulder_yaw_link]"
+      },
+      "degree": 4
+    },
+    {
+      "id": "agibot_x2.hw.link.left_elbow_link",
+      "type": "Link",
+      "layer": "kinematics",
+      "label": "left_elbow_link",
+      "props": {
+        "source": "x2_ultra.urdf#link[left_elbow_link]"
+      },
+      "degree": 4
+    },
+    {
+      "id": "agibot_x2.hw.link.left_wrist_yaw_link",
+      "type": "Link",
+      "layer": "kinematics",
+      "label": "left_wrist_yaw_link",
+      "props": {
+        "source": "x2_ultra.urdf#link[left_wrist_yaw_link]"
+      },
+      "degree": 4
+    },
+    {
+      "id": "agibot_x2.hw.link.left_wrist_pitch_link",
+      "type": "Link",
+      "layer": "kinematics",
+      "label": "left_wrist_pitch_link",
+      "props": {
+        "source": "x2_ultra.urdf#link[left_wrist_pitch_link]"
+      },
+      "degree": 4
+    },
+    {
+      "id": "agibot_x2.hw.link.left_wrist_roll_link",
+      "type": "Link",
+      "layer": "kinematics",
+      "label": "left_wrist_roll_link",
+      "props": {
+        "source": "x2_ultra.urdf#link[left_wrist_roll_link]"
+      },
+      "degree": 2
+    },
+    {
+      "id": "agibot_x2.hw.link.right_shoulder_pitch_link",
+      "type": "Link",
+      "layer": "kinematics",
+      "label": "right_shoulder_pitch_link",
+      "props": {
+        "source": "x2_ultra.urdf#link[right_shoulder_pitch_link]"
+      },
+      "degree": 4
+    },
+    {
+      "id": "agibot_x2.hw.link.right_shoulder_roll_link",
+      "type": "Link",
+      "layer": "kinematics",
+      "label": "right_shoulder_roll_link",
+      "props": {
+        "source": "x2_ultra.urdf#link[right_shoulder_roll_link]"
+      },
+      "degree": 4
+    },
+    {
+      "id": "agibot_x2.hw.link.right_shoulder_yaw_link",
+      "type": "Link",
+      "layer": "kinematics",
+      "label": "right_shoulder_yaw_link",
+      "props": {
+        "source": "x2_ultra.urdf#link[right_shoulder_yaw_link]"
+      },
+      "degree": 4
+    },
+    {
+      "id": "agibot_x2.hw.link.right_elbow_link",
+      "type": "Link",
+      "layer": "kinematics",
+      "label": "right_elbow_link",
+      "props": {
+        "source": "x2_ultra.urdf#link[right_elbow_link]"
+      },
+      "degree": 4
+    },
+    {
+      "id": "agibot_x2.hw.link.right_wrist_yaw_link",
+      "type": "Link",
+      "layer": "kinematics",
+      "label": "right_wrist_yaw_link",
+      "props": {
+        "source": "x2_ultra.urdf#link[right_wrist_yaw_link]"
+      },
+      "degree": 4
+    },
+    {
+      "id": "agibot_x2.hw.link.right_wrist_pitch_link",
+      "type": "Link",
+      "layer": "kinematics",
+      "label": "right_wrist_pitch_link",
+      "props": {
+        "source": "x2_ultra.urdf#link[right_wrist_pitch_link]"
+      },
+      "degree": 4
+    },
+    {
+      "id": "agibot_x2.hw.link.right_wrist_roll_link",
+      "type": "Link",
+      "layer": "kinematics",
+      "label": "right_wrist_roll_link",
+      "props": {
+        "source": "x2_ultra.urdf#link[right_wrist_roll_link]"
+      },
+      "degree": 2
+    },
+    {
+      "id": "agibot_x2.hw.link.head_yaw_link",
+      "type": "Link",
+      "layer": "kinematics",
+      "label": "head_yaw_link",
+      "props": {
+        "source": "x2_ultra.urdf#link[head_yaw_link]"
+      },
+      "degree": 4
+    },
+    {
+      "id": "agibot_x2.hw.link.head_pitch_link",
+      "type": "Link",
+      "layer": "kinematics",
+      "label": "head_pitch_link",
+      "props": {
+        "source": "x2_ultra.urdf#link[head_pitch_link]"
+      },
+      "degree": 10
+    },
+    {
+      "id": "agibot_x2.hw.link.imu_in_head_link",
+      "type": "Link",
+      "layer": "kinematics",
+      "label": "imu_in_head_link",
+      "props": {
+        "source": "x2_ultra.urdf#link[imu_in_head_link]"
+      },
+      "degree": 1
+    },
+    {
+      "id": "agibot_x2.hw.link.rgbd_head_front",
+      "type": "Link",
+      "layer": "kinematics",
+      "label": "rgbd_head_front",
+      "props": {
+        "source": "x2_ultra.urdf#link[rgbd_head_front]"
+      },
+      "degree": 1
+    },
+    {
+      "id": "agibot_x2.hw.link.stereo_head_front",
+      "type": "Link",
+      "layer": "kinematics",
+      "label": "stereo_head_front",
+      "props": {
+        "source": "x2_ultra.urdf#link[stereo_head_front]"
+      },
+      "degree": 1
+    },
+    {
+      "id": "agibot_x2.hw.link.rgb_head_rear",
+      "type": "Link",
+      "layer": "kinematics",
+      "label": "rgb_head_rear",
+      "props": {
+        "source": "x2_ultra.urdf#link[rgb_head_rear]"
+      },
+      "degree": 1
+    },
+    {
+      "id": "agibot_x2.hw.link.rgb_head_center",
+      "type": "Link",
+      "layer": "kinematics",
+      "label": "rgb_head_center",
+      "props": {
+        "source": "x2_ultra.urdf#link[rgb_head_center]"
+      },
+      "degree": 1
+    },
+    {
+      "id": "agibot_x2.hw.link.lidar_chest_front",
+      "type": "Link",
+      "layer": "kinematics",
+      "label": "lidar_chest_front",
+      "props": {
+        "source": "x2_ultra.urdf#link[lidar_chest_front]"
+      },
+      "degree": 1
+    },
+    {
+      "id": "agibot_x2.hw.link.base_link",
+      "type": "Link",
+      "layer": "kinematics",
+      "label": "base_link",
+      "props": {
+        "source": "x2_ultra.urdf#link[base_link]"
+      },
+      "degree": 1
+    },
+    {
+      "id": "agibot_x2.mode.passive_default",
+      "type": "Mode",
+      "layer": "behaviors",
+      "label": "零力矩模式",
+      "props": {
+        "name_human": "零力矩模式",
+        "description": "机器人关节零力矩,自由状态",
+        "source": "aimdk.docx#§5.1.1"
+      },
+      "degree": 5
+    },
+    {
+      "id": "agibot_x2.mode.damping_default",
+      "type": "Mode",
+      "layer": "behaviors",
+      "label": "阻尼模式",
+      "props": {
+        "name_human": "阻尼模式",
+        "description": "关节有阻尼感",
+        "source": "aimdk.docx#§5.1.1"
+      },
+      "degree": 3
+    },
+    {
+      "id": "agibot_x2.mode.joint_default",
+      "type": "Mode",
+      "layer": "behaviors",
+      "label": "位控站立",
+      "props": {
+        "name_human": "位控站立",
+        "description": "位置控制站立",
+        "source": "aimdk.docx#§5.1.1"
+      },
+      "degree": 7
+    },
+    {
+      "id": "agibot_x2.mode.stand_default",
+      "type": "Mode",
+      "layer": "behaviors",
+      "label": "稳定站立",
+      "props": {
+        "name_human": "稳定站立",
+        "description": "主动发力确保站立",
+        "source": "aimdk.docx#§5.1.1"
+      },
+      "degree": 12
+    },
+    {
+      "id": "agibot_x2.mode.locomotion_default",
+      "type": "Mode",
+      "layer": "behaviors",
+      "label": "走跑模式",
+      "props": {
+        "name_human": "走跑模式",
+        "description": "正常走跑",
+        "source": "aimdk.docx#§5.1.1"
+      },
+      "degree": 7
+    },
+    {
+      "id": "agibot_x2.mode.production_test",
+      "type": "Mode",
+      "layer": "behaviors",
+      "label": "产线测试模式",
+      "props": {
+        "name_human": "产线测试模式",
+        "description": "产线测试场景使用,在 sm.log 中可见 mode transition request",
+        "source": "session_2026_04_08, sm.log"
+      },
+      "degree": 0
+    },
+    {
+      "id": "agibot_x2.control_loop.mc_arbitration",
+      "type": "ControlLoop",
+      "layer": "behaviors",
+      "label": "MC 输入源仲裁回路",
+      "props": {
+        "name_human": "MC 输入源仲裁回路",
+        "description": "对多个控制输入源做优先级实时仲裁,选择最高优先级活跃源的指令",
+        "source": "aimdk.docx#§5.1.3"
+      },
+      "degree": 11
+    },
+    {
+      "id": "agibot_x2.input_source.rc",
+      "type": "InputSource",
+      "layer": "behaviors",
+      "label": "rc",
+      "props": {
+        "source": "aimdk.docx#§5.1.3"
+      },
+      "degree": 5
+    },
+    {
+      "id": "agibot_x2.input_source.vr",
+      "type": "InputSource",
+      "layer": "behaviors",
+      "label": "vr",
+      "props": {
+        "source": "aimdk.docx#§5.1.3"
+      },
+      "degree": 2
+    },
+    {
+      "id": "agibot_x2.input_source.app_proxy",
+      "type": "InputSource",
+      "layer": "behaviors",
+      "label": "app_proxy",
+      "props": {
+        "source": "aimdk.docx#§5.1.3"
+      },
+      "degree": 3
+    },
+    {
+      "id": "agibot_x2.input_source.interaction",
+      "type": "InputSource",
+      "layer": "behaviors",
+      "label": "interaction",
+      "props": {
+        "source": "aimdk.docx#§5.1.3"
+      },
+      "degree": 3
+    },
+    {
+      "id": "agibot_x2.input_source.pnc",
+      "type": "InputSource",
+      "layer": "behaviors",
+      "label": "pnc",
+      "props": {
+        "source": "aimdk.docx#§5.1.3"
+      },
+      "degree": 3
+    },
+    {
+      "id": "agibot_x2.priority.safety_l10",
+      "type": "PriorityLevel",
+      "layer": "behaviors",
+      "label": "SAFETY_L10",
+      "props": {
+        "name": "SAFETY_L10",
+        "description": "紧急安全层",
+        "source": "aimdk.docx#§5.2.1"
+      },
+      "degree": 2
+    },
+    {
+      "id": "agibot_x2.priority.warning_l8",
+      "type": "PriorityLevel",
+      "layer": "behaviors",
+      "label": "WARNING_L8",
+      "props": {
+        "name": "WARNING_L8",
+        "description": "危险预警层",
+        "source": "aimdk.docx#§5.2.1"
+      },
+      "degree": 2
+    },
+    {
+      "id": "agibot_x2.priority.system_l7",
+      "type": "PriorityLevel",
+      "layer": "behaviors",
+      "label": "SYSTEM_L7",
+      "props": {
+        "name": "SYSTEM_L7",
+        "description": "系统提示层",
+        "source": "aimdk.docx#§5.2.1"
+      },
+      "degree": 1
+    },
+    {
+      "id": "agibot_x2.priority.interaction_l6",
+      "type": "PriorityLevel",
+      "layer": "behaviors",
+      "label": "INTERACTION_L6",
+      "props": {
+        "name": "INTERACTION_L6",
+        "description": "交互响应层",
+        "source": "aimdk.docx#§5.2.1"
+      },
+      "degree": 2
+    },
+    {
+      "id": "agibot_x2.priority.mission_l4",
+      "type": "PriorityLevel",
+      "layer": "behaviors",
+      "label": "MISSION_L4",
+      "props": {
+        "name": "MISSION_L4",
+        "description": "任务执行层",
+        "source": "aimdk.docx#§5.2.1"
+      },
+      "degree": 1
+    },
+    {
+      "id": "agibot_x2.priority.service_l2",
+      "type": "PriorityLevel",
+      "layer": "behaviors",
+      "label": "SERVICE_L2",
+      "props": {
+        "name": "SERVICE_L2",
+        "description": "主动服务层",
+        "source": "aimdk.docx#§5.2.1"
+      },
+      "degree": 1
+    },
+    {
+      "id": "agibot_x2.priority.background_l1",
+      "type": "PriorityLevel",
+      "layer": "behaviors",
+      "label": "BACKGROUND_L1",
+      "props": {
+        "name": "BACKGROUND_L1",
+        "description": "后台服务层",
+        "source": "aimdk.docx#§5.2.1"
+      },
+      "degree": 1
+    },
+    {
+      "id": "agibot_x2.motion.right_hand_wave",
+      "type": "PresetMotion",
+      "layer": "behaviors",
+      "label": "右手挥手",
+      "props": {
+        "name_human": "右手挥手",
+        "source": "aimdk.docx#§5.1.4"
+      },
+      "degree": 2
+    },
+    {
+      "id": "agibot_x2.motion.left_hand_wave",
+      "type": "PresetMotion",
+      "layer": "behaviors",
+      "label": "左手挥手",
+      "props": {
+        "name_human": "左手挥手",
+        "source": "aimdk.docx#§5.1.4"
+      },
+      "degree": 2
+    },
+    {
+      "id": "agibot_x2.motion.right_handshake",
+      "type": "PresetMotion",
+      "layer": "behaviors",
+      "label": "右手握手",
+      "props": {
+        "name_human": "右手握手",
+        "source": "aimdk.docx#§5.1.4"
+      },
+      "degree": 1
+    },
+    {
+      "id": "agibot_x2.motion.left_handshake",
+      "type": "PresetMotion",
+      "layer": "behaviors",
+      "label": "左手握手",
+      "props": {
+        "name_human": "左手握手",
+        "source": "aimdk.docx#§5.1.4"
+      },
+      "degree": 1
+    },
+    {
+      "id": "agibot_x2.motion.right_hand_raise",
+      "type": "PresetMotion",
+      "layer": "behaviors",
+      "label": "右手举手",
+      "props": {
+        "name_human": "右手举手",
+        "source": "aimdk.docx#§5.1.4"
+      },
+      "degree": 1
+    },
+    {
+      "id": "agibot_x2.motion.left_hand_raise",
+      "type": "PresetMotion",
+      "layer": "behaviors",
+      "label": "左手举手",
+      "props": {
+        "name_human": "左手举手",
+        "source": "aimdk.docx#§5.1.4"
+      },
+      "degree": 1
+    },
+    {
+      "id": "agibot_x2.motion.right_flying_kiss",
+      "type": "PresetMotion",
+      "layer": "behaviors",
+      "label": "右手飞吻",
+      "props": {
+        "name_human": "右手飞吻",
+        "source": "aimdk.docx#§5.1.4"
+      },
+      "degree": 1
+    },
+    {
+      "id": "agibot_x2.motion.left_flying_kiss",
+      "type": "PresetMotion",
+      "layer": "behaviors",
+      "label": "左手飞吻",
+      "props": {
+        "name_human": "左手飞吻",
+        "source": "aimdk.docx#§5.1.4"
+      },
+      "degree": 1
+    },
+    {
+      "id": "agibot_x2.motion.applause",
+      "type": "PresetMotion",
+      "layer": "behaviors",
+      "label": "鼓掌",
+      "props": {
+        "name_human": "鼓掌",
+        "source": "aimdk.docx#§5.1.4"
+      },
+      "degree": 2
+    },
+    {
+      "id": "agibot_x2.motion.right_salute",
+      "type": "PresetMotion",
+      "layer": "behaviors",
+      "label": "右手敬礼",
+      "props": {
+        "name_human": "右手敬礼",
+        "source": "aimdk.docx#§5.1.4"
+      },
+      "degree": 1
+    },
+    {
+      "id": "agibot_x2.motion.left_salute",
+      "type": "PresetMotion",
+      "layer": "behaviors",
+      "label": "左手敬礼",
+      "props": {
+        "name_human": "左手敬礼",
+        "source": "aimdk.docx#§5.1.4"
+      },
+      "degree": 1
+    },
+    {
+      "id": "agibot_x2.motion.heart_both",
+      "type": "PresetMotion",
+      "layer": "behaviors",
+      "label": "双手比心",
+      "props": {
+        "name_human": "双手比心",
+        "source": "aimdk.docx#§5.1.4"
+      },
+      "degree": 1
+    },
+    {
+      "id": "agibot_x2.motion.heart_right",
+      "type": "PresetMotion",
+      "layer": "behaviors",
+      "label": "右手比心",
+      "props": {
+        "name_human": "右手比心",
+        "source": "aimdk.docx#§5.1.4"
+      },
+      "degree": 1
+    },
+    {
+      "id": "agibot_x2.motion.heart_left",
+      "type": "PresetMotion",
+      "layer": "behaviors",
+      "label": "左手比心",
+      "props": {
+        "name_human": "左手比心",
+        "source": "aimdk.docx#§5.1.4"
+      },
+      "degree": 1
+    },
+    {
+      "id": "agibot_x2.motion.hug",
+      "type": "PresetMotion",
+      "layer": "behaviors",
+      "label": "拥抱",
+      "props": {
+        "name_human": "拥抱",
+        "source": "aimdk.docx#§5.1.4"
+      },
+      "degree": 2
+    },
+    {
+      "id": "agibot_x2.motion.cheer_up",
+      "type": "PresetMotion",
+      "layer": "behaviors",
+      "label": "加油",
+      "props": {
+        "name_human": "加油",
+        "source": "aimdk.docx#§5.1.4"
+      },
+      "degree": 1
+    },
+    {
+      "id": "agibot_x2.motion.arms_out_both",
+      "type": "PresetMotion",
+      "layer": "behaviors",
+      "label": "双手平举",
+      "props": {
+        "name_human": "双手平举",
+        "source": "aimdk.docx#§5.1.4"
+      },
+      "degree": 1
+    },
+    {
+      "id": "agibot_x2.motion.arm_out_right",
+      "type": "PresetMotion",
+      "layer": "behaviors",
+      "label": "右手平举",
+      "props": {
+        "name_human": "右手平举",
+        "source": "aimdk.docx#§5.1.4"
+      },
+      "degree": 1
+    },
+    {
+      "id": "agibot_x2.motion.arm_out_left",
+      "type": "PresetMotion",
+      "layer": "behaviors",
+      "label": "左手平举",
+      "props": {
+        "name_human": "左手平举",
+        "source": "aimdk.docx#§5.1.4"
+      },
+      "degree": 1
+    },
+    {
+      "id": "agibot_x2.motion.bye",
+      "type": "PresetMotion",
+      "layer": "behaviors",
+      "label": "拜拜",
+      "props": {
+        "name_human": "拜拜",
+        "source": "aimdk.docx#§5.1.4"
+      },
+      "degree": 1
+    },
+    {
+      "id": "agibot_x2.motion.wave_burst",
+      "type": "PresetMotion",
+      "layer": "behaviors",
+      "label": "动感光波",
+      "props": {
+        "name_human": "动感光波",
+        "source": "aimdk.docx#§5.1.4"
+      },
+      "degree": 1
+    },
+    {
+      "id": "agibot_x2.motion.right_high_five",
+      "type": "PresetMotion",
+      "layer": "behaviors",
+      "label": "右手击掌",
+      "props": {
+        "name_human": "右手击掌",
+        "source": "aimdk.docx#§5.1.4"
+      },
+      "degree": 1
+    },
+    {
+      "id": "agibot_x2.motion.left_high_five",
+      "type": "PresetMotion",
+      "layer": "behaviors",
+      "label": "左手击掌",
+      "props": {
+        "name_human": "左手击掌",
+        "source": "aimdk.docx#§5.1.4"
+      },
+      "degree": 1
+    },
+    {
+      "id": "agibot_x2.motion.cross_arms",
+      "type": "PresetMotion",
+      "layer": "behaviors",
+      "label": "双手打叉",
+      "props": {
+        "name_human": "双手打叉",
+        "source": "aimdk.docx#§5.1.4"
+      },
+      "degree": 1
+    },
+    {
+      "id": "agibot_x2.motion.chest_wave_right",
+      "type": "PresetMotion",
+      "layer": "behaviors",
+      "label": "胸前右手挥手",
+      "props": {
+        "name_human": "胸前右手挥手",
+        "source": "aimdk.docx#§5.1.4"
+      },
+      "degree": 1
+    },
+    {
+      "id": "agibot_x2.motion.chest_wave_left",
+      "type": "PresetMotion",
+      "layer": "behaviors",
+      "label": "胸前左手挥手",
+      "props": {
+        "name_human": "胸前左手挥手",
+        "source": "aimdk.docx#§5.1.4"
+      },
+      "degree": 1
+    },
+    {
+      "id": "agibot_x2.motion.bow",
+      "type": "PresetMotion",
+      "layer": "behaviors",
+      "label": "鞠躬",
+      "props": {
+        "name_human": "鞠躬",
+        "source": "aimdk.docx#§5.1.4"
+      },
+      "degree": 2
+    },
+    {
+      "id": "agibot_x2.motion.head_scratch",
+      "type": "PresetMotion",
+      "layer": "behaviors",
+      "label": "挠头",
+      "props": {
+        "name_human": "挠头",
+        "source": "aimdk.docx#§5.1.4"
+      },
+      "degree": 1
+    },
+    {
+      "id": "agibot_x2.motion.butt_scratch",
+      "type": "PresetMotion",
+      "layer": "behaviors",
+      "label": "抓屁股",
+      "props": {
+        "name_human": "抓屁股",
+        "source": "aimdk.docx#§5.1.4"
+      },
+      "degree": 1
+    },
+    {
+      "id": "agibot_x2.motion.lying_stand_up",
+      "type": "PresetMotion",
+      "layer": "behaviors",
+      "label": "平躺站起",
+      "props": {
+        "name_human": "平躺站起",
+        "source": "aimdk.docx#§2.1.2"
+      },
+      "degree": 2
+    },
+    {
+      "id": "agibot_x2.motion.sitting_stand_up",
+      "type": "PresetMotion",
+      "layer": "behaviors",
+      "label": "坐下站起",
+      "props": {
+        "name_human": "坐下站起",
+        "source": "aimdk.docx#§2.1.3"
+      },
+      "degree": 2
+    },
+    {
+      "id": "agibot_x2.event.pmu.rk3588_power_good",
+      "type": "StatusBit",
+      "layer": "events",
+      "label": "rk3588_power_good",
+      "props": {
+        "source": "aimdk.docx#§5.4.2 pmu_bool_status.0"
+      },
+      "degree": 2
+    },
+    {
+      "id": "agibot_x2.event.pmu.rk3588_monitor1",
+      "type": "StatusBit",
+      "layer": "events",
+      "label": "rk3588_monitor1",
+      "props": {
+        "source": "aimdk.docx#§5.4.2 pmu_bool_status.1"
+      },
+      "degree": 2
+    },
+    {
+      "id": "agibot_x2.event.pmu.rk3588_monitor2",
+      "type": "StatusBit",
+      "layer": "events",
+      "label": "rk3588_monitor2",
+      "props": {
+        "source": "aimdk.docx#§5.4.2 pmu_bool_status.2"
+      },
+      "degree": 2
+    },
+    {
+      "id": "agibot_x2.event.pmu.orin_power_good",
+      "type": "StatusBit",
+      "layer": "events",
+      "label": "orin_power_good",
+      "props": {
+        "source": "aimdk.docx#§5.4.2 pmu_bool_status.3"
+      },
+      "degree": 2
+    },
+    {
+      "id": "agibot_x2.event.pmu.orin_monitor1",
+      "type": "StatusBit",
+      "layer": "events",
+      "label": "orin_monitor1",
+      "props": {
+        "source": "aimdk.docx#§5.4.2 pmu_bool_status.4"
+      },
+      "degree": 2
+    },
+    {
+      "id": "agibot_x2.event.pmu.orin_monitor2",
+      "type": "StatusBit",
+      "layer": "events",
+      "label": "orin_monitor2",
+      "props": {
+        "source": "aimdk.docx#§5.4.2 pmu_bool_status.5"
+      },
+      "degree": 2
+    },
+    {
+      "id": "agibot_x2.event.pmu.bus48v_overcurrent",
+      "type": "StatusBit",
+      "layer": "events",
+      "label": "bus48v_overcurrent",
+      "props": {
+        "source": "aimdk.docx#§5.4.2 pmu_bool_status.6"
+      },
+      "degree": 2
+    },
+    {
+      "id": "agibot_x2.event.pmu.bus48v_overtemperature",
+      "type": "StatusBit",
+      "layer": "events",
+      "label": "bus48v_overtemperature",
+      "props": {
+        "source": "aimdk.docx#§5.4.2 pmu_bool_status.7"
+      },
+      "degree": 2
+    },
+    {
+      "id": "agibot_x2.event.pmu.rk3588_plug_detect",
+      "type": "StatusBit",
+      "layer": "events",
+      "label": "rk3588_plug_detect",
+      "props": {
+        "source": "aimdk.docx#§5.4.2 pmu_bool_status.8"
+      },
+      "degree": 2
+    },
+    {
+      "id": "agibot_x2.event.pmu.orin_nx_plug_detect",
+      "type": "StatusBit",
+      "layer": "events",
+      "label": "orin_nx_plug_detect",
+      "props": {
+        "source": "aimdk.docx#§5.4.2 pmu_bool_status.9"
+      },
+      "degree": 2
+    },
+    {
+      "id": "agibot_x2.event.bms.charge_flag",
+      "type": "StatusBit",
+      "layer": "events",
+      "label": "charge_flag",
+      "props": {
+        "source": "aimdk.docx#§5.4.2 bms.0"
+      },
+      "degree": 2
+    },
+    {
+      "id": "agibot_x2.event.bms.charge_overcurrent",
+      "type": "StatusBit",
+      "layer": "events",
+      "label": "charge_overcurrent",
+      "props": {
+        "source": "aimdk.docx#§5.4.2 bms.1"
+      },
+      "degree": 2
+    },
+    {
+      "id": "agibot_x2.event.bms.discharge_flag",
+      "type": "StatusBit",
+      "layer": "events",
+      "label": "discharge_flag",
+      "props": {
+        "source": "aimdk.docx#§5.4.2 bms.2"
+      },
+      "degree": 2
+    },
+    {
+      "id": "agibot_x2.event.bms.discharge_overcurrent",
+      "type": "StatusBit",
+      "layer": "events",
+      "label": "discharge_overcurrent",
+      "props": {
+        "source": "aimdk.docx#§5.4.2 bms.3"
+      },
+      "degree": 2
+    },
+    {
+      "id": "agibot_x2.event.bms.short_circuit",
+      "type": "StatusBit",
+      "layer": "events",
+      "label": "short_circuit",
+      "props": {
+        "source": "aimdk.docx#§5.4.2 bms.4"
+      },
+      "degree": 2
+    },
+    {
+      "id": "agibot_x2.event.bms.cell_overvoltage",
+      "type": "StatusBit",
+      "layer": "events",
+      "label": "cell_overvoltage",
+      "props": {
+        "source": "aimdk.docx#§5.4.2 bms.5"
+      },
+      "degree": 2
+    },
+    {
+      "id": "agibot_x2.event.bms.cell_undervoltage",
+      "type": "StatusBit",
+      "layer": "events",
+      "label": "cell_undervoltage",
+      "props": {
+        "source": "aimdk.docx#§5.4.2 bms.6"
+      },
+      "degree": 2
+    },
+    {
+      "id": "agibot_x2.event.bms.battery_overvoltage",
+      "type": "StatusBit",
+      "layer": "events",
+      "label": "battery_overvoltage",
+      "props": {
+        "source": "aimdk.docx#§5.4.2 bms.7"
+      },
+      "degree": 2
+    },
+    {
+      "id": "agibot_x2.event.bms.battery_undervoltage",
+      "type": "StatusBit",
+      "layer": "events",
+      "label": "battery_undervoltage",
+      "props": {
+        "source": "aimdk.docx#§5.4.2 bms.8"
+      },
+      "degree": 2
+    },
+    {
+      "id": "agibot_x2.event.bms.cell_open_circuit",
+      "type": "StatusBit",
+      "layer": "events",
+      "label": "cell_open_circuit",
+      "props": {
+        "source": "aimdk.docx#§5.4.2 bms.9"
+      },
+      "degree": 2
+    },
+    {
+      "id": "agibot_x2.event.bms.ntc_open_circuit",
+      "type": "StatusBit",
+      "layer": "events",
+      "label": "ntc_open_circuit",
+      "props": {
+        "source": "aimdk.docx#§5.4.2 bms.10"
+      },
+      "degree": 2
+    },
+    {
+      "id": "agibot_x2.event.bms.cell_discharge_overtemp",
+      "type": "StatusBit",
+      "layer": "events",
+      "label": "cell_discharge_overtemp",
+      "props": {
+        "source": "aimdk.docx#§5.4.2 bms.11"
+      },
+      "degree": 2
+    },
+    {
+      "id": "agibot_x2.event.bms.cell_charge_overtemp",
+      "type": "StatusBit",
+      "layer": "events",
+      "label": "cell_charge_overtemp",
+      "props": {
+        "source": "aimdk.docx#§5.4.2 bms.12"
+      },
+      "degree": 2
+    },
+    {
+      "id": "agibot_x2.event.bms.cell_discharge_undertemp",
+      "type": "StatusBit",
+      "layer": "events",
+      "label": "cell_discharge_undertemp",
+      "props": {
+        "source": "aimdk.docx#§5.4.2 bms.13"
+      },
+      "degree": 2
+    },
+    {
+      "id": "agibot_x2.event.bms.cell_charge_undertemp",
+      "type": "StatusBit",
+      "layer": "events",
+      "label": "cell_charge_undertemp",
+      "props": {
+        "source": "aimdk.docx#§5.4.2 bms.14"
+      },
+      "degree": 2
+    },
+    {
+      "id": "agibot_x2.event.bms.cell_voltage_diff_over_high",
+      "type": "StatusBit",
+      "layer": "events",
+      "label": "cell_voltage_diff_over_high",
+      "props": {
+        "source": "aimdk.docx#§5.4.2 bms.16"
+      },
+      "degree": 2
+    },
+    {
+      "id": "agibot_x2.event.bms.mosfet_charge_disable",
+      "type": "StatusBit",
+      "layer": "events",
+      "label": "mosfet_charge_disable",
+      "props": {
+        "source": "aimdk.docx#§5.4.2 bms.17"
+      },
+      "degree": 2
+    },
+    {
+      "id": "agibot_x2.event.bms.mosfet_discharge_disable",
+      "type": "StatusBit",
+      "layer": "events",
+      "label": "mosfet_discharge_disable",
+      "props": {
+        "source": "aimdk.docx#§5.4.2 bms.18"
+      },
+      "degree": 2
+    },
+    {
+      "id": "agibot_x2.event.bms.mosfet_overtemp",
+      "type": "StatusBit",
+      "layer": "events",
+      "label": "mosfet_overtemp",
+      "props": {
+        "source": "aimdk.docx#§5.4.2 bms.19"
+      },
+      "degree": 2
+    },
+    {
+      "id": "agibot_x2.event.bms.balance_line_resistance_over_high",
+      "type": "StatusBit",
+      "layer": "events",
+      "label": "balance_line_resistance_over_high",
+      "props": {
+        "source": "aimdk.docx#§5.4.2 bms.20"
+      },
+      "degree": 2
+    },
+    {
+      "id": "agibot_x2.event.hand.omnipicker.no_fault",
+      "type": "FaultCode",
+      "layer": "events",
+      "label": "no_fault",
+      "props": {
+        "source": "aimdk.docx#§5.1.5 OmniPicker faultcode"
+      },
+      "degree": 1
+    },
+    {
+      "id": "agibot_x2.event.hand.omnipicker.over_temp",
+      "type": "FaultCode",
+      "layer": "events",
+      "label": "over_temp",
+      "props": {
+        "source": "aimdk.docx#§5.1.5"
+      },
+      "degree": 1
+    },
+    {
+      "id": "agibot_x2.event.hand.omnipicker.over_speed",
+      "type": "FaultCode",
+      "layer": "events",
+      "label": "over_speed",
+      "props": {
+        "source": "aimdk.docx#§5.1.5"
+      },
+      "degree": 1
+    },
+    {
+      "id": "agibot_x2.event.hand.omnipicker.init_fault",
+      "type": "FaultCode",
+      "layer": "events",
+      "label": "init_fault",
+      "props": {
+        "source": "aimdk.docx#§5.1.5"
+      },
+      "degree": 1
+    },
+    {
+      "id": "agibot_x2.event.hand.omnipicker.over_limit",
+      "type": "FaultCode",
+      "layer": "events",
+      "label": "over_limit",
+      "props": {
+        "source": "aimdk.docx#§5.1.5"
+      },
+      "degree": 1
+    },
+    {
+      "id": "agibot_x2.event.joint_domain.damping_mode",
+      "type": "FaultCode",
+      "layer": "events",
+      "label": "damping_mode",
+      "props": {
+        "source": "aimdk.docx#§5.1.6 DomainErrorState"
+      },
+      "degree": 1
+    },
+    {
+      "id": "agibot_x2.event.joint_domain.power_off",
+      "type": "FaultCode",
+      "layer": "events",
+      "label": "power_off",
+      "props": {
+        "source": "aimdk.docx#§5.1.6"
+      },
+      "degree": 1
+    },
+    {
+      "id": "agibot_x2.event.joint_domain.disabled",
+      "type": "FaultCode",
+      "layer": "events",
+      "label": "disabled",
+      "props": {
+        "source": "aimdk.docx#§5.1.6"
+      },
+      "degree": 1
+    },
+    {
+      "id": "agibot_x2.event.joint_domain.comm_disconnect",
+      "type": "FaultCode",
+      "layer": "events",
+      "label": "comm_disconnect",
+      "props": {
+        "source": "aimdk.docx#§5.1.6"
+      },
+      "degree": 1
+    },
+    {
+      "id": "agibot_x2.event.hand.omnipicker.target_reached",
+      "type": "StatusBit",
+      "layer": "events",
+      "label": "target_reached",
+      "props": {
+        "source": "aimdk.docx#§5.1.5"
+      },
+      "degree": 1
+    },
+    {
+      "id": "agibot_x2.event.hand.omnipicker.moving",
+      "type": "StatusBit",
+      "layer": "events",
+      "label": "moving",
+      "props": {
+        "source": "aimdk.docx#§5.1.5"
+      },
+      "degree": 1
+    },
+    {
+      "id": "agibot_x2.event.hand.omnipicker.jammed",
+      "type": "StatusBit",
+      "layer": "events",
+      "label": "jammed",
+      "props": {
+        "source": "aimdk.docx#§5.1.5"
+      },
+      "degree": 1
+    },
+    {
+      "id": "agibot_x2.event.hand.omnipicker.object_dropped",
+      "type": "StatusBit",
+      "layer": "events",
+      "label": "object_dropped",
+      "props": {
+        "source": "aimdk.docx#§5.1.5"
+      },
+      "degree": 1
+    },
+    {
+      "id": "agibot_x2.event.touch.unknown",
+      "type": "TouchEvent",
+      "layer": "events",
+      "label": "unknown",
+      "props": {
+        "source": "aimdk.docx#§5.4.1 TouchState"
+      },
+      "degree": 1
+    },
+    {
+      "id": "agibot_x2.event.touch.idle",
+      "type": "TouchEvent",
+      "layer": "events",
+      "label": "idle",
+      "props": {
+        "source": "aimdk.docx#§5.4.1"
+      },
+      "degree": 1
+    },
+    {
+      "id": "agibot_x2.event.touch.touch",
+      "type": "TouchEvent",
+      "layer": "events",
+      "label": "touch",
+      "props": {
+        "source": "aimdk.docx#§5.4.1"
+      },
+      "degree": 1
+    },
+    {
+      "id": "agibot_x2.event.touch.swipe",
+      "type": "TouchEvent",
+      "layer": "events",
+      "label": "swipe",
+      "props": {
+        "source": "aimdk.docx#§5.4.1"
+      },
+      "degree": 1
+    },
+    {
+      "id": "agibot_x2.event.touch.single_tap",
+      "type": "TouchEvent",
+      "layer": "events",
+      "label": "single_tap",
+      "props": {
+        "source": "aimdk.docx#§5.4.1"
+      },
+      "degree": 1
+    },
+    {
+      "id": "agibot_x2.event.touch.double_tap",
+      "type": "TouchEvent",
+      "layer": "events",
+      "label": "double_tap",
+      "props": {
+        "source": "aimdk.docx#§5.4.1"
+      },
+      "degree": 1
+    },
+    {
+      "id": "agibot_x2.event.touch.triple_tap",
+      "type": "TouchEvent",
+      "layer": "events",
+      "label": "triple_tap",
+      "props": {
+        "source": "aimdk.docx#§5.4.1"
+      },
+      "degree": 1
+    },
+    {
+      "id": "agibot_x2.if.topic.mc_locomotion_velocity",
+      "type": "Topic",
+      "layer": "interfaces",
+      "label": "/aima/mc/locomotion/velocity",
+      "props": {
+        "name": "/aima/mc/locomotion/velocity",
+        "source": "aimdk.docx#§5.1.2"
+      },
+      "degree": 6
+    },
+    {
+      "id": "agibot_x2.if.topic.joint_arm_command",
+      "type": "Topic",
+      "layer": "interfaces",
+      "label": "/aima/hal/joint/arm/command",
+      "props": {
+        "name": "/aima/hal/joint/arm/command",
+        "source": "aimdk.docx#§5.1.6"
+      },
+      "degree": 3
+    },
+    {
+      "id": "agibot_x2.if.topic.joint_arm_state",
+      "type": "Topic",
+      "layer": "interfaces",
+      "label": "/aima/hal/joint/arm/state",
+      "props": {
+        "name": "/aima/hal/joint/arm/state",
+        "source": "aimdk.docx#§5.1.6"
+      },
+      "degree": 5
+    },
+    {
+      "id": "agibot_x2.if.topic.joint_leg_command",
+      "type": "Topic",
+      "layer": "interfaces",
+      "label": "/aima/hal/joint/leg/command",
+      "props": {
+        "name": "/aima/hal/joint/leg/command",
+        "source": "aimdk.docx#§5.1.6"
+      },
+      "degree": 2
+    },
+    {
+      "id": "agibot_x2.if.topic.joint_leg_state",
+      "type": "Topic",
+      "layer": "interfaces",
+      "label": "/aima/hal/joint/leg/state",
+      "props": {
+        "name": "/aima/hal/joint/leg/state",
+        "source": "aimdk.docx#§5.1.6"
+      },
+      "degree": 1
+    },
+    {
+      "id": "agibot_x2.if.topic.joint_waist_command",
+      "type": "Topic",
+      "layer": "interfaces",
+      "label": "/aima/hal/joint/waist/command",
+      "props": {
+        "name": "/aima/hal/joint/waist/command",
+        "source": "aimdk.docx#§5.1.6"
+      },
+      "degree": 0
+    },
+    {
+      "id": "agibot_x2.if.topic.joint_head_command",
+      "type": "Topic",
+      "layer": "interfaces",
+      "label": "/aima/hal/joint/head/command",
+      "props": {
+        "name": "/aima/hal/joint/head/command",
+        "source": "aimdk.docx#§5.1.6"
+      },
+      "degree": 0
+    },
+    {
+      "id": "agibot_x2.if.topic.joint_hand_command",
+      "type": "Topic",
+      "layer": "interfaces",
+      "label": "/aima/hal/joint/hand/command",
+      "props": {
+        "name": "/aima/hal/joint/hand/command",
+        "source": "aimdk.docx#§5.1.5"
+      },
+      "degree": 2
+    },
+    {
+      "id": "agibot_x2.if.topic.joint_hand_state",
+      "type": "Topic",
+      "layer": "interfaces",
+      "label": "/aima/hal/joint/hand/state",
+      "props": {
+        "name": "/aima/hal/joint/hand/state",
+        "source": "aimdk.docx#§5.1.5"
+      },
+      "degree": 10
+    },
+    {
+      "id": "agibot_x2.if.topic.imu_chest",
+      "type": "Topic",
+      "layer": "interfaces",
+      "label": "/aima/hal/imu/chest/state",
+      "props": {
+        "name": "/aima/hal/imu/chest/state",
+        "source": "aimdk.docx#§5.4.1"
+      },
+      "degree": 3
+    },
+    {
+      "id": "agibot_x2.if.topic.imu_torso",
+      "type": "Topic",
+      "layer": "interfaces",
+      "label": "/aima/hal/imu/torso/state",
+      "props": {
+        "name": "/aima/hal/imu/torso/state",
+        "source": "aimdk.docx#§5.4.1"
+      },
+      "degree": 3
+    },
+    {
+      "id": "agibot_x2.if.topic.stereo_front_left_image",
+      "type": "Topic",
+      "layer": "interfaces",
+      "label": "/aima/hal/sensor/stereo_head_front_left/rgb_image",
+      "props": {
+        "name": "/aima/hal/sensor/stereo_head_front_left/rgb_image",
+        "source": "aimdk.docx#§5.4.1"
+      },
+      "degree": 3
+    },
+    {
+      "id": "agibot_x2.if.topic.rgbd_front_image",
+      "type": "Topic",
+      "layer": "interfaces",
+      "label": "/aima/hal/sensor/rgbd_head_front/rgb_image",
+      "props": {
+        "name": "/aima/hal/sensor/rgbd_head_front/rgb_image",
+        "source": "aimdk.docx#§5.4.1"
+      },
+      "degree": 2
+    },
+    {
+      "id": "agibot_x2.if.topic.rgbd_front_pointcloud",
+      "type": "Topic",
+      "layer": "interfaces",
+      "label": "/aima/hal/sensor/rgbd_head_front/depth_pointcloud",
+      "props": {
+        "name": "/aima/hal/sensor/rgbd_head_front/depth_pointcloud",
+        "source": "aimdk.docx#§5.4.1"
+      },
+      "degree": 2
+    },
+    {
+      "id": "agibot_x2.if.topic.lidar_pointcloud",
+      "type": "Topic",
+      "layer": "interfaces",
+      "label": "/aima/hal/sensor/lidar_chest_front/lidar_pointcloud",
+      "props": {
+        "name": "/aima/hal/sensor/lidar_chest_front/lidar_pointcloud",
+        "source": "aimdk.docx#§5.4.1"
+      },
+      "degree": 2
+    },
+    {
+      "id": "agibot_x2.if.topic.touch_head",
+      "type": "Topic",
+      "layer": "interfaces",
+      "label": "/aima/hal/sensor/touch_head",
+      "props": {
+        "name": "/aima/hal/sensor/touch_head",
+        "source": "aimdk.docx#§5.4.1"
+      },
+      "degree": 10
+    },
+    {
+      "id": "agibot_x2.if.topic.pmu_state",
+      "type": "Topic",
+      "layer": "interfaces",
+      "label": "/aima/hal/pmu/state",
+      "props": {
+        "name": "/aima/hal/pmu/state",
+        "source": "aimdk.docx#§5.4.2"
+      },
+      "degree": 34
+    },
+    {
+      "id": "agibot_x2.if.topic.vad_audio_output",
+      "type": "Topic",
+      "layer": "interfaces",
+      "label": "/agent/process_audio_output",
+      "props": {
+        "name": "/agent/process_audio_output",
+        "source": "aimdk.docx#§5.2.1"
+      },
+      "degree": 2
+    },
+    {
+      "id": "agibot_x2.if.topic.face_ui_status",
+      "type": "Topic",
+      "layer": "interfaces",
+      "label": "/face_ui_proxy/status",
+      "props": {
+        "name": "/face_ui_proxy/status",
+        "source": "aimdk.docx#§5.2.2"
+      },
+      "degree": 1
+    },
+    {
+      "id": "agibot_x2.if.topic.mc_body_pose",
+      "type": "Topic",
+      "layer": "interfaces",
+      "label": "/aima/mc/body_pose",
+      "props": {
+        "name": "/aima/mc/body_pose",
+        "source": "session_2026_04_08"
+      },
+      "degree": 2
+    },
+    {
+      "id": "agibot_x2.if.topic.mc_common_state",
+      "type": "Topic",
+      "layer": "interfaces",
+      "label": "/aima/mc/common/state",
+      "props": {
+        "name": "/aima/mc/common/state",
+        "source": "session_2026_04_08"
+      },
+      "degree": 2
+    },
+    {
+      "id": "agibot_x2.if.topic.joint_waist_state",
+      "type": "Topic",
+      "layer": "interfaces",
+      "label": "/aima/hal/joint/waist/state",
+      "props": {
+        "name": "/aima/hal/joint/waist/state",
+        "source": "session_2026_04_08"
+      },
+      "degree": 1
+    },
+    {
+      "id": "agibot_x2.if.topic.joint_head_state",
+      "type": "Topic",
+      "layer": "interfaces",
+      "label": "/aima/hal/joint/head/state",
+      "props": {
+        "name": "/aima/hal/joint/head/state",
+        "source": "session_2026_04_08"
+      },
+      "degree": 1
+    },
+    {
+      "id": "agibot_x2.if.topic.monitor_udcu",
+      "type": "Topic",
+      "layer": "interfaces",
+      "label": "/aima/hal/monitor/udcu",
+      "props": {
+        "name": "/aima/hal/monitor/udcu",
+        "source": "session_2026_04_08"
+      },
+      "degree": 2
+    },
+    {
+      "id": "agibot_x2.if.topic.monitor_ddcu",
+      "type": "Topic",
+      "layer": "interfaces",
+      "label": "/aima/hal/monitor/ddcu",
+      "props": {
+        "name": "/aima/hal/monitor/ddcu",
+        "source": "session_2026_04_08"
+      },
+      "degree": 2
+    },
+    {
+      "id": "agibot_x2.if.srv.get_mc_action",
+      "type": "Service",
+      "layer": "interfaces",
+      "label": "/aimdk_msgs/srv/GetMcAction",
+      "props": {
+        "name": "/aimdk_msgs/srv/GetMcAction",
+        "source": "aimdk.docx#§5.1.1"
+      },
+      "degree": 2
+    },
+    {
+      "id": "agibot_x2.if.srv.set_mc_action",
+      "type": "Service",
+      "layer": "interfaces",
+      "label": "/aimdk_msgs/srv/SetMcAction",
+      "props": {
+        "name": "/aimdk_msgs/srv/SetMcAction",
+        "source": "aimdk.docx#§5.1.1"
+      },
+      "degree": 2
+    },
+    {
+      "id": "agibot_x2.if.srv.set_mc_input_source",
+      "type": "Service",
+      "layer": "interfaces",
+      "label": "/aimdk_msgs/srv/SetMcInputSource",
+      "props": {
+        "name": "/aimdk_msgs/srv/SetMcInputSource",
+        "source": "aimdk.docx#§5.1.3"
+      },
+      "degree": 6
+    },
+    {
+      "id": "agibot_x2.if.srv.get_current_input_source",
+      "type": "Service",
+      "layer": "interfaces",
+      "label": "/aimdk_msgs/srv/GetCurrentInputSource",
+      "props": {
+        "name": "/aimdk_msgs/srv/GetCurrentInputSource",
+        "source": "aimdk.docx#§5.1.3"
+      },
+      "degree": 1
+    },
+    {
+      "id": "agibot_x2.if.srv.set_mc_preset_motion",
+      "type": "Service",
+      "layer": "interfaces",
+      "label": "/aimdk_msgs/srv/SetMcPresetMotion",
+      "props": {
+        "name": "/aimdk_msgs/srv/SetMcPresetMotion",
+        "source": "aimdk.docx#§5.1.4"
+      },
+      "degree": 2
+    },
+    {
+      "id": "agibot_x2.if.srv.get_hand_type",
+      "type": "Service",
+      "layer": "interfaces",
+      "label": "/aimdk_msgs/srv/GetHandType",
+      "props": {
+        "name": "/aimdk_msgs/srv/GetHandType",
+        "source": "aimdk.docx#§5.1.5"
+      },
+      "degree": 2
+    },
+    {
+      "id": "agibot_x2.if.srv.get_all_joint_state",
+      "type": "Service",
+      "layer": "interfaces",
+      "label": "/aimdk_msgs/srv/GetAllJointState",
+      "props": {
+        "name": "/aimdk_msgs/srv/GetAllJointState",
+        "source": "aimdk.docx#§5.1.6"
+      },
+      "degree": 2
+    },
+    {
+      "id": "agibot_x2.if.srv.play_tts",
+      "type": "Service",
+      "layer": "interfaces",
+      "label": "/aimdk_msgs/srv/PlayTts",
+      "props": {
+        "name": "/aimdk_msgs/srv/PlayTts",
+        "source": "aimdk.docx#§5.2.1"
+      },
+      "degree": 2
+    },
+    {
+      "id": "agibot_x2.if.srv.play_media_file",
+      "type": "Service",
+      "layer": "interfaces",
+      "label": "/aimdk_msgs/srv/PlayMediaFile",
+      "props": {
+        "name": "/aimdk_msgs/srv/PlayMediaFile",
+        "source": "aimdk.docx#§5.2.1"
+      },
+      "degree": 2
+    },
+    {
+      "id": "agibot_x2.if.srv.set_volume",
+      "type": "Service",
+      "layer": "interfaces",
+      "label": "/aimdk_msgs/srv/SetVolume",
+      "props": {
+        "name": "/aimdk_msgs/srv/SetVolume",
+        "source": "aimdk.docx#§5.2.1"
+      },
+      "degree": 2
+    },
+    {
+      "id": "agibot_x2.if.srv.get_volume",
+      "type": "Service",
+      "layer": "interfaces",
+      "label": "/aimdk_msgs/srv/GetVolume",
+      "props": {
+        "name": "/aimdk_msgs/srv/GetVolume",
+        "source": "aimdk.docx#§5.2.1"
+      },
+      "degree": 1
+    },
+    {
+      "id": "agibot_x2.if.srv.set_mute",
+      "type": "Service",
+      "layer": "interfaces",
+      "label": "/aimdk_msgs/srv/SetMute",
+      "props": {
+        "name": "/aimdk_msgs/srv/SetMute",
+        "source": "aimdk.docx#§5.2.1"
+      },
+      "degree": 2
+    },
+    {
+      "id": "agibot_x2.if.srv.get_mute",
+      "type": "Service",
+      "layer": "interfaces",
+      "label": "/aimdk_msgs/srv/GetMute",
+      "props": {
+        "name": "/aimdk_msgs/srv/GetMute",
+        "source": "aimdk.docx#§5.2.1"
+      },
+      "degree": 1
+    },
+    {
+      "id": "agibot_x2.schema.msg.mc_locomotion_velocity",
+      "type": "MsgSchema",
+      "layer": "interfaces",
+      "label": "aimdk_msgs/msg/McLocomotionVelocity",
+      "props": {
+        "name": "aimdk_msgs/msg/McLocomotionVelocity",
+        "source": "aimdk.docx#§5.1.2"
+      },
+      "degree": 1
+    },
+    {
+      "id": "agibot_x2.schema.msg.joint_command",
+      "type": "MsgSchema",
+      "layer": "interfaces",
+      "label": "aimdk_msgs/msg/JointCommand",
+      "props": {
+        "name": "aimdk_msgs/msg/JointCommand",
+        "source": "aimdk.docx#§5.1.6"
+      },
+      "degree": 2
+    },
+    {
+      "id": "agibot_x2.schema.msg.joint_state",
+      "type": "MsgSchema",
+      "layer": "interfaces",
+      "label": "aimdk_msgs/msg/JointState",
+      "props": {
+        "name": "aimdk_msgs/msg/JointState",
+        "source": "aimdk.docx#§5.1.6"
+      },
+      "degree": 2
+    },
+    {
+      "id": "agibot_x2.schema.msg.pmu_state",
+      "type": "MsgSchema",
+      "layer": "interfaces",
+      "label": "aimdk_msgs/msg/PmuState",
+      "props": {
+        "name": "aimdk_msgs/msg/PmuState",
+        "source": "aimdk.docx#§5.4.2"
+      },
+      "degree": 1
+    },
+    {
+      "id": "agibot_x2.schema.msg.touch_state",
+      "type": "MsgSchema",
+      "layer": "interfaces",
+      "label": "aimdk_msgs/msg/TouchState",
+      "props": {
+        "name": "aimdk_msgs/msg/TouchState",
+        "source": "aimdk.docx#§5.4.1"
+      },
+      "degree": 1
+    },
+    {
+      "id": "agibot_x2.schema.msg.tts_priority_level",
+      "type": "MsgSchema",
+      "layer": "interfaces",
+      "label": "aimdk_msgs/msg/TtsPriorityLevel",
+      "props": {
+        "name": "aimdk_msgs/msg/TtsPriorityLevel",
+        "source": "aimdk.docx#§5.2.1"
+      },
+      "degree": 0
+    },
+    {
+      "id": "agibot_x2.schema.msg.mc_body_pose",
+      "type": "MsgSchema",
+      "layer": "interfaces",
+      "label": "aimdk_msgs/msg/McBodyPose",
+      "props": {
+        "name": "aimdk_msgs/msg/McBodyPose",
+        "source": "session_2026_04_08, mcap aimrtbag_20260408_*"
+      },
+      "degree": 1
+    },
+    {
+      "id": "agibot_x2.schema.msg.mc_common_state",
+      "type": "MsgSchema",
+      "layer": "interfaces",
+      "label": "aimdk_msgs/msg/McCommonState",
+      "props": {
+        "name": "aimdk_msgs/msg/McCommonState",
+        "source": "session_2026_04_08, mcap"
+      },
+      "degree": 1
+    },
+    {
+      "id": "agibot_x2.schema.msg.dcu_monitor_data",
+      "type": "MsgSchema",
+      "layer": "interfaces",
+      "label": "aimdk_msgs/msg/DcuMonitorData",
+      "props": {
+        "name": "aimdk_msgs/msg/DcuMonitorData",
+        "source": "session_2026_04_08, mcap"
+      },
+      "degree": 2
+    },
+    {
+      "id": "agibot_x2.sw.motion_controller",
+      "type": "SoftwareComponent",
+      "layer": "compute",
+      "label": "Motion controller",
+      "props": {
+        "name_human": "Motion controller",
+        "component_kind": "control",
+        "standard_mappings_count": 2,
+        "source": "aimdk.docx#§5.1"
+      },
+      "degree": 6
+    },
+    {
+      "id": "agibot_x2.sw.hal_sensor",
+      "type": "SoftwareComponent",
+      "layer": "compute",
+      "label": "HAL sensor publisher",
+      "props": {
+        "name_human": "HAL sensor publisher",
+        "component_kind": "middleware",
+        "standard_mappings_count": 1,
+        "source": "interfaces.yaml sensor topics"
+      },
+      "degree": 3
+    },
+    {
+      "id": "agibot_x2.sw.interaction_audio",
+      "type": "SoftwareComponent",
+      "layer": "compute",
+      "label": "Interaction audio stack",
+      "props": {
+        "name_human": "Interaction audio stack",
+        "component_kind": "ui",
+        "standard_mappings_count": 1,
+        "source": "aimdk.docx#§5.2.1"
+      },
+      "degree": 1
+    },
+    {
+      "id": "agibot_x2.sw.power_monitor",
+      "type": "SoftwareComponent",
+      "layer": "compute",
+      "label": "Power monitor",
+      "props": {
+        "name_human": "Power monitor",
+        "component_kind": "diagnostics",
+        "standard_mappings_count": 1,
+        "source": "aimdk.docx#§5.4.2"
+      },
+      "degree": 1
+    },
+    {
+      "id": "agibot_x2.cap.mode_management",
+      "type": "Capability",
+      "layer": "capabilities",
+      "label": "Mode management",
+      "props": {
+        "name_human": "Mode management",
+        "capability_kind": "planning",
+        "description": "Query and switch the robot's whole-body motion mode.",
+        "boundaries_count": 2,
+        "boundaries_sample": "SetMcAction success must be verified with GetMcAction because firmware can retur",
+        "standard_mappings_count": 2,
+        "produces_count": 2,
+        "produces_sample": "current_mode",
+        "source": "aimdk.docx#§5.1.1; capability_boundary.yaml mode_switch"
+      },
+      "degree": 6
+    },
+    {
+      "id": "agibot_x2.cap.locomotion_velocity_control",
+      "type": "Capability",
+      "layer": "capabilities",
+      "label": "Locomotion velocity control",
+      "props": {
+        "name_human": "Locomotion velocity control",
+        "capability_kind": "navigation",
+        "description": "Command forward, lateral, and angular walking velocity under MC input-source arbitration.",
+        "boundaries_count": 3,
+        "boundaries_sample": "Requires a registered input source.",
+        "standard_mappings_count": 2,
+        "produces_count": 1,
+        "produces_sample": "base_motion",
+        "consumes_count": 4,
+        "consumes_sample": "forward_velocity",
+        "source": "aimdk.docx#§5.1.2"
+      },
+      "degree": 9
+    },
+    {
+      "id": "agibot_x2.cap.input_source_arbitration",
+      "type": "Capability",
+      "layer": "capabilities",
+      "label": "Input source arbitration",
+      "props": {
+        "name_human": "Input source arbitration",
+        "capability_kind": "communication",
+        "description": "Register, modify, enable, disable, and query control input sources.",
+        "boundaries_count": 2,
+        "boundaries_sample": "Built-in sources must not be deleted.",
+        "standard_mappings_count": 1,
+        "produces_count": 3,
+        "produces_sample": "registered_input_source",
+        "source": "aimdk.docx#§5.1.3"
+      },
+      "degree": 9
+    },
+    {
+      "id": "agibot_x2.cap.preset_motion",
+      "type": "Capability",
+      "layer": "capabilities",
+      "label": "Preset motion execution",
+      "props": {
+        "name_human": "Preset motion execution",
+        "capability_kind": "actuation",
+        "description": "Invoke vendor predefined gestures and recovery motions.",
+        "boundaries_count": 2,
+        "boundaries_sample": "Motion and area must match a registered PresetMotion.",
+        "standard_mappings_count": 2,
+        "produces_count": 2,
+        "produces_sample": "whole_body_motion",
+        "consumes_count": 3,
+        "consumes_sample": "motion_id",
+        "source": "aimdk.docx#§5.1.4"
+      },
+      "degree": 4
+    },
+    {
+      "id": "agibot_x2.cap.joint_position_control",
+      "type": "Capability",
+      "layer": "capabilities",
+      "label": "Joint position control",
+      "props": {
+        "name_human": "Joint position control",
+        "capability_kind": "actuation",
+        "description": "Command grouped head, waist, arm, and leg joint positions with limit checks.",
+        "boundaries_count": 3,
+        "boundaries_sample": "All commanded positions must remain within Joint.position_limit.",
+        "standard_mappings_count": 1,
+        "produces_count": 1,
+        "produces_sample": "joint_motion",
+        "consumes_count": 1,
+        "consumes_sample": "joint_positions_by_domain",
+        "source": "aimdk.docx#§5.1.6; capability_boundary.yaml joint_state"
+      },
+      "degree": 8
+    },
+    {
+      "id": "agibot_x2.cap.hand_manipulation",
+      "type": "Capability",
+      "layer": "capabilities",
+      "label": "Hand manipulation",
+      "props": {
+        "name_human": "Hand manipulation",
+        "capability_kind": "manipulation",
+        "description": "Query installed end effector type and command gripper/dexterous hand joints.",
+        "boundaries_count": 2,
+        "boundaries_sample": "Command hand_type must match the installed end effector.",
+        "standard_mappings_count": 2,
+        "produces_count": 2,
+        "produces_sample": "grasp_state",
+        "consumes_count": 2,
+        "consumes_sample": "hand_type",
+        "source": "aimdk.docx#§5.1.5"
+      },
+      "degree": 6
+    },
+    {
+      "id": "agibot_x2.cap.speech_output",
+      "type": "Capability",
+      "layer": "capabilities",
+      "label": "Speech and media output",
+      "props": {
+        "name_human": "Speech and media output",
+        "capability_kind": "interaction",
+        "description": "Play TTS/media and configure volume/mute state on the interaction computer.",
+        "boundaries_count": 2,
+        "boundaries_sample": "Media files must be present on PC3 and readable.",
+        "standard_mappings_count": 1,
+        "produces_count": 2,
+        "produces_sample": "speech_audio",
+        "consumes_count": 4,
+        "consumes_sample": "text",
+        "source": "aimdk.docx#§5.2.1"
+      },
+      "degree": 12
+    },
+    {
+      "id": "agibot_x2.cap.power_diagnostics",
+      "type": "Capability",
+      "layer": "capabilities",
+      "label": "Power diagnostics",
+      "props": {
+        "name_human": "Power diagnostics",
+        "capability_kind": "diagnosis",
+        "description": "Observe PMU/BMS status bits, voltages, currents, temperatures, capacity, and charge/discharge state.",
+        "boundaries_count": 1,
+        "boundaries_sample": "PMU topic is realtime but not included in current hal_sensor MCAP retention.",
+        "standard_mappings_count": 2,
+        "produces_count": 4,
+        "produces_sample": "pmu_status_bits",
+        "source": "aimdk.docx#§5.4.2; capability_boundary.yaml mcap_hal_sensor"
+      },
+      "degree": 3
+    },
+    {
+      "id": "agibot_x2.cap.tactile_head_events",
+      "type": "Capability",
+      "layer": "capabilities",
+      "label": "Head tactile event sensing",
+      "props": {
+        "name_human": "Head tactile event sensing",
+        "capability_kind": "sensing",
+        "description": "Observe head touch, tap, swipe, and idle events.",
+        "standard_mappings_count": 1,
+        "detects_count": 5,
+        "detects_sample": "touch",
+        "produces_count": 2,
+        "produces_sample": "touch_event_type",
+        "qos_frequency_hz": 100,
+        "source": "aimdk.docx#§5.4.1"
+      },
+      "degree": 4
+    },
+    {
+      "id": "agibot_x2.cap.visual_depth_sensing",
+      "type": "Capability",
+      "layer": "capabilities",
+      "label": "Visual and depth sensing",
+      "props": {
+        "name_human": "Visual and depth sensing",
+        "capability_kind": "sensing",
+        "description": "Provide front stereo/RGBD image streams and RGBD depth point cloud for perception workloads.",
+        "boundaries_count": 1,
+        "boundaries_sample": "Camera streams are bandwidth sensitive and marked cross_unit_safe=false where kn",
+        "standard_mappings_count": 1,
+        "detects_count": 2,
+        "detects_sample": "image_frame",
+        "produces_count": 3,
+        "produces_sample": "rgb_image",
+        "qos_frequency_hz": 10,
+        "source": "aimdk.docx#§5.4.1"
+      },
+      "degree": 6
+    },
+    {
+      "id": "agibot_x2.cap.body_state_observation",
+      "type": "Capability",
+      "layer": "capabilities",
+      "label": "Body state observation",
+      "props": {
+        "name_human": "Body state observation",
+        "capability_kind": "sensing",
+        "description": "Observe IMU, body pose, common MC state, joint state topics, and DCU monitor streams.",
+        "boundaries_count": 2,
+        "boundaries_sample": "Chest IMU and joint state are realtime topics but not recorded in current MCAP c",
+        "standard_mappings_count": 2,
+        "produces_count": 5,
+        "produces_sample": "imu_state",
+        "qos_imu_frequency_hz": 500,
+        "source": "session_2026_04_08; capability_boundary.yaml"
+      },
+      "degree": 12
+    },
+    {
+      "id": "agibot_x2.cap.param.locomotion.forward_velocity",
+      "type": "CapabilityParameter",
+      "layer": "capabilities",
+      "label": "forward_velocity",
+      "props": {
+        "name": "forward_velocity",
+        "value_type": "float",
+        "unit": "m/s",
+        "required": true
+      },
+      "degree": 1
+    },
+    {
+      "id": "agibot_x2.cap.param.locomotion.lateral_velocity",
+      "type": "CapabilityParameter",
+      "layer": "capabilities",
+      "label": "lateral_velocity",
+      "props": {
+        "name": "lateral_velocity",
+        "value_type": "float",
+        "unit": "m/s",
+        "required": true
+      },
+      "degree": 1
+    },
+    {
+      "id": "agibot_x2.cap.param.locomotion.angular_velocity",
+      "type": "CapabilityParameter",
+      "layer": "capabilities",
+      "label": "angular_velocity",
+      "props": {
+        "name": "angular_velocity",
+        "value_type": "float",
+        "unit": "rad/s",
+        "required": true
+      },
+      "degree": 1
+    },
+    {
+      "id": "agibot_x2.req.safe_base_motion",
+      "type": "ServiceRequirement",
+      "layer": "requirements",
+      "label": "Safe base motion",
+      "props": {
+        "name_human": "Safe base motion",
+        "required_capabilities_count": 3,
+        "required_capabilities_sample": "navigation",
+        "required_outputs_count": 2,
+        "required_outputs_sample": "base_motion",
+        "safety_constraints_count": 2,
+        "safety_constraints_sample": "mode must be verified before motion commands"
+      },
+      "degree": 4
+    },
+    {
+      "id": "agibot_x2.req.robot_health_report",
+      "type": "ServiceRequirement",
+      "layer": "requirements",
+      "label": "Robot health report",
+      "props": {
+        "name_human": "Robot health report",
+        "required_capabilities_count": 2,
+        "required_capabilities_sample": "diagnosis",
+        "required_outputs_count": 4,
+        "required_outputs_sample": "battery_state",
+        "safety_constraints_count": 1,
+        "safety_constraints_sample": "report must disclose MCAP observability blind spots"
+      },
+      "degree": 2
+    },
+    {
+      "id": "agibot_x2.req.human_interaction",
+      "type": "ServiceRequirement",
+      "layer": "requirements",
+      "label": "Human interaction",
+      "props": {
+        "name_human": "Human interaction",
+        "required_capabilities_count": 3,
+        "required_capabilities_sample": "interaction",
+        "required_outputs_count": 3,
+        "required_outputs_sample": "speech_audio"
+      },
+      "degree": 3
+    },
+    {
+      "id": "get_mc_action",
+      "type": "Action",
+      "layer": "actions",
+      "label": "get_mc_action",
+      "props": {
+        "safety_class": "INFO",
+        "invoker": "ros2_service"
+      },
+      "degree": 7
+    },
+    {
+      "id": "set_mc_action",
+      "type": "Action",
+      "layer": "actions",
+      "label": "set_mc_action",
+      "props": {
+        "safety_class": "MOTION",
+        "invoker": "ros2_service",
+        "preconditions_count": 2
+      },
+      "degree": 5
+    },
+    {
+      "id": "set_forward_velocity",
+      "type": "Action",
+      "layer": "actions",
+      "label": "set_forward_velocity",
+      "props": {
+        "safety_class": "MOTION",
+        "invoker": "ros2_topic",
+        "preconditions_count": 3
+      },
+      "degree": 9
+    },
+    {
+      "id": "set_lateral_velocity",
+      "type": "Action",
+      "layer": "actions",
+      "label": "set_lateral_velocity",
+      "props": {
+        "safety_class": "MOTION",
+        "invoker": "ros2_topic",
+        "preconditions_count": 3
+      },
+      "degree": 6
+    },
+    {
+      "id": "set_angular_velocity",
+      "type": "Action",
+      "layer": "actions",
+      "label": "set_angular_velocity",
+      "props": {
+        "safety_class": "MOTION",
+        "invoker": "ros2_topic",
+        "preconditions_count": 3
+      },
+      "degree": 6
+    },
+    {
+      "id": "get_current_input_source",
+      "type": "Action",
+      "layer": "actions",
+      "label": "get_current_input_source",
+      "props": {
+        "safety_class": "INFO",
+        "invoker": "ros2_service"
+      },
+      "degree": 2
+    },
+    {
+      "id": "register_input_source",
+      "type": "Action",
+      "layer": "actions",
+      "label": "register_input_source",
+      "props": {
+        "safety_class": "CONFIG",
+        "invoker": "ros2_service",
+        "preconditions_count": 1
+      },
+      "degree": 3
+    },
+    {
+      "id": "modify_input_source",
+      "type": "Action",
+      "layer": "actions",
+      "label": "modify_input_source",
+      "props": {
+        "safety_class": "CONFIG",
+        "invoker": "ros2_service",
+        "preconditions_count": 1
+      },
+      "degree": 3
+    },
+    {
+      "id": "delete_input_source",
+      "type": "Action",
+      "layer": "actions",
+      "label": "delete_input_source",
+      "props": {
+        "safety_class": "CONFIG",
+        "invoker": "ros2_service",
+        "preconditions_count": 1
+      },
+      "degree": 3
+    },
+    {
+      "id": "enable_input_source",
+      "type": "Action",
+      "layer": "actions",
+      "label": "enable_input_source",
+      "props": {
+        "safety_class": "CONFIG",
+        "invoker": "ros2_service"
+      },
+      "degree": 3
+    },
+    {
+      "id": "disable_input_source",
+      "type": "Action",
+      "layer": "actions",
+      "label": "disable_input_source",
+      "props": {
+        "safety_class": "CONFIG",
+        "invoker": "ros2_service"
+      },
+      "degree": 4
+    },
+    {
+      "id": "set_preset_motion",
+      "type": "Action",
+      "layer": "actions",
+      "label": "set_preset_motion",
+      "props": {
+        "safety_class": "MOTION",
+        "invoker": "ros2_service",
+        "preconditions_count": 2
+      },
+      "degree": 42
+    },
+    {
+      "id": "set_joint_position",
+      "type": "Action",
+      "layer": "actions",
+      "label": "set_joint_position",
+      "props": {
+        "safety_class": "MOTION",
+        "invoker": "ros2_topic",
+        "preconditions_count": 2
+      },
+      "degree": 10
+    },
+    {
+      "id": "get_all_joint_state",
+      "type": "Action",
+      "layer": "actions",
+      "label": "get_all_joint_state",
+      "props": {
+        "safety_class": "INFO",
+        "invoker": "ros2_service"
+      },
+      "degree": 5
+    },
+    {
+      "id": "get_hand_type",
+      "type": "Action",
+      "layer": "actions",
+      "label": "get_hand_type",
+      "props": {
+        "safety_class": "INFO",
+        "invoker": "ros2_service"
+      },
+      "degree": 2
+    },
+    {
+      "id": "set_hand_command",
+      "type": "Action",
+      "layer": "actions",
+      "label": "set_hand_command",
+      "props": {
+        "safety_class": "MOTION",
+        "invoker": "ros2_topic",
+        "preconditions_count": 3
+      },
+      "degree": 6
+    },
+    {
+      "id": "play_tts",
+      "type": "Action",
+      "layer": "actions",
+      "label": "play_tts",
+      "props": {
+        "safety_class": "INFO",
+        "invoker": "ros2_service"
+      },
+      "degree": 11
+    },
+    {
+      "id": "play_media_file",
+      "type": "Action",
+      "layer": "actions",
+      "label": "play_media_file",
+      "props": {
+        "safety_class": "INFO",
+        "invoker": "ros2_service",
+        "preconditions_count": 1
+      },
+      "degree": 6
+    },
+    {
+      "id": "set_volume",
+      "type": "Action",
+      "layer": "actions",
+      "label": "set_volume",
+      "props": {
+        "safety_class": "CONFIG",
+        "invoker": "ros2_service"
+      },
+      "degree": 3
+    },
+    {
+      "id": "get_volume",
+      "type": "Action",
+      "layer": "actions",
+      "label": "get_volume",
+      "props": {
+        "safety_class": "INFO",
+        "invoker": "ros2_service"
+      },
+      "degree": 2
+    },
+    {
+      "id": "set_mute",
+      "type": "Action",
+      "layer": "actions",
+      "label": "set_mute",
+      "props": {
+        "safety_class": "CONFIG",
+        "invoker": "ros2_service"
+      },
+      "degree": 3
+    },
+    {
+      "id": "get_mute",
+      "type": "Action",
+      "layer": "actions",
+      "label": "get_mute",
+      "props": {
+        "safety_class": "INFO",
+        "invoker": "ros2_service"
+      },
+      "degree": 2
+    },
+    {
+      "id": "agibot_x2.hw.end_effector.left",
+      "type": "VirtualEndpoint",
+      "layer": "hardware",
+      "label": "end_effector.left",
+      "props": {
+        "virtual": true,
+        "reason": "synthesized link endpoint for 3D visualization"
+      },
+      "degree": 1
+    },
+    {
+      "id": "agibot_x2.hw.end_effector.right",
+      "type": "VirtualEndpoint",
+      "layer": "hardware",
+      "label": "end_effector.right",
+      "props": {
+        "virtual": true,
+        "reason": "synthesized link endpoint for 3D visualization"
+      },
+      "degree": 1
+    },
+    {
+      "id": "agibot_x2.hw.head.*",
+      "type": "VirtualEndpoint",
+      "layer": "hardware",
+      "label": "head.*",
+      "props": {
+        "virtual": true,
+        "reason": "synthesized link endpoint for 3D visualization"
+      },
+      "degree": 1
+    },
+    {
+      "id": "agibot_x2.hw.left_arm.*",
+      "type": "VirtualEndpoint",
+      "layer": "hardware",
+      "label": "left_arm.*",
+      "props": {
+        "virtual": true,
+        "reason": "synthesized link endpoint for 3D visualization"
+      },
+      "degree": 2
+    },
+    {
+      "id": "agibot_x2.hw.left_leg.*",
+      "type": "VirtualEndpoint",
+      "layer": "hardware",
+      "label": "left_leg.*",
+      "props": {
+        "virtual": true,
+        "reason": "synthesized link endpoint for 3D visualization"
+      },
+      "degree": 4
+    },
+    {
+      "id": "agibot_x2.hw.right_arm.*",
+      "type": "VirtualEndpoint",
+      "layer": "hardware",
+      "label": "right_arm.*",
+      "props": {
+        "virtual": true,
+        "reason": "synthesized link endpoint for 3D visualization"
+      },
+      "degree": 2
+    },
+    {
+      "id": "agibot_x2.hw.right_leg.*",
+      "type": "VirtualEndpoint",
+      "layer": "hardware",
+      "label": "right_leg.*",
+      "props": {
+        "virtual": true,
+        "reason": "synthesized link endpoint for 3D visualization"
+      },
+      "degree": 4
+    },
+    {
+      "id": "agibot_x2.hw.speaker",
+      "type": "VirtualEndpoint",
+      "layer": "hardware",
+      "label": "hw.speaker",
+      "props": {
+        "virtual": true,
+        "reason": "synthesized link endpoint for 3D visualization"
+      },
+      "degree": 4
+    },
+    {
+      "id": "agibot_x2.hw.waist.*",
+      "type": "VirtualEndpoint",
+      "layer": "hardware",
+      "label": "waist.*",
+      "props": {
+        "virtual": true,
+        "reason": "synthesized link endpoint for 3D visualization"
+      },
+      "degree": 2
+    }
+  ],
+  "links": [
+    {
+      "source": "agibot_x2.hw.link.pelvis",
+      "target": "agibot_x2.hw.link.imu_in_pelvis_link",
+      "type": "parent_of"
+    },
+    {
+      "source": "agibot_x2.hw.link.pelvis",
+      "target": "agibot_x2.hw.link.left_hip_pitch_link",
+      "type": "parent_of"
+    },
+    {
+      "source": "agibot_x2.hw.link.left_hip_pitch_link",
+      "target": "agibot_x2.hw.link.left_hip_roll_link",
+      "type": "parent_of"
+    },
+    {
+      "source": "agibot_x2.hw.link.left_hip_roll_link",
+      "target": "agibot_x2.hw.link.left_hip_yaw_link",
+      "type": "parent_of"
+    },
+    {
+      "source": "agibot_x2.hw.link.left_hip_yaw_link",
+      "target": "agibot_x2.hw.link.left_knee_link",
+      "type": "parent_of"
+    },
+    {
+      "source": "agibot_x2.hw.link.left_knee_link",
+      "target": "agibot_x2.hw.link.left_ankle_pitch_link",
+      "type": "parent_of"
+    },
+    {
+      "source": "agibot_x2.hw.link.left_ankle_pitch_link",
+      "target": "agibot_x2.hw.link.left_ankle_roll_link",
+      "type": "parent_of"
+    },
+    {
+      "source": "agibot_x2.hw.link.pelvis",
+      "target": "agibot_x2.hw.link.right_hip_pitch_link",
+      "type": "parent_of"
+    },
+    {
+      "source": "agibot_x2.hw.link.right_hip_pitch_link",
+      "target": "agibot_x2.hw.link.right_hip_roll_link",
+      "type": "parent_of"
+    },
+    {
+      "source": "agibot_x2.hw.link.right_hip_roll_link",
+      "target": "agibot_x2.hw.link.right_hip_yaw_link",
+      "type": "parent_of"
+    },
+    {
+      "source": "agibot_x2.hw.link.right_hip_yaw_link",
+      "target": "agibot_x2.hw.link.right_knee_link",
+      "type": "parent_of"
+    },
+    {
+      "source": "agibot_x2.hw.link.right_knee_link",
+      "target": "agibot_x2.hw.link.right_ankle_pitch_link",
+      "type": "parent_of"
+    },
+    {
+      "source": "agibot_x2.hw.link.right_ankle_pitch_link",
+      "target": "agibot_x2.hw.link.right_ankle_roll_link",
+      "type": "parent_of"
+    },
+    {
+      "source": "agibot_x2.hw.link.pelvis",
+      "target": "agibot_x2.hw.link.waist_yaw_link",
+      "type": "parent_of"
+    },
+    {
+      "source": "agibot_x2.hw.link.waist_yaw_link",
+      "target": "agibot_x2.hw.link.waist_pitch_link",
+      "type": "parent_of"
+    },
+    {
+      "source": "agibot_x2.hw.link.waist_pitch_link",
+      "target": "agibot_x2.hw.link.torso_link",
+      "type": "parent_of"
+    },
+    {
+      "source": "agibot_x2.hw.link.torso_link",
+      "target": "agibot_x2.hw.link.imu_in_torso_link",
+      "type": "parent_of"
+    },
+    {
+      "source": "agibot_x2.hw.link.torso_link",
+      "target": "agibot_x2.hw.link.left_shoulder_pitch_link",
+      "type": "parent_of"
+    },
+    {
+      "source": "agibot_x2.hw.link.left_shoulder_pitch_link",
+      "target": "agibot_x2.hw.link.left_shoulder_roll_link",
+      "type": "parent_of"
+    },
+    {
+      "source": "agibot_x2.hw.link.left_shoulder_roll_link",
+      "target": "agibot_x2.hw.link.left_shoulder_yaw_link",
+      "type": "parent_of"
+    },
+    {
+      "source": "agibot_x2.hw.link.left_shoulder_yaw_link",
+      "target": "agibot_x2.hw.link.left_elbow_link",
+      "type": "parent_of"
+    },
+    {
+      "source": "agibot_x2.hw.link.left_elbow_link",
+      "target": "agibot_x2.hw.link.left_wrist_yaw_link",
+      "type": "parent_of"
+    },
+    {
+      "source": "agibot_x2.hw.link.left_wrist_yaw_link",
+      "target": "agibot_x2.hw.link.left_wrist_pitch_link",
+      "type": "parent_of"
+    },
+    {
+      "source": "agibot_x2.hw.link.left_wrist_pitch_link",
+      "target": "agibot_x2.hw.link.left_wrist_roll_link",
+      "type": "parent_of"
+    },
+    {
+      "source": "agibot_x2.hw.link.torso_link",
+      "target": "agibot_x2.hw.link.right_shoulder_pitch_link",
+      "type": "parent_of"
+    },
+    {
+      "source": "agibot_x2.hw.link.right_shoulder_pitch_link",
+      "target": "agibot_x2.hw.link.right_shoulder_roll_link",
+      "type": "parent_of"
+    },
+    {
+      "source": "agibot_x2.hw.link.right_shoulder_roll_link",
+      "target": "agibot_x2.hw.link.right_shoulder_yaw_link",
+      "type": "parent_of"
+    },
+    {
+      "source": "agibot_x2.hw.link.right_shoulder_yaw_link",
+      "target": "agibot_x2.hw.link.right_elbow_link",
+      "type": "parent_of"
+    },
+    {
+      "source": "agibot_x2.hw.link.right_elbow_link",
+      "target": "agibot_x2.hw.link.right_wrist_yaw_link",
+      "type": "parent_of"
+    },
+    {
+      "source": "agibot_x2.hw.link.right_wrist_yaw_link",
+      "target": "agibot_x2.hw.link.right_wrist_pitch_link",
+      "type": "parent_of"
+    },
+    {
+      "source": "agibot_x2.hw.link.right_wrist_pitch_link",
+      "target": "agibot_x2.hw.link.right_wrist_roll_link",
+      "type": "parent_of"
+    },
+    {
+      "source": "agibot_x2.hw.link.torso_link",
+      "target": "agibot_x2.hw.link.head_yaw_link",
+      "type": "parent_of"
+    },
+    {
+      "source": "agibot_x2.hw.link.head_yaw_link",
+      "target": "agibot_x2.hw.link.head_pitch_link",
+      "type": "parent_of"
+    },
+    {
+      "source": "agibot_x2.hw.link.head_pitch_link",
+      "target": "agibot_x2.hw.link.imu_in_head_link",
+      "type": "parent_of"
+    },
+    {
+      "source": "agibot_x2.hw.link.head_pitch_link",
+      "target": "agibot_x2.hw.link.rgbd_head_front",
+      "type": "parent_of"
+    },
+    {
+      "source": "agibot_x2.hw.link.head_pitch_link",
+      "target": "agibot_x2.hw.link.stereo_head_front",
+      "type": "parent_of"
+    },
+    {
+      "source": "agibot_x2.hw.link.head_pitch_link",
+      "target": "agibot_x2.hw.link.rgb_head_rear",
+      "type": "parent_of"
+    },
+    {
+      "source": "agibot_x2.hw.link.head_pitch_link",
+      "target": "agibot_x2.hw.link.rgb_head_center",
+      "type": "parent_of"
+    },
+    {
+      "source": "agibot_x2.hw.link.torso_link",
+      "target": "agibot_x2.hw.link.lidar_chest_front",
+      "type": "parent_of"
+    },
+    {
+      "source": "agibot_x2.hw.link.base_link",
+      "target": "agibot_x2.hw.link.pelvis",
+      "type": "parent_of"
+    },
+    {
+      "source": "agibot_x2.hw.sensor.imu_torso",
+      "target": "agibot_x2.hw.link.pelvis",
+      "type": "mounted_via_fixed"
+    },
+    {
+      "source": "agibot_x2.hw.sensor.rgbd_head_front",
+      "target": "agibot_x2.hw.link.head_pitch_link",
+      "type": "mounted_via_fixed"
+    },
+    {
+      "source": "agibot_x2.hw.sensor.rgb_head_rear",
+      "target": "agibot_x2.hw.link.head_pitch_link",
+      "type": "mounted_via_fixed"
+    },
+    {
+      "source": "agibot_x2.hw.sensor.rgb_head_front_interaction",
+      "target": "agibot_x2.hw.link.head_pitch_link",
+      "type": "mounted_via_fixed"
+    },
+    {
+      "source": "agibot_x2.hw.sensor.lidar_chest_front",
+      "target": "agibot_x2.hw.link.torso_link",
+      "type": "mounted_via_fixed"
+    },
+    {
+      "source": "agibot_x2.mode.passive_default",
+      "target": "agibot_x2.mode.joint_default",
+      "type": "transitions_to"
+    },
+    {
+      "source": "agibot_x2.mode.joint_default",
+      "target": "agibot_x2.mode.stand_default",
+      "type": "transitions_to"
+    },
+    {
+      "source": "agibot_x2.mode.stand_default",
+      "target": "agibot_x2.mode.locomotion_default",
+      "type": "transitions_to"
+    },
+    {
+      "source": "agibot_x2.mode.locomotion_default",
+      "target": "agibot_x2.mode.stand_default",
+      "type": "transitions_to"
+    },
+    {
+      "source": "agibot_x2.mode.locomotion_default",
+      "target": "set_forward_velocity",
+      "type": "allows"
+    },
+    {
+      "source": "agibot_x2.mode.locomotion_default",
+      "target": "set_lateral_velocity",
+      "type": "allows"
+    },
+    {
+      "source": "agibot_x2.mode.locomotion_default",
+      "target": "set_angular_velocity",
+      "type": "allows"
+    },
+    {
+      "source": "agibot_x2.mode.stand_default",
+      "target": "set_forward_velocity",
+      "type": "allows"
+    },
+    {
+      "source": "agibot_x2.mode.stand_default",
+      "target": "set_preset_motion",
+      "type": "allows"
+    },
+    {
+      "source": "agibot_x2.mode.joint_default",
+      "target": "set_joint_position",
+      "type": "allows"
+    },
+    {
+      "source": "set_preset_motion",
+      "target": "agibot_x2.mode.passive_default",
+      "type": "forbidden_in"
+    },
+    {
+      "source": "set_preset_motion",
+      "target": "agibot_x2.mode.damping_default",
+      "type": "forbidden_in"
+    },
+    {
+      "source": "set_preset_motion",
+      "target": "agibot_x2.mode.locomotion_default",
+      "type": "forbidden_in"
+    },
+    {
+      "source": "agibot_x2.input_source.rc",
+      "target": "agibot_x2.control_loop.mc_arbitration",
+      "type": "participates_in"
+    },
+    {
+      "source": "agibot_x2.input_source.vr",
+      "target": "agibot_x2.control_loop.mc_arbitration",
+      "type": "participates_in"
+    },
+    {
+      "source": "agibot_x2.input_source.app_proxy",
+      "target": "agibot_x2.control_loop.mc_arbitration",
+      "type": "participates_in"
+    },
+    {
+      "source": "agibot_x2.input_source.interaction",
+      "target": "agibot_x2.control_loop.mc_arbitration",
+      "type": "participates_in"
+    },
+    {
+      "source": "agibot_x2.input_source.pnc",
+      "target": "agibot_x2.control_loop.mc_arbitration",
+      "type": "participates_in"
+    },
+    {
+      "source": "agibot_x2.event.pmu.bus48v_overcurrent",
+      "target": "agibot_x2.hw.power",
+      "type": "indicates"
+    },
+    {
+      "source": "agibot_x2.event.pmu.bus48v_overtemperature",
+      "target": "agibot_x2.hw.power",
+      "type": "indicates"
+    },
+    {
+      "source": "agibot_x2.event.bms.short_circuit",
+      "target": "agibot_x2.hw.power",
+      "type": "indicates"
+    },
+    {
+      "source": "agibot_x2.event.bms.cell_overvoltage",
+      "target": "agibot_x2.hw.power",
+      "type": "indicates"
+    },
+    {
+      "source": "agibot_x2.event.bms.cell_undervoltage",
+      "target": "agibot_x2.hw.power",
+      "type": "indicates"
+    },
+    {
+      "source": "agibot_x2.event.bms.cell_discharge_overtemp",
+      "target": "agibot_x2.hw.power",
+      "type": "indicates"
+    },
+    {
+      "source": "agibot_x2.event.bms.cell_charge_overtemp",
+      "target": "agibot_x2.hw.power",
+      "type": "indicates"
+    },
+    {
+      "source": "agibot_x2.event.bms.mosfet_overtemp",
+      "target": "agibot_x2.hw.power",
+      "type": "indicates"
+    },
+    {
+      "source": "agibot_x2.hw.sensor.imu_chest",
+      "target": "agibot_x2.if.topic.imu_chest",
+      "type": "publishes_via"
+    },
+    {
+      "source": "agibot_x2.hw.sensor.imu_torso",
+      "target": "agibot_x2.if.topic.imu_torso",
+      "type": "publishes_via"
+    },
+    {
+      "source": "agibot_x2.hw.sensor.lidar_chest_front",
+      "target": "agibot_x2.if.topic.lidar_pointcloud",
+      "type": "publishes_via"
+    },
+    {
+      "source": "agibot_x2.hw.sensor.rgbd_head_front",
+      "target": "agibot_x2.if.topic.rgbd_front_image",
+      "type": "publishes_via"
+    },
+    {
+      "source": "agibot_x2.hw.sensor.rgbd_head_front",
+      "target": "agibot_x2.if.topic.rgbd_front_pointcloud",
+      "type": "publishes_via"
+    },
+    {
+      "source": "agibot_x2.hw.sensor.stereo_head_front_left",
+      "target": "agibot_x2.if.topic.stereo_front_left_image",
+      "type": "publishes_via"
+    },
+    {
+      "source": "agibot_x2.hw.sensor.touch_head",
+      "target": "agibot_x2.if.topic.touch_head",
+      "type": "publishes_via"
+    },
+    {
+      "source": "agibot_x2.hw.power",
+      "target": "agibot_x2.if.topic.pmu_state",
+      "type": "publishes_via"
+    },
+    {
+      "source": "set_forward_velocity",
+      "target": "agibot_x2.if.topic.mc_locomotion_velocity",
+      "type": "invokes_via"
+    },
+    {
+      "source": "set_lateral_velocity",
+      "target": "agibot_x2.if.topic.mc_locomotion_velocity",
+      "type": "invokes_via"
+    },
+    {
+      "source": "set_angular_velocity",
+      "target": "agibot_x2.if.topic.mc_locomotion_velocity",
+      "type": "invokes_via"
+    },
+    {
+      "source": "set_mc_action",
+      "target": "agibot_x2.if.srv.set_mc_action",
+      "type": "invokes_via"
+    },
+    {
+      "source": "get_mc_action",
+      "target": "agibot_x2.if.srv.get_mc_action",
+      "type": "invokes_via"
+    },
+    {
+      "source": "register_input_source",
+      "target": "agibot_x2.if.srv.set_mc_input_source",
+      "type": "invokes_via"
+    },
+    {
+      "source": "modify_input_source",
+      "target": "agibot_x2.if.srv.set_mc_input_source",
+      "type": "invokes_via"
+    },
+    {
+      "source": "delete_input_source",
+      "target": "agibot_x2.if.srv.set_mc_input_source",
+      "type": "invokes_via"
+    },
+    {
+      "source": "enable_input_source",
+      "target": "agibot_x2.if.srv.set_mc_input_source",
+      "type": "invokes_via"
+    },
+    {
+      "source": "disable_input_source",
+      "target": "agibot_x2.if.srv.set_mc_input_source",
+      "type": "invokes_via"
+    },
+    {
+      "source": "get_current_input_source",
+      "target": "agibot_x2.if.srv.get_current_input_source",
+      "type": "invokes_via"
+    },
+    {
+      "source": "set_preset_motion",
+      "target": "agibot_x2.if.srv.set_mc_preset_motion",
+      "type": "invokes_via"
+    },
+    {
+      "source": "set_joint_position",
+      "target": "agibot_x2.if.topic.joint_arm_command",
+      "type": "invokes_via"
+    },
+    {
+      "source": "get_all_joint_state",
+      "target": "agibot_x2.if.srv.get_all_joint_state",
+      "type": "invokes_via"
+    },
+    {
+      "source": "set_hand_command",
+      "target": "agibot_x2.if.topic.joint_hand_command",
+      "type": "invokes_via"
+    },
+    {
+      "source": "get_hand_type",
+      "target": "agibot_x2.if.srv.get_hand_type",
+      "type": "invokes_via"
+    },
+    {
+      "source": "play_tts",
+      "target": "agibot_x2.if.srv.play_tts",
+      "type": "invokes_via"
+    },
+    {
+      "source": "play_media_file",
+      "target": "agibot_x2.if.srv.play_media_file",
+      "type": "invokes_via"
+    },
+    {
+      "source": "set_volume",
+      "target": "agibot_x2.if.srv.set_volume",
+      "type": "invokes_via"
+    },
+    {
+      "source": "get_volume",
+      "target": "agibot_x2.if.srv.get_volume",
+      "type": "invokes_via"
+    },
+    {
+      "source": "set_mute",
+      "target": "agibot_x2.if.srv.set_mute",
+      "type": "invokes_via"
+    },
+    {
+      "source": "get_mute",
+      "target": "agibot_x2.if.srv.get_mute",
+      "type": "invokes_via"
+    },
+    {
+      "source": "agibot_x2.if.topic.mc_locomotion_velocity",
+      "target": "agibot_x2.schema.msg.mc_locomotion_velocity",
+      "type": "uses_schema"
+    },
+    {
+      "source": "agibot_x2.if.topic.joint_arm_command",
+      "target": "agibot_x2.schema.msg.joint_command",
+      "type": "uses_schema"
+    },
+    {
+      "source": "agibot_x2.if.topic.joint_leg_command",
+      "target": "agibot_x2.schema.msg.joint_command",
+      "type": "uses_schema"
+    },
+    {
+      "source": "agibot_x2.if.topic.pmu_state",
+      "target": "agibot_x2.schema.msg.pmu_state",
+      "type": "uses_schema"
+    },
+    {
+      "source": "agibot_x2.if.topic.touch_head",
+      "target": "agibot_x2.schema.msg.touch_state",
+      "type": "uses_schema"
+    },
+    {
+      "source": "agibot_x2.if.topic.mc_body_pose",
+      "target": "agibot_x2.schema.msg.mc_body_pose",
+      "type": "uses_schema"
+    },
+    {
+      "source": "agibot_x2.if.topic.mc_common_state",
+      "target": "agibot_x2.schema.msg.mc_common_state",
+      "type": "uses_schema"
+    },
+    {
+      "source": "agibot_x2.if.topic.joint_waist_state",
+      "target": "agibot_x2.schema.msg.joint_state",
+      "type": "uses_schema"
+    },
+    {
+      "source": "agibot_x2.if.topic.joint_head_state",
+      "target": "agibot_x2.schema.msg.joint_state",
+      "type": "uses_schema"
+    },
+    {
+      "source": "agibot_x2.if.topic.monitor_udcu",
+      "target": "agibot_x2.schema.msg.dcu_monitor_data",
+      "type": "uses_schema"
+    },
+    {
+      "source": "agibot_x2.if.topic.monitor_ddcu",
+      "target": "agibot_x2.schema.msg.dcu_monitor_data",
+      "type": "uses_schema"
+    },
+    {
+      "source": "agibot_x2.sw.motion_controller",
+      "target": "agibot_x2.cap.mode_management",
+      "type": "provides_capability"
+    },
+    {
+      "source": "agibot_x2.sw.motion_controller",
+      "target": "agibot_x2.cap.locomotion_velocity_control",
+      "type": "provides_capability"
+    },
+    {
+      "source": "agibot_x2.sw.motion_controller",
+      "target": "agibot_x2.cap.input_source_arbitration",
+      "type": "provides_capability"
+    },
+    {
+      "source": "agibot_x2.sw.motion_controller",
+      "target": "agibot_x2.cap.preset_motion",
+      "type": "provides_capability"
+    },
+    {
+      "source": "agibot_x2.sw.motion_controller",
+      "target": "agibot_x2.cap.joint_position_control",
+      "type": "provides_capability"
+    },
+    {
+      "source": "agibot_x2.sw.motion_controller",
+      "target": "agibot_x2.cap.hand_manipulation",
+      "type": "provides_capability"
+    },
+    {
+      "source": "agibot_x2.sw.interaction_audio",
+      "target": "agibot_x2.cap.speech_output",
+      "type": "provides_capability"
+    },
+    {
+      "source": "agibot_x2.sw.power_monitor",
+      "target": "agibot_x2.cap.power_diagnostics",
+      "type": "provides_capability"
+    },
+    {
+      "source": "agibot_x2.sw.hal_sensor",
+      "target": "agibot_x2.cap.tactile_head_events",
+      "type": "provides_capability"
+    },
+    {
+      "source": "agibot_x2.sw.hal_sensor",
+      "target": "agibot_x2.cap.visual_depth_sensing",
+      "type": "provides_capability"
+    },
+    {
+      "source": "agibot_x2.sw.hal_sensor",
+      "target": "agibot_x2.cap.body_state_observation",
+      "type": "provides_capability"
+    },
+    {
+      "source": "agibot_x2.hw.sensor.touch_head",
+      "target": "agibot_x2.cap.tactile_head_events",
+      "type": "provides_capability"
+    },
+    {
+      "source": "agibot_x2.hw.sensor.rgbd_head_front",
+      "target": "agibot_x2.cap.visual_depth_sensing",
+      "type": "provides_capability"
+    },
+    {
+      "source": "agibot_x2.hw.sensor.stereo_head_front_left",
+      "target": "agibot_x2.cap.visual_depth_sensing",
+      "type": "provides_capability"
+    },
+    {
+      "source": "agibot_x2.hw.sensor.lidar_chest_front",
+      "target": "agibot_x2.cap.body_state_observation",
+      "type": "provides_capability"
+    },
+    {
+      "source": "agibot_x2.hw.sensor.imu_chest",
+      "target": "agibot_x2.cap.body_state_observation",
+      "type": "provides_capability"
+    },
+    {
+      "source": "agibot_x2.hw.sensor.imu_torso",
+      "target": "agibot_x2.cap.body_state_observation",
+      "type": "provides_capability"
+    },
+    {
+      "source": "agibot_x2.cap.locomotion_velocity_control",
+      "target": "agibot_x2.cap.param.locomotion.forward_velocity",
+      "type": "has_parameter"
+    },
+    {
+      "source": "agibot_x2.cap.locomotion_velocity_control",
+      "target": "agibot_x2.cap.param.locomotion.lateral_velocity",
+      "type": "has_parameter"
+    },
+    {
+      "source": "agibot_x2.cap.locomotion_velocity_control",
+      "target": "agibot_x2.cap.param.locomotion.angular_velocity",
+      "type": "has_parameter"
+    },
+    {
+      "source": "agibot_x2.cap.mode_management",
+      "target": "get_mc_action",
+      "type": "exposed_via"
+    },
+    {
+      "source": "agibot_x2.cap.mode_management",
+      "target": "set_mc_action",
+      "type": "exposed_via"
+    },
+    {
+      "source": "agibot_x2.cap.mode_management",
+      "target": "agibot_x2.if.srv.get_mc_action",
+      "type": "exposed_via"
+    },
+    {
+      "source": "agibot_x2.cap.mode_management",
+      "target": "agibot_x2.if.srv.set_mc_action",
+      "type": "exposed_via"
+    },
+    {
+      "source": "agibot_x2.cap.locomotion_velocity_control",
+      "target": "set_forward_velocity",
+      "type": "exposed_via"
+    },
+    {
+      "source": "agibot_x2.cap.locomotion_velocity_control",
+      "target": "set_lateral_velocity",
+      "type": "exposed_via"
+    },
+    {
+      "source": "agibot_x2.cap.locomotion_velocity_control",
+      "target": "set_angular_velocity",
+      "type": "exposed_via"
+    },
+    {
+      "source": "agibot_x2.cap.locomotion_velocity_control",
+      "target": "agibot_x2.if.topic.mc_locomotion_velocity",
+      "type": "exposed_via"
+    },
+    {
+      "source": "agibot_x2.cap.input_source_arbitration",
+      "target": "get_current_input_source",
+      "type": "exposed_via"
+    },
+    {
+      "source": "agibot_x2.cap.input_source_arbitration",
+      "target": "register_input_source",
+      "type": "exposed_via"
+    },
+    {
+      "source": "agibot_x2.cap.input_source_arbitration",
+      "target": "modify_input_source",
+      "type": "exposed_via"
+    },
+    {
+      "source": "agibot_x2.cap.input_source_arbitration",
+      "target": "delete_input_source",
+      "type": "exposed_via"
+    },
+    {
+      "source": "agibot_x2.cap.input_source_arbitration",
+      "target": "enable_input_source",
+      "type": "exposed_via"
+    },
+    {
+      "source": "agibot_x2.cap.input_source_arbitration",
+      "target": "disable_input_source",
+      "type": "exposed_via"
+    },
+    {
+      "source": "agibot_x2.cap.input_source_arbitration",
+      "target": "agibot_x2.if.srv.set_mc_input_source",
+      "type": "exposed_via"
+    },
+    {
+      "source": "agibot_x2.cap.preset_motion",
+      "target": "set_preset_motion",
+      "type": "exposed_via"
+    },
+    {
+      "source": "agibot_x2.cap.preset_motion",
+      "target": "agibot_x2.if.srv.set_mc_preset_motion",
+      "type": "exposed_via"
+    },
+    {
+      "source": "agibot_x2.cap.joint_position_control",
+      "target": "set_joint_position",
+      "type": "exposed_via"
+    },
+    {
+      "source": "agibot_x2.cap.joint_position_control",
+      "target": "get_all_joint_state",
+      "type": "exposed_via"
+    },
+    {
+      "source": "agibot_x2.cap.joint_position_control",
+      "target": "agibot_x2.if.topic.joint_arm_command",
+      "type": "exposed_via"
+    },
+    {
+      "source": "agibot_x2.cap.joint_position_control",
+      "target": "agibot_x2.if.topic.joint_leg_command",
+      "type": "exposed_via"
+    },
+    {
+      "source": "agibot_x2.cap.joint_position_control",
+      "target": "agibot_x2.if.topic.joint_arm_state",
+      "type": "exposed_via"
+    },
+    {
+      "source": "agibot_x2.cap.joint_position_control",
+      "target": "agibot_x2.if.topic.joint_leg_state",
+      "type": "exposed_via"
+    },
+    {
+      "source": "agibot_x2.cap.joint_position_control",
+      "target": "agibot_x2.if.srv.get_all_joint_state",
+      "type": "exposed_via"
+    },
+    {
+      "source": "agibot_x2.cap.hand_manipulation",
+      "target": "get_hand_type",
+      "type": "exposed_via"
+    },
+    {
+      "source": "agibot_x2.cap.hand_manipulation",
+      "target": "set_hand_command",
+      "type": "exposed_via"
+    },
+    {
+      "source": "agibot_x2.cap.hand_manipulation",
+      "target": "agibot_x2.if.srv.get_hand_type",
+      "type": "exposed_via"
+    },
+    {
+      "source": "agibot_x2.cap.hand_manipulation",
+      "target": "agibot_x2.if.topic.joint_hand_command",
+      "type": "exposed_via"
+    },
+    {
+      "source": "agibot_x2.cap.hand_manipulation",
+      "target": "agibot_x2.if.topic.joint_hand_state",
+      "type": "exposed_via"
+    },
+    {
+      "source": "agibot_x2.cap.speech_output",
+      "target": "play_tts",
+      "type": "exposed_via"
+    },
+    {
+      "source": "agibot_x2.cap.speech_output",
+      "target": "play_media_file",
+      "type": "exposed_via"
+    },
+    {
+      "source": "agibot_x2.cap.speech_output",
+      "target": "set_volume",
+      "type": "exposed_via"
+    },
+    {
+      "source": "agibot_x2.cap.speech_output",
+      "target": "get_volume",
+      "type": "exposed_via"
+    },
+    {
+      "source": "agibot_x2.cap.speech_output",
+      "target": "set_mute",
+      "type": "exposed_via"
+    },
+    {
+      "source": "agibot_x2.cap.speech_output",
+      "target": "get_mute",
+      "type": "exposed_via"
+    },
+    {
+      "source": "agibot_x2.cap.speech_output",
+      "target": "agibot_x2.if.srv.play_tts",
+      "type": "exposed_via"
+    },
+    {
+      "source": "agibot_x2.cap.speech_output",
+      "target": "agibot_x2.if.srv.play_media_file",
+      "type": "exposed_via"
+    },
+    {
+      "source": "agibot_x2.cap.speech_output",
+      "target": "agibot_x2.if.srv.set_volume",
+      "type": "exposed_via"
+    },
+    {
+      "source": "agibot_x2.cap.speech_output",
+      "target": "agibot_x2.if.srv.set_mute",
+      "type": "exposed_via"
+    },
+    {
+      "source": "agibot_x2.cap.power_diagnostics",
+      "target": "agibot_x2.if.topic.pmu_state",
+      "type": "exposed_via"
+    },
+    {
+      "source": "agibot_x2.cap.tactile_head_events",
+      "target": "agibot_x2.if.topic.touch_head",
+      "type": "exposed_via"
+    },
+    {
+      "source": "agibot_x2.cap.visual_depth_sensing",
+      "target": "agibot_x2.if.topic.stereo_front_left_image",
+      "type": "exposed_via"
+    },
+    {
+      "source": "agibot_x2.cap.visual_depth_sensing",
+      "target": "agibot_x2.if.topic.rgbd_front_image",
+      "type": "exposed_via"
+    },
+    {
+      "source": "agibot_x2.cap.visual_depth_sensing",
+      "target": "agibot_x2.if.topic.rgbd_front_pointcloud",
+      "type": "exposed_via"
+    },
+    {
+      "source": "agibot_x2.cap.body_state_observation",
+      "target": "agibot_x2.if.topic.imu_chest",
+      "type": "exposed_via"
+    },
+    {
+      "source": "agibot_x2.cap.body_state_observation",
+      "target": "agibot_x2.if.topic.imu_torso",
+      "type": "exposed_via"
+    },
+    {
+      "source": "agibot_x2.cap.body_state_observation",
+      "target": "agibot_x2.if.topic.mc_body_pose",
+      "type": "exposed_via"
+    },
+    {
+      "source": "agibot_x2.cap.body_state_observation",
+      "target": "agibot_x2.if.topic.mc_common_state",
+      "type": "exposed_via"
+    },
+    {
+      "source": "agibot_x2.cap.body_state_observation",
+      "target": "agibot_x2.if.topic.monitor_udcu",
+      "type": "exposed_via"
+    },
+    {
+      "source": "agibot_x2.cap.body_state_observation",
+      "target": "agibot_x2.if.topic.monitor_ddcu",
+      "type": "exposed_via"
+    },
+    {
+      "source": "agibot_x2.cap.mode_management",
+      "target": "agibot_x2.req.safe_base_motion",
+      "type": "satisfies_requirement"
+    },
+    {
+      "source": "agibot_x2.cap.input_source_arbitration",
+      "target": "agibot_x2.req.safe_base_motion",
+      "type": "satisfies_requirement"
+    },
+    {
+      "source": "agibot_x2.cap.locomotion_velocity_control",
+      "target": "agibot_x2.req.safe_base_motion",
+      "type": "satisfies_requirement"
+    },
+    {
+      "source": "agibot_x2.cap.body_state_observation",
+      "target": "agibot_x2.req.safe_base_motion",
+      "type": "satisfies_requirement"
+    },
+    {
+      "source": "agibot_x2.cap.power_diagnostics",
+      "target": "agibot_x2.req.robot_health_report",
+      "type": "satisfies_requirement"
+    },
+    {
+      "source": "agibot_x2.cap.body_state_observation",
+      "target": "agibot_x2.req.robot_health_report",
+      "type": "satisfies_requirement"
+    },
+    {
+      "source": "agibot_x2.cap.speech_output",
+      "target": "agibot_x2.req.human_interaction",
+      "type": "satisfies_requirement"
+    },
+    {
+      "source": "agibot_x2.cap.tactile_head_events",
+      "target": "agibot_x2.req.human_interaction",
+      "type": "satisfies_requirement"
+    },
+    {
+      "source": "agibot_x2.cap.preset_motion",
+      "target": "agibot_x2.req.human_interaction",
+      "type": "satisfies_requirement"
+    },
+    {
+      "source": "disable_input_source",
+      "target": "agibot_x2.event.bms.discharge_overcurrent",
+      "type": "resolves"
+    },
+    {
+      "source": "agibot_x2.event.pmu.rk3588_power_good",
+      "target": "agibot_x2.if.topic.pmu_state",
+      "type": "carried_by"
+    },
+    {
+      "source": "agibot_x2.event.pmu.rk3588_monitor1",
+      "target": "agibot_x2.if.topic.pmu_state",
+      "type": "carried_by"
+    },
+    {
+      "source": "agibot_x2.event.pmu.rk3588_monitor2",
+      "target": "agibot_x2.if.topic.pmu_state",
+      "type": "carried_by"
+    },
+    {
+      "source": "agibot_x2.event.pmu.orin_power_good",
+      "target": "agibot_x2.if.topic.pmu_state",
+      "type": "carried_by"
+    },
+    {
+      "source": "agibot_x2.event.pmu.orin_monitor1",
+      "target": "agibot_x2.if.topic.pmu_state",
+      "type": "carried_by"
+    },
+    {
+      "source": "agibot_x2.event.pmu.orin_monitor2",
+      "target": "agibot_x2.if.topic.pmu_state",
+      "type": "carried_by"
+    },
+    {
+      "source": "agibot_x2.event.pmu.bus48v_overcurrent",
+      "target": "agibot_x2.if.topic.pmu_state",
+      "type": "carried_by"
+    },
+    {
+      "source": "agibot_x2.event.pmu.bus48v_overtemperature",
+      "target": "agibot_x2.if.topic.pmu_state",
+      "type": "carried_by"
+    },
+    {
+      "source": "agibot_x2.event.pmu.rk3588_plug_detect",
+      "target": "agibot_x2.if.topic.pmu_state",
+      "type": "carried_by"
+    },
+    {
+      "source": "agibot_x2.event.pmu.orin_nx_plug_detect",
+      "target": "agibot_x2.if.topic.pmu_state",
+      "type": "carried_by"
+    },
+    {
+      "source": "agibot_x2.event.bms.charge_flag",
+      "target": "agibot_x2.if.topic.pmu_state",
+      "type": "carried_by"
+    },
+    {
+      "source": "agibot_x2.event.bms.charge_overcurrent",
+      "target": "agibot_x2.if.topic.pmu_state",
+      "type": "carried_by"
+    },
+    {
+      "source": "agibot_x2.event.bms.discharge_flag",
+      "target": "agibot_x2.if.topic.pmu_state",
+      "type": "carried_by"
+    },
+    {
+      "source": "agibot_x2.event.bms.discharge_overcurrent",
+      "target": "agibot_x2.if.topic.pmu_state",
+      "type": "carried_by"
+    },
+    {
+      "source": "agibot_x2.event.bms.short_circuit",
+      "target": "agibot_x2.if.topic.pmu_state",
+      "type": "carried_by"
+    },
+    {
+      "source": "agibot_x2.event.bms.cell_overvoltage",
+      "target": "agibot_x2.if.topic.pmu_state",
+      "type": "carried_by"
+    },
+    {
+      "source": "agibot_x2.event.bms.cell_undervoltage",
+      "target": "agibot_x2.if.topic.pmu_state",
+      "type": "carried_by"
+    },
+    {
+      "source": "agibot_x2.event.bms.battery_overvoltage",
+      "target": "agibot_x2.if.topic.pmu_state",
+      "type": "carried_by"
+    },
+    {
+      "source": "agibot_x2.event.bms.battery_undervoltage",
+      "target": "agibot_x2.if.topic.pmu_state",
+      "type": "carried_by"
+    },
+    {
+      "source": "agibot_x2.event.bms.cell_open_circuit",
+      "target": "agibot_x2.if.topic.pmu_state",
+      "type": "carried_by"
+    },
+    {
+      "source": "agibot_x2.event.bms.ntc_open_circuit",
+      "target": "agibot_x2.if.topic.pmu_state",
+      "type": "carried_by"
+    },
+    {
+      "source": "agibot_x2.event.bms.cell_discharge_overtemp",
+      "target": "agibot_x2.if.topic.pmu_state",
+      "type": "carried_by"
+    },
+    {
+      "source": "agibot_x2.event.bms.cell_charge_overtemp",
+      "target": "agibot_x2.if.topic.pmu_state",
+      "type": "carried_by"
+    },
+    {
+      "source": "agibot_x2.event.bms.cell_discharge_undertemp",
+      "target": "agibot_x2.if.topic.pmu_state",
+      "type": "carried_by"
+    },
+    {
+      "source": "agibot_x2.event.bms.cell_charge_undertemp",
+      "target": "agibot_x2.if.topic.pmu_state",
+      "type": "carried_by"
+    },
+    {
+      "source": "agibot_x2.event.bms.cell_voltage_diff_over_high",
+      "target": "agibot_x2.if.topic.pmu_state",
+      "type": "carried_by"
+    },
+    {
+      "source": "agibot_x2.event.bms.mosfet_charge_disable",
+      "target": "agibot_x2.if.topic.pmu_state",
+      "type": "carried_by"
+    },
+    {
+      "source": "agibot_x2.event.bms.mosfet_discharge_disable",
+      "target": "agibot_x2.if.topic.pmu_state",
+      "type": "carried_by"
+    },
+    {
+      "source": "agibot_x2.event.bms.mosfet_overtemp",
+      "target": "agibot_x2.if.topic.pmu_state",
+      "type": "carried_by"
+    },
+    {
+      "source": "agibot_x2.event.bms.balance_line_resistance_over_high",
+      "target": "agibot_x2.if.topic.pmu_state",
+      "type": "carried_by"
+    },
+    {
+      "source": "agibot_x2.event.pmu.rk3588_power_good",
+      "target": "agibot_x2.hw.compute.pc1",
+      "type": "indicates"
+    },
+    {
+      "source": "agibot_x2.event.pmu.rk3588_monitor1",
+      "target": "agibot_x2.hw.compute.pc1",
+      "type": "indicates"
+    },
+    {
+      "source": "agibot_x2.event.pmu.rk3588_monitor2",
+      "target": "agibot_x2.hw.compute.pc1",
+      "type": "indicates"
+    },
+    {
+      "source": "agibot_x2.event.pmu.rk3588_plug_detect",
+      "target": "agibot_x2.hw.compute.pc1",
+      "type": "indicates"
+    },
+    {
+      "source": "agibot_x2.event.pmu.orin_power_good",
+      "target": "agibot_x2.hw.compute.pc2",
+      "type": "indicates"
+    },
+    {
+      "source": "agibot_x2.event.pmu.orin_monitor1",
+      "target": "agibot_x2.hw.compute.pc2",
+      "type": "indicates"
+    },
+    {
+      "source": "agibot_x2.event.pmu.orin_monitor2",
+      "target": "agibot_x2.hw.compute.pc2",
+      "type": "indicates"
+    },
+    {
+      "source": "agibot_x2.event.pmu.orin_nx_plug_detect",
+      "target": "agibot_x2.hw.compute.pc2",
+      "type": "indicates"
+    },
+    {
+      "source": "agibot_x2.event.bms.charge_flag",
+      "target": "agibot_x2.hw.power",
+      "type": "indicates"
+    },
+    {
+      "source": "agibot_x2.event.bms.charge_overcurrent",
+      "target": "agibot_x2.hw.power",
+      "type": "indicates"
+    },
+    {
+      "source": "agibot_x2.event.bms.discharge_flag",
+      "target": "agibot_x2.hw.power",
+      "type": "indicates"
+    },
+    {
+      "source": "agibot_x2.event.bms.battery_overvoltage",
+      "target": "agibot_x2.hw.power",
+      "type": "indicates"
+    },
+    {
+      "source": "agibot_x2.event.bms.battery_undervoltage",
+      "target": "agibot_x2.hw.power",
+      "type": "indicates"
+    },
+    {
+      "source": "agibot_x2.event.bms.cell_open_circuit",
+      "target": "agibot_x2.hw.power",
+      "type": "indicates"
+    },
+    {
+      "source": "agibot_x2.event.bms.ntc_open_circuit",
+      "target": "agibot_x2.hw.power",
+      "type": "indicates"
+    },
+    {
+      "source": "agibot_x2.event.bms.cell_discharge_undertemp",
+      "target": "agibot_x2.hw.power",
+      "type": "indicates"
+    },
+    {
+      "source": "agibot_x2.event.bms.cell_charge_undertemp",
+      "target": "agibot_x2.hw.power",
+      "type": "indicates"
+    },
+    {
+      "source": "agibot_x2.event.bms.cell_voltage_diff_over_high",
+      "target": "agibot_x2.hw.power",
+      "type": "indicates"
+    },
+    {
+      "source": "agibot_x2.event.bms.mosfet_charge_disable",
+      "target": "agibot_x2.hw.power",
+      "type": "indicates"
+    },
+    {
+      "source": "agibot_x2.event.bms.mosfet_discharge_disable",
+      "target": "agibot_x2.hw.power",
+      "type": "indicates"
+    },
+    {
+      "source": "agibot_x2.event.bms.balance_line_resistance_over_high",
+      "target": "agibot_x2.hw.power",
+      "type": "indicates"
+    },
+    {
+      "source": "agibot_x2.event.touch.unknown",
+      "target": "agibot_x2.if.topic.touch_head",
+      "type": "carried_by"
+    },
+    {
+      "source": "agibot_x2.event.touch.idle",
+      "target": "agibot_x2.if.topic.touch_head",
+      "type": "carried_by"
+    },
+    {
+      "source": "agibot_x2.event.touch.touch",
+      "target": "agibot_x2.if.topic.touch_head",
+      "type": "carried_by"
+    },
+    {
+      "source": "agibot_x2.event.touch.swipe",
+      "target": "agibot_x2.if.topic.touch_head",
+      "type": "carried_by"
+    },
+    {
+      "source": "agibot_x2.event.touch.single_tap",
+      "target": "agibot_x2.if.topic.touch_head",
+      "type": "carried_by"
+    },
+    {
+      "source": "agibot_x2.event.touch.double_tap",
+      "target": "agibot_x2.if.topic.touch_head",
+      "type": "carried_by"
+    },
+    {
+      "source": "agibot_x2.event.touch.triple_tap",
+      "target": "agibot_x2.if.topic.touch_head",
+      "type": "carried_by"
+    },
+    {
+      "source": "agibot_x2.event.hand.omnipicker.no_fault",
+      "target": "agibot_x2.if.topic.joint_hand_state",
+      "type": "carried_by"
+    },
+    {
+      "source": "agibot_x2.event.hand.omnipicker.over_temp",
+      "target": "agibot_x2.if.topic.joint_hand_state",
+      "type": "carried_by"
+    },
+    {
+      "source": "agibot_x2.event.hand.omnipicker.over_speed",
+      "target": "agibot_x2.if.topic.joint_hand_state",
+      "type": "carried_by"
+    },
+    {
+      "source": "agibot_x2.event.hand.omnipicker.init_fault",
+      "target": "agibot_x2.if.topic.joint_hand_state",
+      "type": "carried_by"
+    },
+    {
+      "source": "agibot_x2.event.hand.omnipicker.over_limit",
+      "target": "agibot_x2.if.topic.joint_hand_state",
+      "type": "carried_by"
+    },
+    {
+      "source": "agibot_x2.event.hand.omnipicker.target_reached",
+      "target": "agibot_x2.if.topic.joint_hand_state",
+      "type": "carried_by"
+    },
+    {
+      "source": "agibot_x2.event.hand.omnipicker.moving",
+      "target": "agibot_x2.if.topic.joint_hand_state",
+      "type": "carried_by"
+    },
+    {
+      "source": "agibot_x2.event.hand.omnipicker.jammed",
+      "target": "agibot_x2.if.topic.joint_hand_state",
+      "type": "carried_by"
+    },
+    {
+      "source": "agibot_x2.event.hand.omnipicker.object_dropped",
+      "target": "agibot_x2.if.topic.joint_hand_state",
+      "type": "carried_by"
+    },
+    {
+      "source": "agibot_x2.event.joint_domain.damping_mode",
+      "target": "agibot_x2.if.topic.joint_arm_state",
+      "type": "carried_by"
+    },
+    {
+      "source": "agibot_x2.event.joint_domain.power_off",
+      "target": "agibot_x2.if.topic.joint_arm_state",
+      "type": "carried_by"
+    },
+    {
+      "source": "agibot_x2.event.joint_domain.disabled",
+      "target": "agibot_x2.if.topic.joint_arm_state",
+      "type": "carried_by"
+    },
+    {
+      "source": "agibot_x2.event.joint_domain.comm_disconnect",
+      "target": "agibot_x2.if.topic.joint_arm_state",
+      "type": "carried_by"
+    },
+    {
+      "source": "agibot_x2.motion.right_hand_wave",
+      "target": "set_preset_motion",
+      "type": "invocable_via"
+    },
+    {
+      "source": "agibot_x2.motion.left_hand_wave",
+      "target": "set_preset_motion",
+      "type": "invocable_via"
+    },
+    {
+      "source": "agibot_x2.motion.right_handshake",
+      "target": "set_preset_motion",
+      "type": "invocable_via"
+    },
+    {
+      "source": "agibot_x2.motion.left_handshake",
+      "target": "set_preset_motion",
+      "type": "invocable_via"
+    },
+    {
+      "source": "agibot_x2.motion.right_hand_raise",
+      "target": "set_preset_motion",
+      "type": "invocable_via"
+    },
+    {
+      "source": "agibot_x2.motion.left_hand_raise",
+      "target": "set_preset_motion",
+      "type": "invocable_via"
+    },
+    {
+      "source": "agibot_x2.motion.right_flying_kiss",
+      "target": "set_preset_motion",
+      "type": "invocable_via"
+    },
+    {
+      "source": "agibot_x2.motion.left_flying_kiss",
+      "target": "set_preset_motion",
+      "type": "invocable_via"
+    },
+    {
+      "source": "agibot_x2.motion.applause",
+      "target": "set_preset_motion",
+      "type": "invocable_via"
+    },
+    {
+      "source": "agibot_x2.motion.right_salute",
+      "target": "set_preset_motion",
+      "type": "invocable_via"
+    },
+    {
+      "source": "agibot_x2.motion.left_salute",
+      "target": "set_preset_motion",
+      "type": "invocable_via"
+    },
+    {
+      "source": "agibot_x2.motion.heart_both",
+      "target": "set_preset_motion",
+      "type": "invocable_via"
+    },
+    {
+      "source": "agibot_x2.motion.heart_right",
+      "target": "set_preset_motion",
+      "type": "invocable_via"
+    },
+    {
+      "source": "agibot_x2.motion.heart_left",
+      "target": "set_preset_motion",
+      "type": "invocable_via"
+    },
+    {
+      "source": "agibot_x2.motion.hug",
+      "target": "set_preset_motion",
+      "type": "invocable_via"
+    },
+    {
+      "source": "agibot_x2.motion.cheer_up",
+      "target": "set_preset_motion",
+      "type": "invocable_via"
+    },
+    {
+      "source": "agibot_x2.motion.arms_out_both",
+      "target": "set_preset_motion",
+      "type": "invocable_via"
+    },
+    {
+      "source": "agibot_x2.motion.arm_out_right",
+      "target": "set_preset_motion",
+      "type": "invocable_via"
+    },
+    {
+      "source": "agibot_x2.motion.arm_out_left",
+      "target": "set_preset_motion",
+      "type": "invocable_via"
+    },
+    {
+      "source": "agibot_x2.motion.bye",
+      "target": "set_preset_motion",
+      "type": "invocable_via"
+    },
+    {
+      "source": "agibot_x2.motion.wave_burst",
+      "target": "set_preset_motion",
+      "type": "invocable_via"
+    },
+    {
+      "source": "agibot_x2.motion.right_high_five",
+      "target": "set_preset_motion",
+      "type": "invocable_via"
+    },
+    {
+      "source": "agibot_x2.motion.left_high_five",
+      "target": "set_preset_motion",
+      "type": "invocable_via"
+    },
+    {
+      "source": "agibot_x2.motion.cross_arms",
+      "target": "set_preset_motion",
+      "type": "invocable_via"
+    },
+    {
+      "source": "agibot_x2.motion.chest_wave_right",
+      "target": "set_preset_motion",
+      "type": "invocable_via"
+    },
+    {
+      "source": "agibot_x2.motion.chest_wave_left",
+      "target": "set_preset_motion",
+      "type": "invocable_via"
+    },
+    {
+      "source": "agibot_x2.motion.bow",
+      "target": "set_preset_motion",
+      "type": "invocable_via"
+    },
+    {
+      "source": "agibot_x2.motion.head_scratch",
+      "target": "set_preset_motion",
+      "type": "invocable_via"
+    },
+    {
+      "source": "agibot_x2.motion.butt_scratch",
+      "target": "set_preset_motion",
+      "type": "invocable_via"
+    },
+    {
+      "source": "agibot_x2.motion.lying_stand_up",
+      "target": "set_preset_motion",
+      "type": "invocable_via"
+    },
+    {
+      "source": "agibot_x2.motion.sitting_stand_up",
+      "target": "set_preset_motion",
+      "type": "invocable_via"
+    },
+    {
+      "source": "agibot_x2.motion.right_hand_wave",
+      "target": "agibot_x2.mode.stand_default",
+      "type": "requires_mode"
+    },
+    {
+      "source": "agibot_x2.motion.left_hand_wave",
+      "target": "agibot_x2.mode.stand_default",
+      "type": "requires_mode"
+    },
+    {
+      "source": "agibot_x2.motion.applause",
+      "target": "agibot_x2.mode.stand_default",
+      "type": "requires_mode"
+    },
+    {
+      "source": "agibot_x2.motion.hug",
+      "target": "agibot_x2.mode.stand_default",
+      "type": "requires_mode"
+    },
+    {
+      "source": "agibot_x2.motion.bow",
+      "target": "agibot_x2.mode.stand_default",
+      "type": "requires_mode"
+    },
+    {
+      "source": "agibot_x2.motion.lying_stand_up",
+      "target": "agibot_x2.mode.passive_default",
+      "type": "requires_mode"
+    },
+    {
+      "source": "agibot_x2.motion.sitting_stand_up",
+      "target": "agibot_x2.mode.joint_default",
+      "type": "requires_mode"
+    },
+    {
+      "source": "agibot_x2.hw.left_arm.shoulder_pitch",
+      "target": "agibot_x2.hw.link.torso_link",
+      "type": "has_parent_link"
+    },
+    {
+      "source": "agibot_x2.hw.left_arm.shoulder_pitch",
+      "target": "agibot_x2.hw.link.left_shoulder_pitch_link",
+      "type": "has_child_link"
+    },
+    {
+      "source": "agibot_x2.hw.left_arm.shoulder_roll",
+      "target": "agibot_x2.hw.link.left_shoulder_pitch_link",
+      "type": "has_parent_link"
+    },
+    {
+      "source": "agibot_x2.hw.left_arm.shoulder_roll",
+      "target": "agibot_x2.hw.link.left_shoulder_roll_link",
+      "type": "has_child_link"
+    },
+    {
+      "source": "agibot_x2.hw.left_arm.shoulder_yaw",
+      "target": "agibot_x2.hw.link.left_shoulder_roll_link",
+      "type": "has_parent_link"
+    },
+    {
+      "source": "agibot_x2.hw.left_arm.shoulder_yaw",
+      "target": "agibot_x2.hw.link.left_shoulder_yaw_link",
+      "type": "has_child_link"
+    },
+    {
+      "source": "agibot_x2.hw.left_arm.elbow",
+      "target": "agibot_x2.hw.link.left_shoulder_yaw_link",
+      "type": "has_parent_link"
+    },
+    {
+      "source": "agibot_x2.hw.left_arm.elbow",
+      "target": "agibot_x2.hw.link.left_elbow_link",
+      "type": "has_child_link"
+    },
+    {
+      "source": "agibot_x2.hw.left_arm.wrist_yaw",
+      "target": "agibot_x2.hw.link.left_elbow_link",
+      "type": "has_parent_link"
+    },
+    {
+      "source": "agibot_x2.hw.left_arm.wrist_yaw",
+      "target": "agibot_x2.hw.link.left_wrist_yaw_link",
+      "type": "has_child_link"
+    },
+    {
+      "source": "agibot_x2.hw.left_arm.wrist_pitch",
+      "target": "agibot_x2.hw.link.left_wrist_yaw_link",
+      "type": "has_parent_link"
+    },
+    {
+      "source": "agibot_x2.hw.left_arm.wrist_pitch",
+      "target": "agibot_x2.hw.link.left_wrist_pitch_link",
+      "type": "has_child_link"
+    },
+    {
+      "source": "agibot_x2.hw.left_arm.wrist_roll",
+      "target": "agibot_x2.hw.link.left_wrist_pitch_link",
+      "type": "has_parent_link"
+    },
+    {
+      "source": "agibot_x2.hw.left_arm.wrist_roll",
+      "target": "agibot_x2.hw.link.left_wrist_roll_link",
+      "type": "has_child_link"
+    },
+    {
+      "source": "agibot_x2.hw.right_arm.shoulder_pitch",
+      "target": "agibot_x2.hw.link.torso_link",
+      "type": "has_parent_link"
+    },
+    {
+      "source": "agibot_x2.hw.right_arm.shoulder_pitch",
+      "target": "agibot_x2.hw.link.right_shoulder_pitch_link",
+      "type": "has_child_link"
+    },
+    {
+      "source": "agibot_x2.hw.right_arm.shoulder_roll",
+      "target": "agibot_x2.hw.link.right_shoulder_pitch_link",
+      "type": "has_parent_link"
+    },
+    {
+      "source": "agibot_x2.hw.right_arm.shoulder_roll",
+      "target": "agibot_x2.hw.link.right_shoulder_roll_link",
+      "type": "has_child_link"
+    },
+    {
+      "source": "agibot_x2.hw.right_arm.shoulder_yaw",
+      "target": "agibot_x2.hw.link.right_shoulder_roll_link",
+      "type": "has_parent_link"
+    },
+    {
+      "source": "agibot_x2.hw.right_arm.shoulder_yaw",
+      "target": "agibot_x2.hw.link.right_shoulder_yaw_link",
+      "type": "has_child_link"
+    },
+    {
+      "source": "agibot_x2.hw.right_arm.elbow",
+      "target": "agibot_x2.hw.link.right_shoulder_yaw_link",
+      "type": "has_parent_link"
+    },
+    {
+      "source": "agibot_x2.hw.right_arm.elbow",
+      "target": "agibot_x2.hw.link.right_elbow_link",
+      "type": "has_child_link"
+    },
+    {
+      "source": "agibot_x2.hw.right_arm.wrist_yaw",
+      "target": "agibot_x2.hw.link.right_elbow_link",
+      "type": "has_parent_link"
+    },
+    {
+      "source": "agibot_x2.hw.right_arm.wrist_yaw",
+      "target": "agibot_x2.hw.link.right_wrist_yaw_link",
+      "type": "has_child_link"
+    },
+    {
+      "source": "agibot_x2.hw.right_arm.wrist_pitch",
+      "target": "agibot_x2.hw.link.right_wrist_yaw_link",
+      "type": "has_parent_link"
+    },
+    {
+      "source": "agibot_x2.hw.right_arm.wrist_pitch",
+      "target": "agibot_x2.hw.link.right_wrist_pitch_link",
+      "type": "has_child_link"
+    },
+    {
+      "source": "agibot_x2.hw.right_arm.wrist_roll",
+      "target": "agibot_x2.hw.link.right_wrist_pitch_link",
+      "type": "has_parent_link"
+    },
+    {
+      "source": "agibot_x2.hw.right_arm.wrist_roll",
+      "target": "agibot_x2.hw.link.right_wrist_roll_link",
+      "type": "has_child_link"
+    },
+    {
+      "source": "agibot_x2.hw.left_leg.hip_pitch",
+      "target": "agibot_x2.hw.link.pelvis",
+      "type": "has_parent_link"
+    },
+    {
+      "source": "agibot_x2.hw.left_leg.hip_pitch",
+      "target": "agibot_x2.hw.link.left_hip_pitch_link",
+      "type": "has_child_link"
+    },
+    {
+      "source": "agibot_x2.hw.left_leg.hip_roll",
+      "target": "agibot_x2.hw.link.left_hip_pitch_link",
+      "type": "has_parent_link"
+    },
+    {
+      "source": "agibot_x2.hw.left_leg.hip_roll",
+      "target": "agibot_x2.hw.link.left_hip_roll_link",
+      "type": "has_child_link"
+    },
+    {
+      "source": "agibot_x2.hw.left_leg.hip_yaw",
+      "target": "agibot_x2.hw.link.left_hip_roll_link",
+      "type": "has_parent_link"
+    },
+    {
+      "source": "agibot_x2.hw.left_leg.hip_yaw",
+      "target": "agibot_x2.hw.link.left_hip_yaw_link",
+      "type": "has_child_link"
+    },
+    {
+      "source": "agibot_x2.hw.left_leg.knee",
+      "target": "agibot_x2.hw.link.left_hip_yaw_link",
+      "type": "has_parent_link"
+    },
+    {
+      "source": "agibot_x2.hw.left_leg.knee",
+      "target": "agibot_x2.hw.link.left_knee_link",
+      "type": "has_child_link"
+    },
+    {
+      "source": "agibot_x2.hw.left_leg.ankle_pitch",
+      "target": "agibot_x2.hw.link.left_knee_link",
+      "type": "has_parent_link"
+    },
+    {
+      "source": "agibot_x2.hw.left_leg.ankle_pitch",
+      "target": "agibot_x2.hw.link.left_ankle_pitch_link",
+      "type": "has_child_link"
+    },
+    {
+      "source": "agibot_x2.hw.left_leg.ankle_roll",
+      "target": "agibot_x2.hw.link.left_ankle_pitch_link",
+      "type": "has_parent_link"
+    },
+    {
+      "source": "agibot_x2.hw.left_leg.ankle_roll",
+      "target": "agibot_x2.hw.link.left_ankle_roll_link",
+      "type": "has_child_link"
+    },
+    {
+      "source": "agibot_x2.hw.right_leg.hip_pitch",
+      "target": "agibot_x2.hw.link.pelvis",
+      "type": "has_parent_link"
+    },
+    {
+      "source": "agibot_x2.hw.right_leg.hip_pitch",
+      "target": "agibot_x2.hw.link.right_hip_pitch_link",
+      "type": "has_child_link"
+    },
+    {
+      "source": "agibot_x2.hw.right_leg.hip_roll",
+      "target": "agibot_x2.hw.link.right_hip_pitch_link",
+      "type": "has_parent_link"
+    },
+    {
+      "source": "agibot_x2.hw.right_leg.hip_roll",
+      "target": "agibot_x2.hw.link.right_hip_roll_link",
+      "type": "has_child_link"
+    },
+    {
+      "source": "agibot_x2.hw.right_leg.hip_yaw",
+      "target": "agibot_x2.hw.link.right_hip_roll_link",
+      "type": "has_parent_link"
+    },
+    {
+      "source": "agibot_x2.hw.right_leg.hip_yaw",
+      "target": "agibot_x2.hw.link.right_hip_yaw_link",
+      "type": "has_child_link"
+    },
+    {
+      "source": "agibot_x2.hw.right_leg.knee",
+      "target": "agibot_x2.hw.link.right_hip_yaw_link",
+      "type": "has_parent_link"
+    },
+    {
+      "source": "agibot_x2.hw.right_leg.knee",
+      "target": "agibot_x2.hw.link.right_knee_link",
+      "type": "has_child_link"
+    },
+    {
+      "source": "agibot_x2.hw.right_leg.ankle_pitch",
+      "target": "agibot_x2.hw.link.right_knee_link",
+      "type": "has_parent_link"
+    },
+    {
+      "source": "agibot_x2.hw.right_leg.ankle_pitch",
+      "target": "agibot_x2.hw.link.right_ankle_pitch_link",
+      "type": "has_child_link"
+    },
+    {
+      "source": "agibot_x2.hw.right_leg.ankle_roll",
+      "target": "agibot_x2.hw.link.right_ankle_pitch_link",
+      "type": "has_parent_link"
+    },
+    {
+      "source": "agibot_x2.hw.right_leg.ankle_roll",
+      "target": "agibot_x2.hw.link.right_ankle_roll_link",
+      "type": "has_child_link"
+    },
+    {
+      "source": "agibot_x2.hw.waist.waist_yaw",
+      "target": "agibot_x2.hw.link.pelvis",
+      "type": "has_parent_link"
+    },
+    {
+      "source": "agibot_x2.hw.waist.waist_yaw",
+      "target": "agibot_x2.hw.link.waist_yaw_link",
+      "type": "has_child_link"
+    },
+    {
+      "source": "agibot_x2.hw.waist.waist_pitch",
+      "target": "agibot_x2.hw.link.waist_yaw_link",
+      "type": "has_parent_link"
+    },
+    {
+      "source": "agibot_x2.hw.waist.waist_pitch",
+      "target": "agibot_x2.hw.link.waist_pitch_link",
+      "type": "has_child_link"
+    },
+    {
+      "source": "agibot_x2.hw.waist.waist_roll",
+      "target": "agibot_x2.hw.link.waist_pitch_link",
+      "type": "has_parent_link"
+    },
+    {
+      "source": "agibot_x2.hw.waist.waist_roll",
+      "target": "agibot_x2.hw.link.torso_link",
+      "type": "has_child_link"
+    },
+    {
+      "source": "agibot_x2.hw.head.head_yaw",
+      "target": "agibot_x2.hw.link.torso_link",
+      "type": "has_parent_link"
+    },
+    {
+      "source": "agibot_x2.hw.head.head_yaw",
+      "target": "agibot_x2.hw.link.head_yaw_link",
+      "type": "has_child_link"
+    },
+    {
+      "source": "agibot_x2.hw.head.head_pitch",
+      "target": "agibot_x2.hw.link.head_yaw_link",
+      "type": "has_parent_link"
+    },
+    {
+      "source": "agibot_x2.hw.head.head_pitch",
+      "target": "agibot_x2.hw.link.head_pitch_link",
+      "type": "has_child_link"
+    },
+    {
+      "source": "agibot_x2.priority.safety_l10",
+      "target": "play_tts",
+      "type": "used_by"
+    },
+    {
+      "source": "agibot_x2.priority.safety_l10",
+      "target": "play_media_file",
+      "type": "used_by"
+    },
+    {
+      "source": "agibot_x2.priority.warning_l8",
+      "target": "play_tts",
+      "type": "used_by"
+    },
+    {
+      "source": "agibot_x2.priority.warning_l8",
+      "target": "play_media_file",
+      "type": "used_by"
+    },
+    {
+      "source": "agibot_x2.priority.system_l7",
+      "target": "play_tts",
+      "type": "used_by"
+    },
+    {
+      "source": "agibot_x2.priority.interaction_l6",
+      "target": "play_tts",
+      "type": "used_by"
+    },
+    {
+      "source": "agibot_x2.priority.interaction_l6",
+      "target": "play_media_file",
+      "type": "used_by"
+    },
+    {
+      "source": "agibot_x2.priority.mission_l4",
+      "target": "play_tts",
+      "type": "used_by"
+    },
+    {
+      "source": "agibot_x2.priority.service_l2",
+      "target": "play_tts",
+      "type": "used_by"
+    },
+    {
+      "source": "agibot_x2.priority.background_l1",
+      "target": "play_tts",
+      "type": "used_by"
+    },
+    {
+      "source": "agibot_x2.input_source.rc",
+      "target": "set_forward_velocity",
+      "type": "grants"
+    },
+    {
+      "source": "agibot_x2.input_source.rc",
+      "target": "set_lateral_velocity",
+      "type": "grants"
+    },
+    {
+      "source": "agibot_x2.input_source.rc",
+      "target": "set_angular_velocity",
+      "type": "grants"
+    },
+    {
+      "source": "agibot_x2.input_source.rc",
+      "target": "set_mc_action",
+      "type": "grants"
+    },
+    {
+      "source": "agibot_x2.input_source.app_proxy",
+      "target": "set_mc_action",
+      "type": "grants"
+    },
+    {
+      "source": "agibot_x2.input_source.app_proxy",
+      "target": "set_preset_motion",
+      "type": "grants"
+    },
+    {
+      "source": "agibot_x2.input_source.interaction",
+      "target": "play_tts",
+      "type": "grants"
+    },
+    {
+      "source": "agibot_x2.input_source.interaction",
+      "target": "set_preset_motion",
+      "type": "grants"
+    },
+    {
+      "source": "agibot_x2.input_source.pnc",
+      "target": "set_forward_velocity",
+      "type": "grants"
+    },
+    {
+      "source": "agibot_x2.input_source.pnc",
+      "target": "set_preset_motion",
+      "type": "grants"
+    },
+    {
+      "source": "agibot_x2.input_source.vr",
+      "target": "set_joint_position",
+      "type": "grants"
+    },
+    {
+      "source": "agibot_x2.mode.joint_default",
+      "target": "set_hand_command",
+      "type": "allows"
+    },
+    {
+      "source": "agibot_x2.mode.stand_default",
+      "target": "set_hand_command",
+      "type": "allows"
+    },
+    {
+      "source": "agibot_x2.mode.damping_default",
+      "target": "get_all_joint_state",
+      "type": "allows"
+    },
+    {
+      "source": "agibot_x2.mode.passive_default",
+      "target": "get_mc_action",
+      "type": "allows"
+    },
+    {
+      "source": "agibot_x2.mode.damping_default",
+      "target": "get_mc_action",
+      "type": "allows"
+    },
+    {
+      "source": "agibot_x2.mode.joint_default",
+      "target": "get_mc_action",
+      "type": "allows"
+    },
+    {
+      "source": "agibot_x2.mode.stand_default",
+      "target": "get_mc_action",
+      "type": "allows"
+    },
+    {
+      "source": "agibot_x2.mode.locomotion_default",
+      "target": "get_mc_action",
+      "type": "allows"
+    },
+    {
+      "source": "agibot_x2.mode.passive_default",
+      "target": "get_all_joint_state",
+      "type": "allows"
+    },
+    {
+      "source": "agibot_x2.mode.joint_default",
+      "target": "get_all_joint_state",
+      "type": "allows"
+    },
+    {
+      "source": "agibot_x2.control_loop.mc_arbitration",
+      "target": "agibot_x2.if.topic.mc_locomotion_velocity",
+      "type": "arbitrates"
+    },
+    {
+      "source": "agibot_x2.hw.sensor.stereo_head_front_right",
+      "target": "agibot_x2.if.topic.stereo_front_left_image",
+      "type": "publishes_via"
+    },
+    {
+      "source": "agibot_x2.hw.sensor.rgb_head_front_interaction",
+      "target": "agibot_x2.if.topic.vad_audio_output",
+      "type": "publishes_via"
+    },
+    {
+      "source": "agibot_x2.hw.compute.pc2",
+      "target": "agibot_x2.if.topic.pmu_state",
+      "type": "hosts"
+    },
+    {
+      "source": "agibot_x2.hw.compute.pc2",
+      "target": "agibot_x2.if.topic.lidar_pointcloud",
+      "type": "hosts"
+    },
+    {
+      "source": "agibot_x2.hw.compute.pc2",
+      "target": "agibot_x2.if.topic.imu_chest",
+      "type": "hosts"
+    },
+    {
+      "source": "agibot_x2.hw.compute.pc2",
+      "target": "agibot_x2.if.topic.imu_torso",
+      "type": "hosts"
+    },
+    {
+      "source": "agibot_x2.hw.compute.pc3",
+      "target": "agibot_x2.if.topic.vad_audio_output",
+      "type": "hosts"
+    },
+    {
+      "source": "agibot_x2.hw.compute.pc3",
+      "target": "agibot_x2.if.topic.face_ui_status",
+      "type": "hosts"
+    },
+    {
+      "source": "set_mc_action",
+      "target": "agibot_x2.hw.body",
+      "type": "affects"
+    },
+    {
+      "source": "set_forward_velocity",
+      "target": "agibot_x2.hw.left_leg.*",
+      "type": "affects"
+    },
+    {
+      "source": "set_forward_velocity",
+      "target": "agibot_x2.hw.right_leg.*",
+      "type": "affects"
+    },
+    {
+      "source": "set_forward_velocity",
+      "target": "agibot_x2.hw.waist.*",
+      "type": "affects"
+    },
+    {
+      "source": "set_lateral_velocity",
+      "target": "agibot_x2.hw.left_leg.*",
+      "type": "affects"
+    },
+    {
+      "source": "set_lateral_velocity",
+      "target": "agibot_x2.hw.right_leg.*",
+      "type": "affects"
+    },
+    {
+      "source": "set_angular_velocity",
+      "target": "agibot_x2.hw.left_leg.*",
+      "type": "affects"
+    },
+    {
+      "source": "set_angular_velocity",
+      "target": "agibot_x2.hw.right_leg.*",
+      "type": "affects"
+    },
+    {
+      "source": "register_input_source",
+      "target": "agibot_x2.control_loop.mc_arbitration",
+      "type": "affects"
+    },
+    {
+      "source": "modify_input_source",
+      "target": "agibot_x2.control_loop.mc_arbitration",
+      "type": "affects"
+    },
+    {
+      "source": "delete_input_source",
+      "target": "agibot_x2.control_loop.mc_arbitration",
+      "type": "affects"
+    },
+    {
+      "source": "enable_input_source",
+      "target": "agibot_x2.control_loop.mc_arbitration",
+      "type": "affects"
+    },
+    {
+      "source": "disable_input_source",
+      "target": "agibot_x2.control_loop.mc_arbitration",
+      "type": "affects"
+    },
+    {
+      "source": "set_preset_motion",
+      "target": "agibot_x2.hw.left_arm.*",
+      "type": "affects"
+    },
+    {
+      "source": "set_preset_motion",
+      "target": "agibot_x2.hw.right_arm.*",
+      "type": "affects"
+    },
+    {
+      "source": "set_joint_position",
+      "target": "agibot_x2.hw.head.*",
+      "type": "affects"
+    },
+    {
+      "source": "set_joint_position",
+      "target": "agibot_x2.hw.waist.*",
+      "type": "affects"
+    },
+    {
+      "source": "set_joint_position",
+      "target": "agibot_x2.hw.left_arm.*",
+      "type": "affects"
+    },
+    {
+      "source": "set_joint_position",
+      "target": "agibot_x2.hw.right_arm.*",
+      "type": "affects"
+    },
+    {
+      "source": "set_joint_position",
+      "target": "agibot_x2.hw.left_leg.*",
+      "type": "affects"
+    },
+    {
+      "source": "set_joint_position",
+      "target": "agibot_x2.hw.right_leg.*",
+      "type": "affects"
+    },
+    {
+      "source": "set_hand_command",
+      "target": "agibot_x2.hw.end_effector.left",
+      "type": "affects"
+    },
+    {
+      "source": "set_hand_command",
+      "target": "agibot_x2.hw.end_effector.right",
+      "type": "affects"
+    },
+    {
+      "source": "play_tts",
+      "target": "agibot_x2.hw.speaker",
+      "type": "affects"
+    },
+    {
+      "source": "play_media_file",
+      "target": "agibot_x2.hw.speaker",
+      "type": "affects"
+    },
+    {
+      "source": "set_volume",
+      "target": "agibot_x2.hw.speaker",
+      "type": "affects"
+    },
+    {
+      "source": "set_mute",
+      "target": "agibot_x2.hw.speaker",
+      "type": "affects"
+    }
+  ],
+  "stats": {
+    "total_nodes": 287,
+    "total_links": 430,
+    "by_type": {
+      "Action": 22,
+      "Capability": 11,
+      "CapabilityParameter": 3,
+      "ComputeUnit": 3,
+      "ControlLoop": 1,
+      "FaultCode": 9,
+      "InputSource": 5,
+      "Joint": 31,
+      "Link": 41,
+      "Mode": 6,
+      "MsgSchema": 9,
+      "PowerSubsystem": 1,
+      "PresetMotion": 31,
+      "PriorityLevel": 7,
+      "ProtectionThreshold": 2,
+      "RobotBody": 1,
+      "Sensor": 9,
+      "Service": 13,
+      "ServiceRequirement": 3,
+      "SoftwareComponent": 4,
+      "StatusBit": 34,
+      "Topic": 25,
+      "TouchEvent": 7,
+      "VirtualEndpoint": 9
+    },
+    "by_layer": {
+      "actions": 22,
+      "behaviors": 50,
+      "capabilities": 14,
+      "compute": 7,
+      "events": 50,
+      "hardware": 53,
+      "interfaces": 47,
+      "kinematics": 41,
+      "requirements": 3
+    },
+    "by_link_type": {
+      "affects": 27,
+      "allows": 16,
+      "arbitrates": 1,
+      "carried_by": 50,
+      "exposed_via": 50,
+      "forbidden_in": 3,
+      "grants": 11,
+      "has_child_link": 31,
+      "has_parameter": 3,
+      "has_parent_link": 31,
+      "hosts": 6,
+      "indicates": 29,
+      "invocable_via": 31,
+      "invokes_via": 22,
+      "mounted_via_fixed": 5,
+      "parent_of": 40,
+      "participates_in": 5,
+      "provides_capability": 17,
+      "publishes_via": 10,
+      "requires_mode": 7,
+      "resolves": 1,
+      "satisfies_requirement": 9,
+      "transitions_to": 4,
+      "used_by": 10,
+      "uses_schema": 11
+    },
+    "capabilities": 11,
+    "requirements": 3,
+    "software_components": 4
+  }
+};
+
+// === Three.js setup ===
+const canvasEl = document.getElementById('three-canvas');
+const wrap = document.getElementById('canvas-wrap');
+const scene = new THREE.Scene();
+scene.fog = new THREE.Fog(0x0a0e1a, 80, 380);
+
+let W = wrap.clientWidth, H = wrap.clientHeight;
+const camera = new THREE.PerspectiveCamera(55, W / H, 0.1, 1000);
+camera.position.set(140, 60, 140);
+camera.lookAt(0, 0, 0);
+
+const renderer = new THREE.WebGLRenderer({ canvas: canvasEl, antialias: true });
+renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+renderer.setSize(W, H);
+renderer.setClearColor(0x000000, 0);
+
+// Lights
+scene.add(new THREE.AmbientLight(0xffffff, 0.5));
+const keyLight = new THREE.DirectionalLight(0xffffff, 0.8);
+keyLight.position.set(50, 80, 30);
+scene.add(keyLight);
+
+// === Layers (vertical stacking) ===
+const LAYERS = ['hardware', 'kinematics', 'compute', 'events', 'behaviors', 'interfaces', 'actions', 'capabilities', 'requirements'];
+const LAYER_Y = {
+  hardware:      -96,
+  kinematics:   -72,
+  compute:       -48,
+  events:        -24,
+  behaviors:       0,
+  interfaces:     24,
+  actions:        48,
+  capabilities:   72,
+  requirements:   96,
+};
+const LAYER_COLOR = {
+  hardware:      0xef5350,
+  kinematics:   0xff9800,
+  compute:       0xffd54f,
+  events:        0xab47bc,
+  behaviors:     0x42a5f5,
+  interfaces:    0x66bb6a,
+  actions:       0xec407a,
+  capabilities:  0x00bcd4,
+  requirements:  0xffffff,
+};
+
+// === Build node positions (force-directed layout per layer + radial spread) ===
+const nodeMap = {};
+const nodes = GRAPH_DATA.nodes;
+const links = GRAPH_DATA.links;
+
+// initial positions: per layer, place nodes on a disc with deterministic angle
+const layerNodes = {};
+LAYERS.forEach(l => layerNodes[l] = []);
+nodes.forEach(n => {
+  if (!layerNodes[n.layer]) { n.layer = 'hardware'; }
+  layerNodes[n.layer].push(n);
+});
+
+LAYERS.forEach(layer => {
+  const arr = layerNodes[layer];
+  const count = arr.length;
+  const radius = 12 + Math.sqrt(count) * 5;
+  arr.forEach((n, i) => {
+    const angle = count ? (i / count) * Math.PI * 2 : 0;
+    const r = radius * (0.6 + 0.4 * (((i * 7919) % 100) / 100));
+    n.x = Math.cos(angle) * r;
+    n.y = LAYER_Y[layer];
+    n.z = Math.sin(angle) * r;
+    n.vx = 0; n.vy = 0; n.vz = 0;
+    nodeMap[n.id] = n;
+  });
+});
+
+// === Force simulation (light-weight, just enough to relax) ===
+function simulate(iterations = 250) {
+  for (let it = 0; it < iterations; it++) {
+    const alpha = 1 - it / iterations;
+
+    // Node-node repulsion (within same layer only, faster)
+    LAYERS.forEach(layer => {
+      const arr = layerNodes[layer];
+      for (let i = 0; i < arr.length; i++) {
+        for (let j = i + 1; j < arr.length; j++) {
+          const a = arr[i], b = arr[j];
+          const dx = a.x - b.x, dz = a.z - b.z;
+          const d2 = dx * dx + dz * dz + 0.01;
+          const f = 30 * alpha / d2;
+          a.vx += dx * f; a.vz += dz * f;
+          b.vx -= dx * f; b.vz -= dz * f;
+        }
+      }
+    });
+
+    // Link attraction (cross-layer, gentle)
+    links.forEach(l => {
+      const s = nodeMap[l.source], t = nodeMap[l.target];
+      if (!s || !t) return;
+      const dx = t.x - s.x, dz = t.z - s.z;
+      const d = Math.sqrt(dx * dx + dz * dz) || 0.01;
+      const targetD = 8;
+      const f = (d - targetD) * 0.04 * alpha;
+      s.vx += (dx / d) * f; s.vz += (dz / d) * f;
+      t.vx -= (dx / d) * f; t.vz -= (dz / d) * f;
+    });
+
+    // Apply velocities, damping, keep Y fixed to layer
+    nodes.forEach(n => {
+      n.x += n.vx * 0.5; n.z += n.vz * 0.5;
+      n.vx *= 0.6; n.vz *= 0.6;
+      // Soft radial pullback to keep cluster from drifting
+      const r = Math.sqrt(n.x * n.x + n.z * n.z);
+      const rmax = 10 + Math.sqrt(layerNodes[n.layer].length) * 6;
+      if (r > rmax) {
+        const k = rmax / r;
+        n.x *= k; n.z *= k;
+      }
+    });
+  }
+}
+simulate(250);
+
+nodes.forEach(n => {
+  n.layeredX = n.x;
+  n.layeredY = n.y;
+  n.layeredZ = n.z;
+});
+
+function hashUnit(text, salt = 0) {
+  let h = 2166136261 + salt;
+  for (let i = 0; i < text.length; i++) {
+    h ^= text.charCodeAt(i);
+    h = Math.imul(h, 16777619);
+  }
+  return ((h >>> 0) % 10000) / 10000;
+}
+
+function computeGraphLayout(iterations = 180) {
+  nodes.forEach((n, i) => {
+    const u = hashUnit(n.id, 17);
+    const v = hashUnit(n.id, 53);
+    const theta = u * Math.PI * 2;
+    const phi = Math.acos(2 * v - 1);
+    const radius = 36 + Math.sqrt(nodes.length) * 2.2 + (i % 17);
+    n.graphX = Math.sin(phi) * Math.cos(theta) * radius;
+    n.graphY = Math.cos(phi) * radius * 0.72;
+    n.graphZ = Math.sin(phi) * Math.sin(theta) * radius;
+    n.gvx = 0; n.gvy = 0; n.gvz = 0;
+  });
+
+  for (let it = 0; it < iterations; it++) {
+    const alpha = 1 - it / iterations;
+    for (let i = 0; i < nodes.length; i++) {
+      const a = nodes[i];
+      for (let j = i + 1; j < nodes.length; j++) {
+        const b = nodes[j];
+        const dx = a.graphX - b.graphX;
+        const dy = a.graphY - b.graphY;
+        const dz = a.graphZ - b.graphZ;
+        const d2 = dx * dx + dy * dy + dz * dz + 0.01;
+        const f = 36 * alpha / d2;
+        a.gvx += dx * f; a.gvy += dy * f; a.gvz += dz * f;
+        b.gvx -= dx * f; b.gvy -= dy * f; b.gvz -= dz * f;
+      }
+    }
+
+    links.forEach(l => {
+      const s = nodeMap[l.source], t = nodeMap[l.target];
+      if (!s || !t) return;
+      const dx = t.graphX - s.graphX;
+      const dy = t.graphY - s.graphY;
+      const dz = t.graphZ - s.graphZ;
+      const d = Math.sqrt(dx * dx + dy * dy + dz * dz) || 0.01;
+      const targetD = l.type === 'provides_capability' || l.type === 'exposed_via' ? 18 : 24;
+      const f = (d - targetD) * 0.015 * alpha;
+      s.gvx += (dx / d) * f; s.gvy += (dy / d) * f; s.gvz += (dz / d) * f;
+      t.gvx -= (dx / d) * f; t.gvy -= (dy / d) * f; t.gvz -= (dz / d) * f;
+    });
+
+    nodes.forEach(n => {
+      n.graphX += n.gvx * 0.7;
+      n.graphY += n.gvy * 0.7;
+      n.graphZ += n.gvz * 0.7;
+      n.gvx *= 0.68; n.gvy *= 0.68; n.gvz *= 0.68;
+      const r = Math.sqrt(n.graphX * n.graphX + n.graphY * n.graphY + n.graphZ * n.graphZ);
+      const rmax = 95;
+      if (r > rmax) {
+        const k = rmax / r;
+        n.graphX *= k; n.graphY *= k; n.graphZ *= k;
+      }
+    });
+  }
+}
+computeGraphLayout();
+
+// === Build geometries ===
+const nodeGroup = new THREE.Group();
+const nodeMeshes = [];
+
+const nodeGeom = new THREE.SphereGeometry(0.7, 12, 12);
+
+nodes.forEach(n => {
+  const mat = new THREE.MeshStandardMaterial({
+    color: LAYER_COLOR[n.layer],
+    emissive: LAYER_COLOR[n.layer],
+    emissiveIntensity: 0.4,
+    metalness: 0.2,
+    roughness: 0.5,
+    transparent: true,
+    opacity: 0.94,
+  });
+  // Bigger spheres for important node types
+  let scale = 1;
+  if (n.type === 'ServiceRequirement') scale = 2.2;
+  else if (n.type === 'Capability') scale = 2.0;
+  else if (n.type === 'SoftwareComponent') scale = 1.7;
+  else if (n.type === 'Action') scale = 1.55;
+  else if (n.type === 'Mode') scale = 1.45;
+  else if (n.type === 'ComputeUnit') scale = 1.6;
+  else if (n.type === 'Topic' || n.type === 'Service') scale = 1.2;
+  else if (n.type === 'VirtualEndpoint') scale = 1.1;
+
+  const mesh = new THREE.Mesh(nodeGeom, mat);
+  mesh.position.set(n.x, n.y, n.z);
+  mesh.scale.setScalar(scale);
+  n.baseScale = scale;
+  n.mesh = mesh;
+  mesh.userData = n;
+  nodeGroup.add(mesh);
+  nodeMeshes.push(mesh);
+});
+scene.add(nodeGroup);
+
+// === Build link lines ===
+const linkGroup = new THREE.Group();
+const LINK_COLOR = {
+  has_parent_link:       0xff9800,
+  has_child_link:        0xff9800,
+  carried_by:            0x66bb6a,
+  indicates:             0xef5350,
+  requires_mode:         0xec407a,
+  hosts:                 0xffd54f,
+  affects:               0xff6b35,
+  publishes_via:         0x4dd0e1,
+  arbitrates:            0xab47bc,
+  invocable_via:         0x4dd0e1,
+  grants:                0x42a5f5,
+  allows:                0x66bb6a,
+  used_by:               0xec407a,
+  provides_capability:   0x00bcd4,
+  exposed_via:           0xffffff,
+  has_parameter:         0xffd54f,
+  detects:               0xab47bc,
+  satisfies_requirement: 0x00e676,
+};
+const linkPositions = [];
+const linkColors = [];
+
+links.forEach(l => {
+  const s = nodeMap[l.source], t = nodeMap[l.target];
+  if (!s || !t) return;
+  const c = LINK_COLOR[l.type] || 0x4dd0e1;
+  const r = ((c >> 16) & 0xff) / 255;
+  const g = ((c >> 8) & 0xff) / 255;
+  const b = (c & 0xff) / 255;
+  linkPositions.push(s.x, s.y, s.z, t.x, t.y, t.z);
+  linkColors.push(r, g, b, r, g, b);
+});
+
+const linkGeom = new THREE.BufferGeometry();
+linkGeom.setAttribute('position', new THREE.Float32BufferAttribute(linkPositions, 3));
+linkGeom.setAttribute('color', new THREE.Float32BufferAttribute(linkColors, 3));
+const linkMat = new THREE.LineBasicMaterial({ vertexColors: true, transparent: true, opacity: 0.35 });
+const linkLines = new THREE.LineSegments(linkGeom, linkMat);
+linkGroup.add(linkLines);
+scene.add(linkGroup);
+
+const meshById = new Map(nodeMeshes.map(m => [m.userData.id, m]));
+const hiddenLayers = new Set();
+const matchedIds = new Set();
+let selectedId = null;
+let hoveredNode = null;
+let currentView = 'layered';
+
+const validLinks = links
+  .map(l => ({ ...l, sourceNode: nodeMap[l.source], targetNode: nodeMap[l.target] }))
+  .filter(l => l.sourceNode && l.targetNode);
+
+const neighborCache = new Map();
+function neighborIdsFor(id) {
+  if (neighborCache.has(id)) return neighborCache.get(id);
+  const ids = new Set();
+  validLinks.forEach(l => {
+    if (l.source === id) ids.add(l.target);
+    if (l.target === id) ids.add(l.source);
+  });
+  neighborCache.set(id, ids);
+  return ids;
+}
+
+function escapeHtml(value) {
+  return String(value).replace(/[&<>"']/g, c => ({
+    '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;',
+  })[c]);
+}
+
+function formatValue(value) {
+  if (value == null || value === '') return '';
+  if (typeof value === 'object') return JSON.stringify(value);
+  return String(value);
+}
+
+function nodeDescription(n) {
+  const props = n.props || {};
+  if (props.description) return String(props.description);
+  const outgoing = validLinks.filter(l => l.source === n.id).length;
+  const incoming = validLinks.filter(l => l.target === n.id).length;
+  const linkSummary = `${incoming} incoming / ${outgoing} outgoing relations`;
+  if (n.type === 'Capability') {
+    const kind = props.capability_kind ? `${props.capability_kind} ` : '';
+    return `Capability node: describes what the robot can do at the ${kind}level. It is the agent-facing bridge between providers, safety boundaries, parameters, and exposed actions/topics/services. ${linkSummary}.`;
+  }
+  if (n.type === 'ServiceRequirement') {
+    return `Service requirement node: represents an agent or application goal that should be satisfied by one or more capabilities before selecting concrete interfaces. ${linkSummary}.`;
+  }
+  if (n.type === 'SoftwareComponent') {
+    const kind = props.component_kind ? `${props.component_kind} ` : '';
+    return `Software component node: a ${kind}provider that can supply capabilities or host interface behavior. Use it to trace which subsystem owns a capability. ${linkSummary}.`;
+  }
+  if (n.type === 'CapabilityParameter') {
+    return `Capability parameter node: records an input or constraint that an agent must respect when using a capability. ${linkSummary}.`;
+  }
+  if (n.type === 'Action') {
+    const safety = props.safety_class ? ` Safety class: ${props.safety_class}.` : '';
+    return `Action node: concrete callable command surface. It should be reached through capability selection and validated against mode, parameter, and boundary constraints before use.${safety} ${linkSummary}.`;
+  }
+  if (n.type === 'Topic') return `Topic node: ROS/data stream interface for observation or command exchange. It explains where evidence or commands are carried. ${linkSummary}.`;
+  if (n.type === 'Service') return `Service node: request/response interface used to invoke or query robot behavior. It is part of the exposed invocation surface. ${linkSummary}.`;
+  if (n.type === 'MsgSchema') return `Message schema node: defines payload structure for a topic or service, reducing ambiguity for agent-generated calls. ${linkSummary}.`;
+  if (n.type === 'Sensor') return `Sensor node: physical sensing source that can provide evidence to capabilities or runtime observation. ${linkSummary}.`;
+  if (n.type === 'ComputeUnit') return `Compute unit node: onboard computer or processor that hosts software components and interfaces. ${linkSummary}.`;
+  if (n.type === 'Joint') return `Joint node: controllable kinematic degree of freedom with limits and physical constraints. Agents should treat it as actuation scope, not free-form motion. ${linkSummary}.`;
+  if (n.type === 'Link') return `Link node: physical/URDF body frame used to understand kinematic structure and affected hardware regions. ${linkSummary}.`;
+  if (n.type === 'Mode') return `Mode node: robot control state that gates whether actions are legal or safe. ${linkSummary}.`;
+  if (n.type === 'PresetMotion') return `Preset motion node: vendor-defined behavior that can usually be invoked through motion actions under mode constraints. ${linkSummary}.`;
+  if (n.type === 'InputSource') return `Input source node: command authority source used by motion arbitration and priority control. ${linkSummary}.`;
+  if (n.type === 'PriorityLevel') return `Priority level node: command arbitration priority used to decide which source or interaction can preempt another. ${linkSummary}.`;
+  if (n.type === 'ControlLoop') return `Control loop node: arbitration or runtime control process that coordinates command flow. ${linkSummary}.`;
+  if (n.type === 'StatusBit') return `Status bit node: machine-readable state signal carried by an interface; useful as evidence, not root-cause proof by itself. ${linkSummary}.`;
+  if (n.type === 'FaultCode') return `Fault code node: documented error or failure signal that should be mapped to evidence before diagnosis. ${linkSummary}.`;
+  if (n.type === 'TouchEvent') return `Touch event node: tactile interaction event detected by the robot's sensing stack. ${linkSummary}.`;
+  if (n.type === 'PowerSubsystem') return `Power subsystem node: battery/PMU/BMS-related hardware area and health evidence source. ${linkSummary}.`;
+  if (n.type === 'ProtectionThreshold') return `Protection threshold node: safety or operating bound used to constrain robot behavior. ${linkSummary}.`;
+  if (n.type === 'RobotBody') return `Robot body node: top-level physical body scope for whole-body actions and affected regions. ${linkSummary}.`;
+  if (n.type === 'VirtualEndpoint') return `Virtual endpoint node: synthesized visualization endpoint for wildcard or externally referenced targets so action scope remains visible. ${linkSummary}.`;
+  return `${n.type} node in the ${n.layer} layer. It participates in the ontology graph through ${linkSummary}.`;
+}
+
+nodes.forEach(n => {
+  n.description = nodeDescription(n);
+  n.searchText = [
+    n.id, n.label, n.type, n.layer, n.description,
+    JSON.stringify(n.props || {}),
+  ].join(' ').toLowerCase();
+});
+
+function rebuildVisibleLinks() {
+  const newPos = [], newCol = [];
+  validLinks.forEach(l => {
+    if (hiddenLayers.has(l.sourceNode.layer) || hiddenLayers.has(l.targetNode.layer)) return;
+    const c = LINK_COLOR[l.type] || 0x4dd0e1;
+    const r = ((c >> 16) & 0xff) / 255;
+    const g = ((c >> 8) & 0xff) / 255;
+    const b = (c & 0xff) / 255;
+    const s = l.sourceNode, t = l.targetNode;
+    newPos.push(s.x, s.y, s.z, t.x, t.y, t.z);
+    newCol.push(r, g, b, r, g, b);
+  });
+  linkGeom.setAttribute('position', new THREE.Float32BufferAttribute(newPos, 3));
+  linkGeom.setAttribute('color', new THREE.Float32BufferAttribute(newCol, 3));
+}
+
+function applyVisualState() {
+  const neighborIds = selectedId ? neighborIdsFor(selectedId) : new Set();
+  nodeMeshes.forEach(mesh => {
+    const n = mesh.userData;
+    const layerVisible = !hiddenLayers.has(n.layer);
+    mesh.visible = layerVisible;
+    if (!layerVisible) return;
+
+    let opacity = 0.94;
+    let emissive = 0.4;
+    let scale = n.baseScale || 1;
+
+    if (matchedIds.size && !matchedIds.has(n.id)) {
+      opacity = 0.12;
+      emissive = 0.05;
+    }
+    if (selectedId) {
+      if (n.id === selectedId) {
+        opacity = 1;
+        emissive = 1.15;
+        scale *= 1.55;
+      } else if (neighborIds.has(n.id)) {
+        opacity = Math.max(opacity, 0.92);
+        emissive = 0.85;
+        scale *= 1.24;
+      } else {
+        opacity = Math.min(opacity, 0.16);
+        emissive = Math.min(emissive, 0.08);
+      }
+    }
+
+    mesh.material.opacity = opacity;
+    mesh.material.emissiveIntensity = emissive;
+    mesh.scale.setScalar(scale);
+  });
+  rebuildVisibleLinks();
+}
+
+function renderSearchResults(matches) {
+  const box = document.getElementById('search-results');
+  const count = document.getElementById('search-count');
+  if (!matches.length) {
+    box.classList.remove('visible');
+    box.innerHTML = '';
+    count.textContent = matchedIds.size ? '0 matches' : 'all nodes';
+    return;
+  }
+  count.textContent = `${matches.length} match${matches.length === 1 ? '' : 'es'}`;
+  box.classList.add('visible');
+  box.innerHTML = matches.slice(0, 12).map(n => `
+    <div class="search-result" data-id="${escapeHtml(n.id)}">
+      <div class="search-result-type">${escapeHtml(n.type)}</div>
+      <div class="search-result-label">${escapeHtml(n.label || n.id)}</div>
+    </div>
+  `).join('');
+  box.querySelectorAll('.search-result').forEach(el => {
+    el.addEventListener('click', () => {
+      const n = nodeMap[el.dataset.id];
+      if (n) selectNode(n, true);
+    });
+  });
+}
+
+function runSearch(query) {
+  const q = query.trim().toLowerCase();
+  matchedIds.clear();
+  if (!q) {
+    renderSearchResults([]);
+    applyVisualState();
+    return;
+  }
+  const matches = nodes.filter(n => n.searchText.includes(q));
+  matches.forEach(n => matchedIds.add(n.id));
+  renderSearchResults(matches);
+  applyVisualState();
+}
+
+function focusNode(n) {
+  autoRotate = false;
+  document.getElementById('btn-rotate').classList.remove('active');
+  rotY = Math.atan2(n.x, n.z);
+  rotX = Math.max(-0.75, Math.min(0.75, Math.asin(n.y / 170)));
+  zoom = 0.82;
+}
+
+function renderDetail(node) {
+  const panel = document.getElementById('detail-panel');
+  document.getElementById('detail-kicker').textContent = `${node.layer} · ${node.type} · degree ${node.degree || 0}`;
+  document.getElementById('detail-title').textContent = node.label || node.id;
+  document.getElementById('detail-id').textContent = node.id;
+
+  const propsEl = document.getElementById('detail-props');
+  const rows = [
+    ['description', node.description],
+    ['layer', node.layer],
+    ['type', node.type],
+  ];
+  Object.entries(node.props || {}).forEach(([key, value]) => {
+    if (key === 'description') return;
+    if (value == null || value === '') return;
+    rows.push([key, formatValue(value)]);
+  });
+  propsEl.innerHTML = rows.map(([key, value]) => `
+    <div class="detail-prop-key">${escapeHtml(key)}</div>
+    <div class="detail-prop-val">${escapeHtml(value)}</div>
+  `).join('');
+
+  const outgoing = validLinks.filter(l => l.source === node.id);
+  const incoming = validLinks.filter(l => l.target === node.id);
+  const conns = document.getElementById('detail-conns');
+  const renderConn = (title, items, dir) => {
+    if (!items.length) return '';
+    return `
+      <div class="detail-conns-title">${title} (${items.length})</div>
+      ${items.slice(0, 18).map(l => {
+        const target = dir === 'out' ? l.targetNode : l.sourceNode;
+        const arrow = dir === 'out' ? '->' : '<-';
+        return `
+          <div class="detail-link" data-id="${escapeHtml(target.id)}">
+            <div class="detail-link-type">${escapeHtml(arrow + ' ' + l.type)}</div>
+            <div class="detail-link-label">${escapeHtml(target.label || target.id)}</div>
+          </div>`;
+      }).join('')}
+    `;
+  };
+  conns.innerHTML = renderConn('outgoing relations', outgoing, 'out') + renderConn('incoming relations', incoming, 'in');
+  conns.querySelectorAll('.detail-link').forEach(el => {
+    el.addEventListener('click', () => {
+      const n = nodeMap[el.dataset.id];
+      if (n) selectNode(n, true);
+    });
+  });
+  panel.classList.add('visible');
+}
+
+function selectNode(node, focus = false) {
+  selectedId = node.id;
+  renderDetail(node);
+  if (focus) focusNode(node);
+  applyVisualState();
+}
+
+function clearSelection() {
+  selectedId = null;
+  document.getElementById('detail-panel').classList.remove('visible');
+  applyVisualState();
+}
+
+function applyLayout(view) {
+  nodes.forEach(n => {
+    if (view === 'graph') {
+      n.x = n.graphX;
+      n.y = n.graphY;
+      n.z = n.graphZ;
+    } else {
+      n.x = n.layeredX;
+      n.y = n.layeredY;
+      n.z = n.layeredZ;
+    }
+    if (n.mesh) n.mesh.position.set(n.x, n.y, n.z);
+  });
+  if (typeof layerGuideGroup !== 'undefined') {
+    layerGuideGroup.visible = view === 'layered';
+  }
+  document.getElementById('view-subtitle').textContent = view === 'graph'
+    ? 'GRAPH VIEW · 287 NODES · 430 LINKS · WHOLE NETWORK'
+    : 'LAYERED VIEW · 287 NODES · 430 LINKS · 9 LAYERS';
+  rebuildVisibleLinks();
+  applyVisualState();
+}
+
+function setViewMode(view) {
+  currentView = view;
+  document.querySelectorAll('.mode-btn').forEach(btn => {
+    btn.classList.toggle('active', btn.dataset.view === view);
+  });
+  applyLayout(view);
+}
+
+// === Layer planes (faint) ===
+const layerGuideGroup = new THREE.Group();
+scene.add(layerGuideGroup);
+const planeGeom = new THREE.RingGeometry(0, 72, 64);
+LAYERS.forEach(layer => {
+  const planeMat = new THREE.MeshBasicMaterial({
+    color: LAYER_COLOR[layer],
+    transparent: true,
+    opacity: 0.04,
+    side: THREE.DoubleSide,
+  });
+  const plane = new THREE.Mesh(planeGeom, planeMat);
+  plane.position.y = LAYER_Y[layer];
+  plane.rotation.x = -Math.PI / 2;
+  layerGuideGroup.add(plane);
+
+  // Layer label using a sprite-like plane with canvas texture
+  const labelCanvas = document.createElement('canvas');
+  labelCanvas.width = 256; labelCanvas.height = 64;
+  const ctx = labelCanvas.getContext('2d');
+  ctx.fillStyle = '#ffffff';
+  ctx.font = 'bold 24px monospace';
+  ctx.textAlign = 'left'; ctx.textBaseline = 'middle';
+  ctx.fillText(layer.toUpperCase(), 8, 32);
+  ctx.fillStyle = `#${LAYER_COLOR[layer].toString(16).padStart(6, '0')}`;
+  ctx.fillRect(0, 0, 4, 64);
+
+  const tex = new THREE.CanvasTexture(labelCanvas);
+  const labelMat = new THREE.SpriteMaterial({ map: tex, transparent: true, opacity: 0.8 });
+  const label = new THREE.Sprite(labelMat);
+  label.position.set(75, LAYER_Y[layer], 0);
+  label.scale.set(20, 5, 1);
+  layerGuideGroup.add(label);
+});
+
+// === Update legend counts ===
+LAYERS.forEach(l => {
+  const el = document.getElementById('ct-' + l);
+  if (el) el.textContent = layerNodes[l].length;
+});
+
+// === Interaction: rotation, zoom, click ===
+let isDragging = false;
+let lastX = 0, lastY = 0;
+let rotY = 0, rotX = 0.2;
+let autoRotate = true;
+let zoom = 1.0;
+
+canvasEl.addEventListener('mousedown', e => {
+  isDragging = true; lastX = e.clientX; lastY = e.clientY;
+});
+window.addEventListener('mouseup', () => { isDragging = false; });
+window.addEventListener('mousemove', e => {
+  if (!isDragging) return;
+  const dx = e.clientX - lastX, dy = e.clientY - lastY;
+  rotY += dx * 0.005;
+  rotX = Math.max(-1.4, Math.min(1.4, rotX + dy * 0.005));
+  lastX = e.clientX; lastY = e.clientY;
+  autoRotate = false;
+  document.getElementById('btn-rotate').classList.remove('active');
+});
+
+canvasEl.addEventListener('wheel', e => {
+  e.preventDefault();
+  zoom *= e.deltaY > 0 ? 1.1 : 0.9;
+  zoom = Math.max(0.3, Math.min(3, zoom));
+}, { passive: false });
+
+// Click → focus on node
+const raycaster = new THREE.Raycaster();
+const mouse = new THREE.Vector2();
+const tooltip = document.getElementById('tooltip');
+
+canvasEl.addEventListener('mousemove', e => {
+  const rect = canvasEl.getBoundingClientRect();
+  mouse.x = ((e.clientX - rect.left) / rect.width) * 2 - 1;
+  mouse.y = -((e.clientY - rect.top) / rect.height) * 2 + 1;
+  raycaster.setFromCamera(mouse, camera);
+  const hits = raycaster.intersectObjects(nodeMeshes);
+  if (hits.length > 0) {
+    const n = hits[0].object.userData;
+    hoveredNode = n;
+    tooltip.style.display = 'block';
+    tooltip.style.left = (e.clientX + 14) + 'px';
+    tooltip.style.top = (e.clientY + 14) + 'px';
+    const props = n.props || {};
+    let extra = '';
+    if (props.name_human) extra += `<div class="tt-row">name: <span>${props.name_human}</span></div>`;
+    if (props.capability_kind) extra += `<div class="tt-row">kind: <span>${props.capability_kind}</span></div>`;
+    if (props.component_kind) extra += `<div class="tt-row">component: <span>${props.component_kind}</span></div>`;
+    if (props.safety_class) extra += `<div class="tt-row">safety: <span>${props.safety_class}</span></div>`;
+    if (props.invoker) extra += `<div class="tt-row">invoker: <span>${props.invoker}</span></div>`;
+    if (props.boundaries_count) extra += `<div class="tt-row">boundaries: <span>${props.boundaries_count}</span></div>`;
+    if (props.required_outputs_count) extra += `<div class="tt-row">required outputs: <span>${props.required_outputs_count}</span></div>`;
+    if (props.virtual) extra += `<div class="tt-row">virtual: <span>${props.reason}</span></div>`;
+    tooltip.innerHTML = `
+      <div class="tt-id">${n.id}</div>
+      <div class="tt-type">${n.type} · ${n.layer} · degree ${n.degree || 0}</div>
+      <div class="tt-row"><span>${n.description}</span></div>
+      ${extra}
+    `;
+  } else {
+    hoveredNode = null;
+    tooltip.style.display = 'none';
+  }
+});
+
+canvasEl.addEventListener('mouseleave', () => {
+  hoveredNode = null;
+  tooltip.style.display = 'none';
+});
+
+canvasEl.addEventListener('click', () => {
+  if (hoveredNode) selectNode(hoveredNode, false);
+  else clearSelection();
+});
+
+document.getElementById('search-input').addEventListener('input', e => {
+  runSearch(e.target.value);
+});
+
+document.getElementById('search-input').addEventListener('keydown', e => {
+  if (e.key === 'Escape') {
+    e.currentTarget.value = '';
+    matchedIds.clear();
+    renderSearchResults([]);
+    applyVisualState();
+  }
+});
+
+document.getElementById('detail-close').addEventListener('click', clearSelection);
+
+// === Layer dim toggling ===
+document.querySelectorAll('.lg-row').forEach(row => {
+  row.addEventListener('click', () => {
+    row.classList.toggle('dim');
+    hiddenLayers.clear();
+    document.querySelectorAll('.lg-row.dim').forEach(r => hiddenLayers.add(r.dataset.layer));
+    applyVisualState();
+  });
+});
+
+// === Buttons ===
+document.querySelectorAll('.mode-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    setViewMode(btn.dataset.view);
+  });
+});
+
+document.getElementById('btn-rotate').addEventListener('click', () => {
+  autoRotate = !autoRotate;
+  document.getElementById('btn-rotate').classList.toggle('active', autoRotate);
+});
+document.getElementById('btn-reset').addEventListener('click', () => {
+  rotY = 0;
+  rotX = currentView === 'graph' ? 0.12 : 0.2;
+  zoom = currentView === 'graph' ? 0.72 : 1.0;
+  autoRotate = true;
+  document.getElementById('btn-rotate').classList.add('active');
+  clearSelection();
+  applyLayout(currentView);
+});
+
+// === Resize ===
+window.addEventListener('resize', () => {
+  W = wrap.clientWidth; H = wrap.clientHeight;
+  camera.aspect = W / H; camera.updateProjectionMatrix();
+  renderer.setSize(W, H);
+});
+
+// === Animate ===
+function animate() {
+  requestAnimationFrame(animate);
+  if (autoRotate) rotY += 0.0015;
+  const r = 260 * zoom;
+  camera.position.x = Math.sin(rotY) * Math.cos(rotX) * r;
+  camera.position.z = Math.cos(rotY) * Math.cos(rotX) * r;
+  camera.position.y = Math.sin(rotX) * r;
+  camera.lookAt(0, 0, 0);
+  renderer.render(scene, camera);
+}
+animate();
+</script>
+</body>
+</html>

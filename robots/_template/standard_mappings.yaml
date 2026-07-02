@@ -1,0 +1,16 @@
+standards:
+  - id: ieee_1872_2_aur
+    name: IEEE 1872.2 Autonomous Robotics Ontology
+    role: standard_term_anchor
+    mappings:
+      AutonomousRobot: {roboonto_type: robot}
+      AutonomousCapability: {roboonto_type: Capability}
+      Task: {roboonto_type: ServiceRequirement}
+
+  - id: roso
+    name: Robotic Service Ontology
+    role: service_capability_model
+    mappings:
+      Component: {roboonto_type: SoftwareComponent}
+      Function: {roboonto_type: Capability}
+      hasParameter: {roboonto_link_type: has_parameter}

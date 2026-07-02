@@ -1,0 +1,13 @@
+robot_id: minibot
+
+declared_sensors:
+  - id: minibot.hw.sensor.imu
+    topic: "/minibot/imu"
+    msg_type: "sensor_msgs/msg/Imu"
+    qos_expected: BEST_EFFORT
+    frequency_hz_expected: 100
+
+declared_joint_groups: []
+log_sources: []
+known_gaps: []
+uncovered_domains: []

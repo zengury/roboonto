@@ -1,0 +1,21 @@
+includes:
+- standard_mappings.yaml
+- hardware.yaml
+- kinematics.yaml
+- joints_patch.yaml
+- behaviors.yaml
+- events.yaml
+- interfaces.yaml
+- actions.yaml
+- capabilities.yaml
+- derived_links.yaml
+- capability_boundary.yaml
+robot:
+  description: 宇树 G1 EDU 版 (23-DOF rev_1_0)。腿6×2 + 腰1 + 臂5×2。hip gear ratio {14.3,
+    22.5}。mode_machine=4。
+  firmware_version: mode_machine=4, rev_1_0
+  id: unitree_g1_edu
+  model: G1 EDU (23-DOF)
+  roboonto_version: '0.1'
+  ros2_version: MY_ROS2
+  vendor: Unitree Robotics

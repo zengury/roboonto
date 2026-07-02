@@ -1,0 +1,110 @@
+links:
+- source: unitree_g1_edu.mode.passive
+  target: unitree_g1_edu.mode.walkrun
+  type: transitions_to
+  via: set_loco_fsm_mode
+- source: unitree_g1_edu.mode.walkrun
+  target: unitree_g1_edu.mode.passive
+  type: transitions_to
+  via: set_loco_fsm_mode
+- source: unitree_g1_edu.mode.walkrun
+  target: unitree_g1_edu.mode.user_ctrl
+  type: transitions_to
+  via: switch_to_user_ctrl
+- source: unitree_g1_edu.mode.user_ctrl
+  target: unitree_g1_edu.mode.walkrun
+  type: transitions_to
+  via: switch_to_internal_ctrl
+objects:
+- id: unitree_g1_edu.mode.passive
+  properties:
+    allows_motion: false
+    description: 被动模式 — 关节松弛，无主动控制
+    fsm_id: 1
+    name: PASSIVE
+  source:
+    locator: unitree_sdk2/include/unitree/robot/g1/loco/g1_loco_api.hpp
+    type: sdk_code
+  type: Mode
+- id: unitree_g1_edu.mode.walkrun
+  properties:
+    allows_motion: true
+    description: 行走/跑步模式 — 全关节主动，支持速度控制
+    fsm_id: 2
+    name: WALKRUN
+  source:
+    locator: unitree_sdk2/include/unitree/robot/g1/loco/g1_loco_api.hpp
+    type: sdk_code
+  type: Mode
+- id: unitree_g1_edu.mode.user_ctrl
+  properties:
+    allows_motion: true
+    description: 用户控制模式 — 外部直接发 joint 位置/力矩指令
+    name: USER_CTRL
+  source:
+    locator: unitree_sdk2/include/unitree/robot/g1/loco/g1_loco_api.hpp
+    type: sdk_code
+  type: Mode
+- id: unitree_g1_edu.motion.damp
+  properties:
+    category: loco
+    description: 切换到阻尼/被动模式，关节松弛
+    name: Damp
+  source:
+    locator: unitree_sdk2/example/g1/high_level/g1_loco_client_example.cpp
+    type: sdk_code
+  type: PresetMotion
+- id: unitree_g1_edu.motion.standup
+  properties:
+    category: loco
+    description: 从趴下/坐下状态站起
+    name: StandUp
+  source:
+    locator: unitree_sdk2/example/g1/high_level/g1_loco_client_example.cpp
+    type: sdk_code
+  type: PresetMotion
+- id: unitree_g1_edu.motion.highstand
+  properties:
+    category: loco
+    description: 高位站立（腿伸直）
+    name: HighStand
+  source:
+    locator: unitree_sdk2/example/g1/high_level/g1_loco_client_example.cpp
+    type: sdk_code
+  type: PresetMotion
+- id: unitree_g1_edu.motion.lowstand
+  properties:
+    category: loco
+    description: 低位站立（腿微弯）
+    name: LowStand
+  source:
+    locator: unitree_sdk2/example/g1/high_level/g1_loco_client_example.cpp
+    type: sdk_code
+  type: PresetMotion
+- id: unitree_g1_edu.motion.balancestand
+  properties:
+    category: loco
+    description: 平衡站立模式
+    name: BalanceStand
+  source:
+    locator: unitree_sdk2/example/g1/high_level/g1_loco_client_example.cpp
+    type: sdk_code
+  type: PresetMotion
+- id: unitree_g1_edu.motion.stopmove
+  properties:
+    category: loco
+    description: 停止移动，保持当前位置
+    name: StopMove
+  source:
+    locator: unitree_sdk2/example/g1/high_level/g1_loco_client_example.cpp
+    type: sdk_code
+  type: PresetMotion
+- id: unitree_g1_edu.motion.move
+  properties:
+    category: loco
+    description: '持续速度移动（需参数: vx, vy, omega）'
+    name: Move
+  source:
+    locator: unitree_sdk2/example/g1/high_level/g1_loco_client_example.cpp
+    type: sdk_code
+  type: PresetMotion

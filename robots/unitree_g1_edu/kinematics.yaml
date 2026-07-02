@@ -1,0 +1,891 @@
+links:
+- source: unitree_g1_edu.hw.link.pelvis
+  target: unitree_g1_edu.hw.link.pelvis_contour_link
+  type: parent_of
+  via_joint: pelvis_contour_joint
+- source: unitree_g1_edu.hw.link.pelvis
+  target: unitree_g1_edu.hw.link.left_hip_pitch_link
+  type: parent_of
+  via_joint: left_hip_pitch_joint
+- source: unitree_g1_edu.hw.link.left_hip_pitch_link
+  target: unitree_g1_edu.hw.link.left_hip_roll_link
+  type: parent_of
+  via_joint: left_hip_roll_joint
+- source: unitree_g1_edu.hw.link.left_hip_roll_link
+  target: unitree_g1_edu.hw.link.left_hip_yaw_link
+  type: parent_of
+  via_joint: left_hip_yaw_joint
+- source: unitree_g1_edu.hw.link.left_hip_yaw_link
+  target: unitree_g1_edu.hw.link.left_knee_link
+  type: parent_of
+  via_joint: left_knee_joint
+- source: unitree_g1_edu.hw.link.left_knee_link
+  target: unitree_g1_edu.hw.link.left_ankle_pitch_link
+  type: parent_of
+  via_joint: left_ankle_pitch_joint
+- source: unitree_g1_edu.hw.link.left_ankle_pitch_link
+  target: unitree_g1_edu.hw.link.left_ankle_roll_link
+  type: parent_of
+  via_joint: left_ankle_roll_joint
+- source: unitree_g1_edu.hw.link.pelvis
+  target: unitree_g1_edu.hw.link.right_hip_pitch_link
+  type: parent_of
+  via_joint: right_hip_pitch_joint
+- source: unitree_g1_edu.hw.link.right_hip_pitch_link
+  target: unitree_g1_edu.hw.link.right_hip_roll_link
+  type: parent_of
+  via_joint: right_hip_roll_joint
+- source: unitree_g1_edu.hw.link.right_hip_roll_link
+  target: unitree_g1_edu.hw.link.right_hip_yaw_link
+  type: parent_of
+  via_joint: right_hip_yaw_joint
+- source: unitree_g1_edu.hw.link.right_hip_yaw_link
+  target: unitree_g1_edu.hw.link.right_knee_link
+  type: parent_of
+  via_joint: right_knee_joint
+- source: unitree_g1_edu.hw.link.right_knee_link
+  target: unitree_g1_edu.hw.link.right_ankle_pitch_link
+  type: parent_of
+  via_joint: right_ankle_pitch_joint
+- source: unitree_g1_edu.hw.link.right_ankle_pitch_link
+  target: unitree_g1_edu.hw.link.right_ankle_roll_link
+  type: parent_of
+  via_joint: right_ankle_roll_joint
+- source: unitree_g1_edu.hw.link.pelvis
+  target: unitree_g1_edu.hw.link.torso_link
+  type: parent_of
+  via_joint: waist_yaw_joint
+- source: unitree_g1_edu.hw.link.torso_link
+  target: unitree_g1_edu.hw.link.logo_link
+  type: parent_of
+  via_joint: logo_joint
+- source: unitree_g1_edu.hw.link.torso_link
+  target: unitree_g1_edu.hw.link.head_link
+  type: parent_of
+  via_joint: head_joint
+- source: unitree_g1_edu.hw.link.torso_link
+  target: unitree_g1_edu.hw.link.imu_in_torso
+  type: parent_of
+  via_joint: imu_in_torso_joint
+- source: unitree_g1_edu.hw.link.pelvis
+  target: unitree_g1_edu.hw.link.imu_in_pelvis
+  type: parent_of
+  via_joint: imu_in_pelvis_joint
+- source: unitree_g1_edu.hw.link.torso_link
+  target: unitree_g1_edu.hw.link.d435_link
+  type: parent_of
+  via_joint: d435_joint
+- source: unitree_g1_edu.hw.link.torso_link
+  target: unitree_g1_edu.hw.link.mid360_link
+  type: parent_of
+  via_joint: mid360_joint
+- source: unitree_g1_edu.hw.link.torso_link
+  target: unitree_g1_edu.hw.link.left_shoulder_pitch_link
+  type: parent_of
+  via_joint: left_shoulder_pitch_joint
+- source: unitree_g1_edu.hw.link.left_shoulder_pitch_link
+  target: unitree_g1_edu.hw.link.left_shoulder_roll_link
+  type: parent_of
+  via_joint: left_shoulder_roll_joint
+- source: unitree_g1_edu.hw.link.left_shoulder_roll_link
+  target: unitree_g1_edu.hw.link.left_shoulder_yaw_link
+  type: parent_of
+  via_joint: left_shoulder_yaw_joint
+- source: unitree_g1_edu.hw.link.left_shoulder_yaw_link
+  target: unitree_g1_edu.hw.link.left_elbow_link
+  type: parent_of
+  via_joint: left_elbow_joint
+- source: unitree_g1_edu.hw.link.left_elbow_link
+  target: unitree_g1_edu.hw.link.left_wrist_roll_rubber_hand
+  type: parent_of
+  via_joint: left_wrist_roll_joint
+- source: unitree_g1_edu.hw.link.torso_link
+  target: unitree_g1_edu.hw.link.right_shoulder_pitch_link
+  type: parent_of
+  via_joint: right_shoulder_pitch_joint
+- source: unitree_g1_edu.hw.link.right_shoulder_pitch_link
+  target: unitree_g1_edu.hw.link.right_shoulder_roll_link
+  type: parent_of
+  via_joint: right_shoulder_roll_joint
+- source: unitree_g1_edu.hw.link.right_shoulder_roll_link
+  target: unitree_g1_edu.hw.link.right_shoulder_yaw_link
+  type: parent_of
+  via_joint: right_shoulder_yaw_joint
+- source: unitree_g1_edu.hw.link.right_shoulder_yaw_link
+  target: unitree_g1_edu.hw.link.right_elbow_link
+  type: parent_of
+  via_joint: right_elbow_joint
+- source: unitree_g1_edu.hw.link.right_elbow_link
+  target: unitree_g1_edu.hw.link.right_wrist_roll_rubber_hand
+  type: parent_of
+  via_joint: right_wrist_roll_joint
+objects:
+- id: unitree_g1_edu.hw.link.pelvis
+  properties:
+    inertia:
+      ixx: 0.010549
+      ixy: 0.0
+      ixz: 2.1e-06
+      iyy: 0.0093089
+      iyz: 0.0
+      izz: 0.0079184
+    inertial_origin_rpy:
+    - 0.0
+    - 0.0
+    - 0.0
+    inertial_origin_xyz:
+    - 0.0
+    - 0.0
+    - -0.07605
+    mass: 3.813
+    mass_unit: kg
+    name_urdf: pelvis
+    visual_mesh: meshes/pelvis.STL
+  source:
+    locator: g1_23dof_rev_1_0.urdf#link[pelvis]
+    type: urdf
+  type: Link
+- id: unitree_g1_edu.hw.link.pelvis_contour_link
+  properties:
+    collision_mesh: meshes/pelvis_contour_link.STL
+    inertia:
+      ixx: 1.0e-07
+      ixy: 0.0
+      ixz: 0.0
+      iyy: 1.0e-07
+      iyz: 0.0
+      izz: 1.0e-07
+    inertial_origin_rpy:
+    - 0.0
+    - 0.0
+    - 0.0
+    inertial_origin_xyz:
+    - 0.0
+    - 0.0
+    - 0.0
+    mass: 0.001
+    mass_unit: kg
+    name_urdf: pelvis_contour_link
+    visual_mesh: meshes/pelvis_contour_link.STL
+  source:
+    locator: g1_23dof_rev_1_0.urdf#link[pelvis_contour_link]
+    type: urdf
+  type: Link
+- id: unitree_g1_edu.hw.link.left_hip_pitch_link
+  properties:
+    collision_mesh: meshes/left_hip_pitch_link.STL
+    inertia:
+      ixx: 0.001811
+      ixy: 3.68e-05
+      ixz: -3.44e-05
+      iyy: 0.0014193
+      iyz: 0.000171
+      izz: 0.0012812
+    inertial_origin_rpy:
+    - 0.0
+    - 0.0
+    - 0.0
+    inertial_origin_xyz:
+    - 0.002741
+    - 0.047791
+    - -0.02606
+    mass: 1.35
+    mass_unit: kg
+    name_urdf: left_hip_pitch_link
+    visual_mesh: meshes/left_hip_pitch_link.STL
+  source:
+    locator: g1_23dof_rev_1_0.urdf#link[left_hip_pitch_link]
+    type: urdf
+  type: Link
+- id: unitree_g1_edu.hw.link.left_hip_roll_link
+  properties:
+    collision_mesh: meshes/left_hip_roll_link.STL
+    inertia:
+      ixx: 0.0023773
+      ixy: -3.8e-06
+      ixz: -0.0003908
+      iyy: 0.0024123
+      iyz: 1.84e-05
+      izz: 0.0016595
+    inertial_origin_rpy:
+    - 0.0
+    - 0.0
+    - 0.0
+    inertial_origin_xyz:
+    - 0.029812
+    - -0.001045
+    - -0.087934
+    mass: 1.52
+    mass_unit: kg
+    name_urdf: left_hip_roll_link
+    visual_mesh: meshes/left_hip_roll_link.STL
+  source:
+    locator: g1_23dof_rev_1_0.urdf#link[left_hip_roll_link]
+    type: urdf
+  type: Link
+- id: unitree_g1_edu.hw.link.left_hip_yaw_link
+  properties:
+    collision_mesh: meshes/left_hip_yaw_link.STL
+    inertia:
+      ixx: 0.0057774
+      ixy: -0.0005411
+      ixz: -0.0023948
+      iyy: 0.0076124
+      iyz: -0.0007072
+      izz: 0.003149
+    inertial_origin_rpy:
+    - 0.0
+    - 0.0
+    - 0.0
+    inertial_origin_xyz:
+    - -0.057709
+    - -0.010981
+    - -0.15078
+    mass: 1.702
+    mass_unit: kg
+    name_urdf: left_hip_yaw_link
+    visual_mesh: meshes/left_hip_yaw_link.STL
+  source:
+    locator: g1_23dof_rev_1_0.urdf#link[left_hip_yaw_link]
+    type: urdf
+  type: Link
+- id: unitree_g1_edu.hw.link.left_knee_link
+  properties:
+    collision_mesh: meshes/left_knee_link.STL
+    inertia:
+      ixx: 0.011329
+      ixy: 4.82e-05
+      ixz: -4.49e-05
+      iyy: 0.011277
+      iyz: -0.0007146
+      izz: 0.0015168
+    inertial_origin_rpy:
+    - 0.0
+    - 0.0
+    - 0.0
+    inertial_origin_xyz:
+    - 0.005457
+    - 0.003964
+    - -0.12074
+    mass: 1.932
+    mass_unit: kg
+    name_urdf: left_knee_link
+    visual_mesh: meshes/left_knee_link.STL
+  source:
+    locator: g1_23dof_rev_1_0.urdf#link[left_knee_link]
+    type: urdf
+  type: Link
+- id: unitree_g1_edu.hw.link.left_ankle_pitch_link
+  properties:
+    collision_mesh: meshes/left_ankle_pitch_link.STL
+    inertia:
+      ixx: 8.4e-06
+      ixy: 0.0
+      ixz: -2.9e-06
+      iyy: 1.89e-05
+      iyz: 0.0
+      izz: 1.26e-05
+    inertial_origin_rpy:
+    - 0.0
+    - 0.0
+    - 0.0
+    inertial_origin_xyz:
+    - -0.007269
+    - 0.0
+    - 0.011137
+    mass: 0.074
+    mass_unit: kg
+    name_urdf: left_ankle_pitch_link
+    visual_mesh: meshes/left_ankle_pitch_link.STL
+  source:
+    locator: g1_23dof_rev_1_0.urdf#link[left_ankle_pitch_link]
+    type: urdf
+  type: Link
+- id: unitree_g1_edu.hw.link.left_ankle_roll_link
+  properties:
+    inertia:
+      ixx: 0.0002231
+      ixy: 2.0e-07
+      ixz: 8.91e-05
+      iyy: 0.0016161
+      iyz: -1.0e-07
+      izz: 0.0016667
+    inertial_origin_rpy:
+    - 0.0
+    - 0.0
+    - 0.0
+    inertial_origin_xyz:
+    - 0.026505
+    - 0.0
+    - -0.016425
+    mass: 0.608
+    mass_unit: kg
+    name_urdf: left_ankle_roll_link
+    visual_mesh: meshes/left_ankle_roll_link.STL
+  source:
+    locator: g1_23dof_rev_1_0.urdf#link[left_ankle_roll_link]
+    type: urdf
+  type: Link
+- id: unitree_g1_edu.hw.link.right_hip_pitch_link
+  properties:
+    collision_mesh: meshes/right_hip_pitch_link.STL
+    inertia:
+      ixx: 0.001811
+      ixy: -3.68e-05
+      ixz: -3.44e-05
+      iyy: 0.0014193
+      iyz: -0.000171
+      izz: 0.0012812
+    inertial_origin_rpy:
+    - 0.0
+    - 0.0
+    - 0.0
+    inertial_origin_xyz:
+    - 0.002741
+    - -0.047791
+    - -0.02606
+    mass: 1.35
+    mass_unit: kg
+    name_urdf: right_hip_pitch_link
+    visual_mesh: meshes/right_hip_pitch_link.STL
+  source:
+    locator: g1_23dof_rev_1_0.urdf#link[right_hip_pitch_link]
+    type: urdf
+  type: Link
+- id: unitree_g1_edu.hw.link.right_hip_roll_link
+  properties:
+    collision_mesh: meshes/right_hip_roll_link.STL
+    inertia:
+      ixx: 0.0023773
+      ixy: 3.8e-06
+      ixz: -0.0003908
+      iyy: 0.0024123
+      iyz: -1.84e-05
+      izz: 0.0016595
+    inertial_origin_rpy:
+    - 0.0
+    - 0.0
+    - 0.0
+    inertial_origin_xyz:
+    - 0.029812
+    - 0.001045
+    - -0.087934
+    mass: 1.52
+    mass_unit: kg
+    name_urdf: right_hip_roll_link
+    visual_mesh: meshes/right_hip_roll_link.STL
+  source:
+    locator: g1_23dof_rev_1_0.urdf#link[right_hip_roll_link]
+    type: urdf
+  type: Link
+- id: unitree_g1_edu.hw.link.right_hip_yaw_link
+  properties:
+    collision_mesh: meshes/right_hip_yaw_link.STL
+    inertia:
+      ixx: 0.0057774
+      ixy: 0.0005411
+      ixz: -0.0023948
+      iyy: 0.0076124
+      iyz: 0.0007072
+      izz: 0.003149
+    inertial_origin_rpy:
+    - 0.0
+    - 0.0
+    - 0.0
+    inertial_origin_xyz:
+    - -0.057709
+    - 0.010981
+    - -0.15078
+    mass: 1.702
+    mass_unit: kg
+    name_urdf: right_hip_yaw_link
+    visual_mesh: meshes/right_hip_yaw_link.STL
+  source:
+    locator: g1_23dof_rev_1_0.urdf#link[right_hip_yaw_link]
+    type: urdf
+  type: Link
+- id: unitree_g1_edu.hw.link.right_knee_link
+  properties:
+    collision_mesh: meshes/right_knee_link.STL
+    inertia:
+      ixx: 0.011329
+      ixy: -4.82e-05
+      ixz: 4.49e-05
+      iyy: 0.011277
+      iyz: 0.0007146
+      izz: 0.0015168
+    inertial_origin_rpy:
+    - 0.0
+    - 0.0
+    - 0.0
+    inertial_origin_xyz:
+    - 0.005457
+    - -0.003964
+    - -0.12074
+    mass: 1.932
+    mass_unit: kg
+    name_urdf: right_knee_link
+    visual_mesh: meshes/right_knee_link.STL
+  source:
+    locator: g1_23dof_rev_1_0.urdf#link[right_knee_link]
+    type: urdf
+  type: Link
+- id: unitree_g1_edu.hw.link.right_ankle_pitch_link
+  properties:
+    collision_mesh: meshes/right_ankle_pitch_link.STL
+    inertia:
+      ixx: 8.4e-06
+      ixy: 0.0
+      ixz: -2.9e-06
+      iyy: 1.89e-05
+      iyz: 0.0
+      izz: 1.26e-05
+    inertial_origin_rpy:
+    - 0.0
+    - 0.0
+    - 0.0
+    inertial_origin_xyz:
+    - -0.007269
+    - 0.0
+    - 0.011137
+    mass: 0.074
+    mass_unit: kg
+    name_urdf: right_ankle_pitch_link
+    visual_mesh: meshes/right_ankle_pitch_link.STL
+  source:
+    locator: g1_23dof_rev_1_0.urdf#link[right_ankle_pitch_link]
+    type: urdf
+  type: Link
+- id: unitree_g1_edu.hw.link.right_ankle_roll_link
+  properties:
+    inertia:
+      ixx: 0.0002231
+      ixy: -2.0e-07
+      ixz: 8.91e-05
+      iyy: 0.0016161
+      iyz: 1.0e-07
+      izz: 0.0016667
+    inertial_origin_rpy:
+    - 0.0
+    - 0.0
+    - 0.0
+    inertial_origin_xyz:
+    - 0.026505
+    - 0.0
+    - -0.016425
+    mass: 0.608
+    mass_unit: kg
+    name_urdf: right_ankle_roll_link
+    visual_mesh: meshes/right_ankle_roll_link.STL
+  source:
+    locator: g1_23dof_rev_1_0.urdf#link[right_ankle_roll_link]
+    type: urdf
+  type: Link
+- id: unitree_g1_edu.hw.link.torso_link
+  properties:
+    collision_mesh: meshes/torso_link_23dof_rev_1_0.STL
+    inertia:
+      ixx: 0.05905
+      ixy: 3.3302e-05
+      ixz: -0.0017715
+      iyy: 0.047014
+      iyz: -2.2399e-05
+      izz: 0.025652
+    inertial_origin_rpy:
+    - 0.0
+    - 0.0
+    - 0.0
+    inertial_origin_xyz:
+    - 0.000931
+    - 0.000346
+    - 0.15082
+    mass: 6.78
+    mass_unit: kg
+    name_urdf: torso_link
+    visual_mesh: meshes/torso_link_23dof_rev_1_0.STL
+  source:
+    locator: g1_23dof_rev_1_0.urdf#link[torso_link]
+    type: urdf
+  type: Link
+- id: unitree_g1_edu.hw.link.logo_link
+  properties:
+    collision_mesh: meshes/logo_link.STL
+    inertia:
+      ixx: 1.0e-07
+      ixy: 0.0
+      ixz: 0.0
+      iyy: 1.0e-07
+      iyz: 0.0
+      izz: 1.0e-07
+    inertial_origin_rpy:
+    - 0.0
+    - 0.0
+    - 0.0
+    inertial_origin_xyz:
+    - 0.0
+    - 0.0
+    - 0.0
+    mass: 0.001
+    mass_unit: kg
+    name_urdf: logo_link
+    visual_mesh: meshes/logo_link.STL
+  source:
+    locator: g1_23dof_rev_1_0.urdf#link[logo_link]
+    type: urdf
+  type: Link
+- id: unitree_g1_edu.hw.link.head_link
+  properties:
+    collision_mesh: meshes/head_link.STL
+    inertia:
+      ixx: 0.004085051
+      ixy: -2.543e-06
+      ixz: -6.9455e-05
+      iyy: 0.004185212
+      iyz: -3.726e-06
+      izz: 0.001807911
+    inertial_origin_rpy:
+    - 0.0
+    - 0.0
+    - 0.0
+    inertial_origin_xyz:
+    - 0.005267
+    - 0.000299
+    - 0.449869
+    mass: 1.036
+    mass_unit: kg
+    name_urdf: head_link
+    visual_mesh: meshes/head_link.STL
+  source:
+    locator: g1_23dof_rev_1_0.urdf#link[head_link]
+    type: urdf
+  type: Link
+- id: unitree_g1_edu.hw.link.imu_in_torso
+  properties:
+    name_urdf: imu_in_torso
+  source:
+    locator: g1_23dof_rev_1_0.urdf#link[imu_in_torso]
+    type: urdf
+  type: Link
+- id: unitree_g1_edu.hw.link.imu_in_pelvis
+  properties:
+    name_urdf: imu_in_pelvis
+  source:
+    locator: g1_23dof_rev_1_0.urdf#link[imu_in_pelvis]
+    type: urdf
+  type: Link
+- id: unitree_g1_edu.hw.link.d435_link
+  properties:
+    name_urdf: d435_link
+  source:
+    locator: g1_23dof_rev_1_0.urdf#link[d435_link]
+    type: urdf
+  type: Link
+- id: unitree_g1_edu.hw.link.mid360_link
+  properties:
+    name_urdf: mid360_link
+  source:
+    locator: g1_23dof_rev_1_0.urdf#link[mid360_link]
+    type: urdf
+  type: Link
+- id: unitree_g1_edu.hw.link.left_shoulder_pitch_link
+  properties:
+    inertia:
+      ixx: 0.0004291
+      ixy: -9.2e-06
+      ixz: 6.4e-06
+      iyy: 0.000453
+      iyz: 2.26e-05
+      izz: 0.000423
+    inertial_origin_rpy:
+    - 0.0
+    - 0.0
+    - 0.0
+    inertial_origin_xyz:
+    - 0.0
+    - 0.035892
+    - -0.011628
+    mass: 0.718
+    mass_unit: kg
+    name_urdf: left_shoulder_pitch_link
+    visual_mesh: meshes/left_shoulder_pitch_link.STL
+  source:
+    locator: g1_23dof_rev_1_0.urdf#link[left_shoulder_pitch_link]
+    type: urdf
+  type: Link
+- id: unitree_g1_edu.hw.link.left_shoulder_roll_link
+  properties:
+    inertia:
+      ixx: 0.0006177
+      ixy: -1.0e-06
+      ixz: 8.7e-06
+      iyy: 0.0006912
+      iyz: -5.3e-06
+      izz: 0.0003894
+    inertial_origin_rpy:
+    - 0.0
+    - 0.0
+    - 0.0
+    inertial_origin_xyz:
+    - -0.000227
+    - 0.00727
+    - -0.063243
+    mass: 0.643
+    mass_unit: kg
+    name_urdf: left_shoulder_roll_link
+    visual_mesh: meshes/left_shoulder_roll_link.STL
+  source:
+    locator: g1_23dof_rev_1_0.urdf#link[left_shoulder_roll_link]
+    type: urdf
+  type: Link
+- id: unitree_g1_edu.hw.link.left_shoulder_yaw_link
+  properties:
+    collision_mesh: meshes/left_shoulder_yaw_link.STL
+    inertia:
+      ixx: 0.0009988
+      ixy: 7.9e-06
+      ixz: 0.0001412
+      iyy: 0.0010605
+      iyz: -2.86e-05
+      izz: 0.0004354
+    inertial_origin_rpy:
+    - 0.0
+    - 0.0
+    - 0.0
+    inertial_origin_xyz:
+    - 0.010773
+    - -0.002949
+    - -0.072009
+    mass: 0.734
+    mass_unit: kg
+    name_urdf: left_shoulder_yaw_link
+    visual_mesh: meshes/left_shoulder_yaw_link.STL
+  source:
+    locator: g1_23dof_rev_1_0.urdf#link[left_shoulder_yaw_link]
+    type: urdf
+  type: Link
+- id: unitree_g1_edu.hw.link.left_elbow_link
+  properties:
+    collision_mesh: meshes/left_elbow_link.STL
+    inertia:
+      ixx: 0.0002891
+      ixy: 6.53e-05
+      ixz: 1.72e-05
+      iyy: 0.0004152
+      iyz: -5.6e-06
+      izz: 0.0004197
+    inertial_origin_rpy:
+    - 0.0
+    - 0.0
+    - 0.0
+    inertial_origin_xyz:
+    - 0.064956
+    - 0.004454
+    - -0.010062
+    mass: 0.6
+    mass_unit: kg
+    name_urdf: left_elbow_link
+    visual_mesh: meshes/left_elbow_link.STL
+  source:
+    locator: g1_23dof_rev_1_0.urdf#link[left_elbow_link]
+    type: urdf
+  type: Link
+- id: unitree_g1_edu.hw.link.left_wrist_roll_rubber_hand
+  properties:
+    collision_mesh: meshes/left_wrist_roll_rubber_hand.STL
+    inertia:
+      ixx: 0.00019613494735
+      ixy: -4.19816908e-06
+      ixz: -3.95086058e-05
+      iyy: 0.00200280358206
+      iyz: 2.49774203e-06
+      izz: 0.00194181412808
+    inertial_origin_rpy:
+    - 0.0
+    - 0.0
+    - 0.0
+    inertial_origin_xyz:
+    - 0.1079465665
+    - 0.00163511945
+    - 0.00202244863
+    mass: 0.35692864
+    mass_unit: kg
+    name_urdf: left_wrist_roll_rubber_hand
+    visual_mesh: meshes/left_wrist_roll_rubber_hand.STL
+  source:
+    locator: g1_23dof_rev_1_0.urdf#link[left_wrist_roll_rubber_hand]
+    type: urdf
+  type: Link
+- id: unitree_g1_edu.hw.link.right_shoulder_pitch_link
+  properties:
+    inertia:
+      ixx: 0.0004291
+      ixy: 9.2e-06
+      ixz: 6.4e-06
+      iyy: 0.000453
+      iyz: -2.26e-05
+      izz: 0.000423
+    inertial_origin_rpy:
+    - 0.0
+    - 0.0
+    - 0.0
+    inertial_origin_xyz:
+    - 0.0
+    - -0.035892
+    - -0.011628
+    mass: 0.718
+    mass_unit: kg
+    name_urdf: right_shoulder_pitch_link
+    visual_mesh: meshes/right_shoulder_pitch_link.STL
+  source:
+    locator: g1_23dof_rev_1_0.urdf#link[right_shoulder_pitch_link]
+    type: urdf
+  type: Link
+- id: unitree_g1_edu.hw.link.right_shoulder_roll_link
+  properties:
+    inertia:
+      ixx: 0.0006177
+      ixy: 1.0e-06
+      ixz: 8.7e-06
+      iyy: 0.0006912
+      iyz: 5.3e-06
+      izz: 0.0003894
+    inertial_origin_rpy:
+    - 0.0
+    - 0.0
+    - 0.0
+    inertial_origin_xyz:
+    - -0.000227
+    - -0.00727
+    - -0.063243
+    mass: 0.643
+    mass_unit: kg
+    name_urdf: right_shoulder_roll_link
+    visual_mesh: meshes/right_shoulder_roll_link.STL
+  source:
+    locator: g1_23dof_rev_1_0.urdf#link[right_shoulder_roll_link]
+    type: urdf
+  type: Link
+- id: unitree_g1_edu.hw.link.right_shoulder_yaw_link
+  properties:
+    collision_mesh: meshes/right_shoulder_yaw_link.STL
+    inertia:
+      ixx: 0.0009988
+      ixy: -7.9e-06
+      ixz: 0.0001412
+      iyy: 0.0010605
+      iyz: 2.86e-05
+      izz: 0.0004354
+    inertial_origin_rpy:
+    - 0.0
+    - 0.0
+    - 0.0
+    inertial_origin_xyz:
+    - 0.010773
+    - 0.002949
+    - -0.072009
+    mass: 0.734
+    mass_unit: kg
+    name_urdf: right_shoulder_yaw_link
+    visual_mesh: meshes/right_shoulder_yaw_link.STL
+  source:
+    locator: g1_23dof_rev_1_0.urdf#link[right_shoulder_yaw_link]
+    type: urdf
+  type: Link
+- id: unitree_g1_edu.hw.link.right_elbow_link
+  properties:
+    collision_mesh: meshes/right_elbow_link.STL
+    inertia:
+      ixx: 0.0002891
+      ixy: -6.53e-05
+      ixz: 1.72e-05
+      iyy: 0.0004152
+      iyz: 5.6e-06
+      izz: 0.0004197
+    inertial_origin_rpy:
+    - 0.0
+    - 0.0
+    - 0.0
+    inertial_origin_xyz:
+    - 0.064956
+    - -0.004454
+    - -0.010062
+    mass: 0.6
+    mass_unit: kg
+    name_urdf: right_elbow_link
+    visual_mesh: meshes/right_elbow_link.STL
+  source:
+    locator: g1_23dof_rev_1_0.urdf#link[right_elbow_link]
+    type: urdf
+  type: Link
+- id: unitree_g1_edu.hw.link.right_wrist_roll_rubber_hand
+  properties:
+    collision_mesh: meshes/right_wrist_roll_rubber_hand.STL
+    inertia:
+      ixx: 0.00019613494735
+      ixy: 4.19816908e-06
+      ixz: -3.95086058e-05
+      iyy: 0.00200280358206
+      iyz: -2.49774203e-06
+      izz: 0.00194181412808
+    inertial_origin_rpy:
+    - 0.0
+    - 0.0
+    - 0.0
+    inertial_origin_xyz:
+    - 0.1079465665
+    - -0.00163511945
+    - 0.00202244863
+    mass: 0.35692864
+    mass_unit: kg
+    name_urdf: right_wrist_roll_rubber_hand
+    visual_mesh: meshes/right_wrist_roll_rubber_hand.STL
+  source:
+    locator: g1_23dof_rev_1_0.urdf#link[right_wrist_roll_rubber_hand]
+    type: urdf
+  type: Link
+- id: unitree_g1_edu.hw.compute.main
+  properties:
+    role: motion_control
+    soc: ARM Cortex-A + GPU
+  source:
+    locator: unitree_ros/robots/g1_description/README.md
+    type: document
+  type: ComputeUnit
+- id: unitree_g1_edu.hw.power.battery
+  properties:
+    name: 电池
+    voltage_nominal: 48
+  source:
+    confidence: medium
+    type: document
+  type: PowerSubsystem
+- id: unitree_g1_edu.hw.sensor.imu
+  properties:
+    name: 骨盆IMU
+    rate_hz: 500
+    sensor_type: IMU
+  source:
+    locator: unitree_sdk2/idl/hg/IMUState_.hpp
+    type: sdk_code
+  type: Sensor
+- id: unitree_g1_edu.hw.sensor.bms
+  properties:
+    name: BMS
+    sensor_type: BMS
+  source:
+    locator: unitree_sdk2/idl/hg/BmsState_.hpp
+    type: sdk_code
+  type: Sensor
+- id: unitree_g1_edu.hw.compute.orin
+  properties:
+    ai_tops: 100
+    cpu: 8-core Arm Cortex-A78AE
+    gpu: 1024-core NVIDIA Ampere GPU with 32 Tensor Cores
+    notes: EDU版二开计算单元。G1标准版无此配置。
+    role: development
+    soc: NVIDIA Jetson Orin NX
+  source:
+    confidence: high
+    locator: unitree.com/g1
+    type: document
+  type: ComputeUnit

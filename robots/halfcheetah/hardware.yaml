@@ -1,0 +1,36 @@
+# Half-Cheetah — Hardware (simulated). Maps to gymnasium HalfCheetah-v5 model.
+
+objects:
+  # Compute — the rollout runner process (the only "compute" in sim)
+  - type: ComputeUnit
+    id: halfcheetah.hw.compute.host
+    properties:
+      role: development
+      soc: "host CPU"
+      notes: simulator runs on the host that runs the rollout runner
+    source: {type: document, locator: "gymnasium HalfCheetah-v5 docs"}
+
+  # Power — placeholder; sim has no battery. Declared so framework's
+  # `hardware.power` rule can be satisfied (we model an idealized supply).
+  - type: PowerSubsystem
+    id: halfcheetah.hw.power
+    properties:
+      battery_wh: 0
+      battery_voltage_nominal: 0
+      pmu_bus_voltages: []
+      notes: simulated robot — power is idealized, never depletes
+    source: {type: document, locator: "self (sim)"}
+
+  # No real sensors — observation is privileged simulator state.
+  # We declare a single virtual sensor so the framework's sensor rule passes.
+  - type: Sensor
+    id: halfcheetah.hw.sensor.proprioception
+    properties:
+      sensor_kind: proprioception
+      vendor: simulator
+      model: mjData
+      mount_link: halfcheetah.hw.link.torso
+      notes: |
+        Returns 17-dim observation: 8 qpos (z, root_angle, 6 joint angles)
+        + 9 qvel (root x/z/angular vel, 6 joint velocities).
+    source: {type: document, locator: "gymnasium HalfCheetah-v5 obs spec"}

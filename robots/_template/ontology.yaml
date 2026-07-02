@@ -1,0 +1,33 @@
+# MY_ROBOT — Ontology Entry
+# ======================================================================
+# 入口文件。roboonto 从此文件开始加载整个 ontology。
+# 
+# 修改指南:
+#   1. 替换 robot.id 为你的机器人 ID (如 "my_robot_v1")
+#   2. 填写 vendor / model / firmware_version
+#   3. 把各 YAML 片段放在 includes 列表里
+#   4. 运行 roboonto validate 检查
+# ======================================================================
+
+robot:
+  id: MY_ROBOT                         # ← 改为你的机器人 ID, 如 "unitree_g1"
+  vendor: MY_VENDOR                    # ← 厂商
+  model: MY_MODEL                      # ← 型号
+  firmware_version: "0.1"
+  roboonto_version: "0.2"
+  ros2_version: MY_ROS2                # Humble / Iron / Jazzy / ...
+  description: |
+    在此填写机器人描述。
+
+# 按依赖顺序 include: 先硬件,再接口,再行为,最后 action
+includes:
+  - standard_mappings.yaml  # 标准映射: IEEE/RoSO/CORA -> RoboOnto
+  - hardware.yaml          # 硬件: Link, Joint, Sensor, ComputeUnit, Power
+  - kinematics.yaml        # 运动学: URDF 导入或手写
+  - interfaces.yaml        # 接口: Topic, Service, MsgSchema
+  - capabilities.yaml      # 能力: Capability / CapabilityParameter / ServiceRequirement
+  - behaviors.yaml         # 行为: Mode, PresetMotion, ControlLoop
+  - events.yaml            # 事件: StatusBit, FaultCode
+  - actions.yaml           # Action: agent 可调用的动词及其约束
+  - derived_links.yaml     # 派生关系 (import 后补全)
+  - capability_boundary.yaml # 可观测性边界声明

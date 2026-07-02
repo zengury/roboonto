@@ -1,0 +1,21 @@
+objects:
+  - type: Mode
+    id: minibot.mode.passive
+    properties:
+      mode_value: PASSIVE
+      name_human: 零力矩
+    source: {type: document, locator: "minibot SDK §5.0"}
+
+  - type: Mode
+    id: minibot.mode.standby
+    properties:
+      mode_value: STANDBY
+      name_human: 待机
+    source: {type: document, locator: "minibot SDK §5.0"}
+
+  - type: Mode
+    id: minibot.mode.active
+    properties:
+      mode_value: ACTIVE
+      name_human: 工作
+    source: {type: document, locator: "minibot SDK §5.0"}

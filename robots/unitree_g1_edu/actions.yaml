@@ -1,0 +1,300 @@
+# Unitree G1 EDU — Actions
+# Source: unitree_sdk2 — loco (sport service), arm, audio APIs
+
+actions:
+  # ═══ Loco Service (sport) ═══
+  - type_id: get_loco_fsm_mode
+    description: 查询当前运动状态机模式 (PASSIVE/WALKRUN)
+    invoker:
+      type: dds_service
+      service: sport
+      api_id: 7002
+    parameters: []
+    preconditions: []
+    affects: []
+    safety_class: INFO
+    idempotent: true
+    source:
+      type: sdk_code
+      locator: "unitree_sdk2/include/unitree/robot/g1/loco/g1_loco_api.hpp"
+
+  - type_id: get_loco_fsm_id
+    description: 查询当前 FSM ID
+    invoker:
+      type: dds_service
+      service: sport
+      api_id: 7001
+    parameters: []
+    preconditions: []
+    affects: []
+    safety_class: INFO
+    idempotent: true
+    source:
+      type: sdk_code
+      locator: "unitree_sdk2/include/unitree/robot/g1/loco/g1_loco_api.hpp"
+
+  - type_id: get_balance_mode
+    description: 查询当前平衡模式
+    invoker:
+      type: dds_service
+      service: sport
+      api_id: 7003
+    parameters: []
+    preconditions: []
+    affects: []
+    safety_class: INFO
+    idempotent: true
+    source:
+      type: sdk_code
+      locator: "unitree_sdk2/include/unitree/robot/g1/loco/g1_loco_api.hpp"
+
+  - type_id: set_loco_fsm_mode
+    description: 切换运动状态机模式 (0=LAST, 1=PASSIVE, 2=WALKRUN)
+    invoker:
+      type: dds_service
+      service: sport
+      api_id: 7101
+    parameters:
+      - name: fsm_id
+        type: int
+        constraints:
+          - type: enum
+            values: [0, 1, 2]
+    preconditions: []
+    affects:
+      - unitree_g1_edu.mode.passive
+      - unitree_g1_edu.mode.walkrun
+    safety_class: MOTION
+    idempotent: false
+    source:
+      type: sdk_code
+      locator: "unitree_sdk2/include/unitree/robot/g1/loco/g1_loco_api.hpp"
+
+  - type_id: set_velocity
+    description: 设置机器人移动速度 (WALKRUN 模式下)
+    invoker:
+      type: dds_service
+      service: sport
+      api_id: 7105
+    parameters:
+      - name: velocity
+        type: "float[3]"
+        description: "[vx, vy, vyaw] 前向/横向/旋转速度 m/s, rad/s"
+      - name: duration
+        type: float
+        description: 持续时间(秒), 0=持续
+    preconditions:
+      - fsm_mode == WALKRUN
+    affects:
+      - unitree_g1_edu.hw.link.pelvis
+    safety_class: MOTION
+    idempotent: false
+    source:
+      type: sdk_code
+      locator: "unitree_sdk2/include/unitree/robot/g1/loco/g1_loco_api.hpp"
+
+  - type_id: set_balance_mode
+    description: 设置平衡模式
+    invoker:
+      type: dds_service
+      service: sport
+      api_id: 7102
+    parameters:
+      - name: mode
+        type: int
+    preconditions: []
+    affects: []
+    safety_class: CONFIG
+    idempotent: true
+    source:
+      type: sdk_code
+      locator: "unitree_sdk2/include/unitree/robot/g1/loco/g1_loco_api.hpp"
+
+  - type_id: set_swing_height
+    description: 设置行走摆腿高度
+    invoker:
+      type: dds_service
+      service: sport
+      api_id: 7103
+    parameters:
+      - name: height
+        type: float
+        unit: m
+    preconditions: []
+    affects: []
+    safety_class: CONFIG
+    idempotent: true
+    source:
+      type: sdk_code
+      locator: "unitree_sdk2/include/unitree/robot/g1/loco/g1_loco_api.hpp"
+
+  - type_id: set_stand_height
+    description: 设置站立高度
+    invoker:
+      type: dds_service
+      service: sport
+      api_id: 7104
+    parameters:
+      - name: height
+        type: float
+        unit: m
+    preconditions: []
+    affects: []
+    safety_class: CONFIG
+    idempotent: true
+    source:
+      type: sdk_code
+      locator: "unitree_sdk2/include/unitree/robot/g1/loco/g1_loco_api.hpp"
+
+  - type_id: set_arm_task
+    description: 给机械臂分配任务 (WALKRUN 下的手臂协同)
+    invoker:
+      type: dds_service
+      service: sport
+      api_id: 7106
+    parameters:
+      - name: task
+        type: int
+    preconditions:
+      - fsm_mode == WALKRUN
+    affects: []
+    safety_class: MOTION
+    idempotent: false
+    source:
+      type: sdk_code
+      locator: "unitree_sdk2/include/unitree/robot/g1/loco/g1_loco_api.hpp"
+
+  - type_id: switch_to_user_ctrl
+    description: 切换到用户控制模式
+    invoker:
+      type: dds_service
+      service: sport
+      api_id: 7110
+    parameters: []
+    preconditions: []
+    affects:
+      - unitree_g1_edu.mode.user_ctrl
+    safety_class: CONFIG
+    idempotent: true
+    source:
+      type: sdk_code
+      locator: "unitree_sdk2/include/unitree/robot/g1/loco/g1_loco_api.hpp"
+
+  - type_id: switch_to_internal_ctrl
+    description: 切换回内部控制模式
+    invoker:
+      type: dds_service
+      service: sport
+      api_id: 7111
+    parameters: []
+    preconditions: []
+    affects: []
+    safety_class: CONFIG
+    idempotent: true
+    source:
+      type: sdk_code
+      locator: "unitree_sdk2/include/unitree/robot/g1/loco/g1_loco_api.hpp"
+
+  # ═══ Arm Service ═══
+  - type_id: arm_execute_action
+    description: 执行预设机械臂动作
+    invoker:
+      type: dds_service
+      service: arm
+      api_id: 7106
+    parameters:
+      - name: action_name
+        type: string
+    preconditions: []
+    affects: []
+    safety_class: MOTION
+    idempotent: false
+    source:
+      type: sdk_code
+      locator: "unitree_sdk2/include/unitree/robot/g1/arm/g1_arm_action_api.hpp"
+
+  - type_id: arm_get_action_list
+    description: 查询可用的预设机械臂动作
+    invoker:
+      type: dds_service
+      service: arm
+      api_id: 7107
+    parameters: []
+    preconditions: []
+    affects: []
+    safety_class: INFO
+    idempotent: true
+    source:
+      type: sdk_code
+      locator: "unitree_sdk2/include/unitree/robot/g1/arm/g1_arm_action_api.hpp"
+
+  # ═══ Audio Service ═══
+  - type_id: play_tts
+    description: 文本转语音播报
+    invoker:
+      type: dds_service
+      service: audio
+      api_id: 1001
+    parameters:
+      - name: text
+        type: string
+    preconditions: []
+    affects: []
+    safety_class: INFO
+    idempotent: false
+    source:
+      type: sdk_code
+      locator: "unitree_sdk2/include/unitree/robot/g1/audio/g1_audio_api.hpp"
+
+  - type_id: set_volume
+    description: 设置音量
+    invoker:
+      type: dds_service
+      service: audio
+      api_id: 1006
+    parameters:
+      - name: volume
+        type: int
+    preconditions: []
+    affects: []
+    safety_class: CONFIG
+    idempotent: true
+    source:
+      type: sdk_code
+      locator: "unitree_sdk2/include/unitree/robot/g1/audio/g1_audio_api.hpp"
+
+  - type_id: get_volume
+    description: 查询当前音量
+    invoker:
+      type: dds_service
+      service: audio
+      api_id: 1005
+    parameters: []
+    preconditions: []
+    affects: []
+    safety_class: INFO
+    idempotent: true
+    source:
+      type: sdk_code
+      locator: "unitree_sdk2/include/unitree/robot/g1/audio/g1_audio_api.hpp"
+
+  - type_id: set_led
+    description: 设置 RGB LED 颜色
+    invoker:
+      type: dds_service
+      service: audio
+      api_id: 1010
+    parameters:
+      - name: r
+        type: int
+      - name: g
+        type: int
+      - name: b
+        type: int
+    preconditions: []
+    affects: []
+    safety_class: CONFIG
+    idempotent: true
+    source:
+      type: sdk_code
+      locator: "unitree_sdk2/include/unitree/robot/g1/audio/g1_audio_api.hpp"

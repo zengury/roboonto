@@ -1,0 +1,28 @@
+# Unitree G1 EDU — Capability Boundary
+
+robot: unitree_g1_edu
+version: "0.1"
+last_updated: 2026-05-16
+
+observability:
+  joint_state:
+    realtime_topic: low_state (DDS)
+    note: G1 使用 Cyclone DDS (Eclipse 开源) 直接通信，不经过 ROS2 中间件
+    recorded_in_mcap: false
+    impact: "无法回溯关节历史数据，需运行时实时采集"
+    status: open
+
+  imu_data:
+    realtime_topic: imu_state (DDS)
+    rate_hz: 500
+    fields: [orientation, angular_velocity, linear_acceleration]
+    status: available
+
+  battery_data:
+    realtime_topic: bms_state (DDS)
+    fields: [voltage, current, soc, temperature]
+    status: available
+
+declared_sensors:
+  - unitree_g1_edu.hw.sensor.imu
+  - unitree_g1_edu.hw.sensor.bms

@@ -1,0 +1,93 @@
+# Unitree G1 EDU — Interfaces (DDS services + topics)
+# Source: unitree_sdk2 IDL headers
+
+objects:
+  - type: Service
+    id: unitree_g1_edu.if.sport
+    properties:
+      name: sport
+      protocol: DDS
+      api_version: "1.0.0.0"
+      description: 运动控制服务 (loco) — FSM/速度/平衡/步态
+    source:
+      type: sdk_code
+      locator: "unitree_sdk2/include/unitree/robot/g1/loco/g1_loco_api.hpp"
+
+  - type: Service
+    id: unitree_g1_edu.if.arm
+    properties:
+      name: arm
+      protocol: DDS
+      api_version: "1.0.0.14"
+      description: 机械臂控制服务 — 预设动作执行
+    source:
+      type: sdk_code
+      locator: "unitree_sdk2/include/unitree/robot/g1/arm/g1_arm_action_api.hpp"
+
+  - type: Service
+    id: unitree_g1_edu.if.audio
+    properties:
+      name: audio
+      protocol: DDS
+      description: 音频+LED 服务 — TTS/ASR/音量/LED
+    source:
+      type: sdk_code
+      locator: "unitree_sdk2/include/unitree/robot/g1/audio/g1_audio_api.hpp"
+
+  - type: Topic
+    id: unitree_g1_edu.if.low_state
+    properties:
+      name: low_state
+      protocol: DDS
+      description: 低层状态数据 — 23 joint positions + velocities + IMU + BMS
+      msg_type: unitree/idl/hg/LowState
+      rate_hz: 500
+    source:
+      type: sdk_code
+      locator: "unitree_sdk2/include/unitree/idl/hg/LowState_.hpp"
+
+  - type: Topic
+    id: unitree_g1_edu.if.low_cmd
+    properties:
+      name: low_cmd
+      protocol: DDS
+      description: 低层指令 — 23 joint targets
+      msg_type: unitree/idl/hg/LowCmd
+      rate_hz: 500
+    source:
+      type: sdk_code
+      locator: "unitree_sdk2/include/unitree/idl/hg/LowCmd_.hpp"
+
+  - type: Topic
+    id: unitree_g1_edu.if.imu_state
+    properties:
+      name: imu_state
+      protocol: DDS
+      description: IMU 状态 — 四元数 + 角速度 + 加速度
+      msg_type: unitree/idl/hg/IMUState
+      rate_hz: 500
+    source:
+      type: sdk_code
+      locator: "unitree_sdk2/include/unitree/idl/hg/IMUState_.hpp"
+
+  - type: Topic
+    id: unitree_g1_edu.if.bms_state
+    properties:
+      name: bms_state
+      protocol: DDS
+      description: 电池状态 — 电压/电流/SOC/温度
+      msg_type: unitree/idl/hg/BmsState
+    source:
+      type: sdk_code
+      locator: "unitree_sdk2/include/unitree/idl/hg/BmsState_.hpp"
+
+  - type: Topic
+    id: unitree_g1_edu.if.sport_mode_state
+    properties:
+      name: sport_mode_state
+      protocol: DDS
+      description: 运动模式状态反馈
+      msg_type: unitree/idl/hg/SportModeState
+    source:
+      type: sdk_code
+      locator: "unitree_sdk2/include/unitree/idl/hg/SportModeState_.hpp"

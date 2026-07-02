@@ -1,0 +1,294 @@
+# AgiBot X2 — Behaviors Ontology
+# Mode / PresetMotion / InputSource / PriorityLevel
+# 覆盖 §5.1.1 模式 / §5.1.3 输入源 / §5.1.4 预设动作 / §5.2.1 TTS 优先级
+
+objects:
+
+# ============================================================
+# 运动模式(§5.1.1)
+# ============================================================
+- type: Mode
+  id: agibot_x2.mode.passive_default
+  properties:
+    mode_value: PASSIVE_DEFAULT
+    name_human: 零力矩模式
+    description: 机器人关节零力矩,自由状态
+    use_case: 系统启动、维护、软急停
+    safety_note: 此模式下机器人自由下垂,需外部支撑
+  source: { type: document, locator: "aimdk.docx#§5.1.1" }
+
+- type: Mode
+  id: agibot_x2.mode.damping_default
+  properties:
+    mode_value: DAMPING_DEFAULT
+    name_human: 阻尼模式
+    description: 关节有阻尼感
+    use_case: 安全移动
+  source: { type: document, locator: "aimdk.docx#§5.1.1" }
+
+- type: Mode
+  id: agibot_x2.mode.joint_default
+  properties:
+    mode_value: JOINT_DEFAULT
+    name_human: 位控站立
+    description: 位置控制站立
+    use_case: 精确关节位置控制
+  source: { type: document, locator: "aimdk.docx#§5.1.1" }
+
+- type: Mode
+  id: agibot_x2.mode.stand_default
+  properties:
+    mode_value: STAND_DEFAULT
+    name_human: 稳定站立
+    description: 主动发力确保站立
+    use_case: 动态平衡控制、行走/动作就绪状态
+    safety_note: "v0.8.0+ 与走跑模式一体化设计,系统根据运动状态内部自动切换"
+  source: { type: document, locator: "aimdk.docx#§5.1.1" }
+
+- type: Mode
+  id: agibot_x2.mode.locomotion_default
+  properties:
+    mode_value: LOCOMOTION_DEFAULT
+    name_human: 走跑模式
+    description: 正常走跑
+    use_case: 日常移动
+  source: { type: document, locator: "aimdk.docx#§5.1.1" }
+
+# 来自真实 log 反推(2026-04-08 session 中观察到 Mode transition request: ProductionTest)
+- type: Mode
+  id: agibot_x2.mode.production_test
+  properties:
+    mode_value: ProductionTest
+    name_human: 产线测试模式
+    description: 产线测试场景使用,在 sm.log 中可见 mode transition request
+    use_case: 出厂测试 / 调试
+  source:
+    type: log_observation
+    locator: "session_2026_04_08, sm.log"
+    confidence: high
+    diff_status: pending_aimdk_confirmation
+
+# ============================================================
+# 控制回路(§5.1.3 输入源仲裁)
+# ============================================================
+- type: ControlLoop
+  id: agibot_x2.control_loop.mc_arbitration
+  properties:
+    name_human: MC 输入源仲裁回路
+    description: 对多个控制输入源做优先级实时仲裁,选择最高优先级活跃源的指令
+    frequency_hz: null   # 文档未披露
+    arbitrates_topics: ["/aima/mc/locomotion/velocity"]
+    arbitration_rules:
+      - 被禁用的输入源和未知输入源,其控制指令被丢弃
+      - 从未被丢弃指令的输入源中选定最高优先级的有效输入源,只接受其控制
+      - 出现非选定的更高优先级有效输入源时,改选其作为选定输入源
+      - 选定输入源非活跃状态(timeout等)则被视为最低优先级,将从活跃的其他有效控制源中重新选定
+    notes: 系统重启后输入源优先级状态将重置
+  source: { type: document, locator: "aimdk.docx#§5.1.3" }
+
+# ============================================================
+# 输入源(§5.1.3,系统内置 5 个 + 二开动态注册)
+# ============================================================
+- type: InputSource
+  id: agibot_x2.input_source.rc
+  properties:
+    source_name: rc
+    display_name: 遥控手柄 (PS5)
+    priority: 80
+    timeout_ms: 1000
+    requires_registration: false
+    origin: system_builtin
+  source: { type: document, locator: "aimdk.docx#§5.1.3" }
+
+- type: InputSource
+  id: agibot_x2.input_source.vr
+  properties:
+    source_name: vr
+    display_name: 遥操模块
+    priority: 70
+    timeout_ms: 1000
+    requires_registration: false
+    origin: system_builtin
+  source: { type: document, locator: "aimdk.docx#§5.1.3" }
+
+- type: InputSource
+  id: agibot_x2.input_source.app_proxy
+  properties:
+    source_name: app_proxy
+    display_name: 移动 APP (Agibot Go)
+    priority: 60
+    timeout_ms: 1000
+    requires_registration: false
+    origin: system_builtin
+  source: { type: document, locator: "aimdk.docx#§5.1.3" }
+
+- type: InputSource
+  id: agibot_x2.input_source.interaction
+  properties:
+    source_name: interaction
+    display_name: 智元灵犀交互模块
+    priority: 50
+    timeout_ms: 1000
+    requires_registration: false
+    origin: system_builtin
+  source: { type: document, locator: "aimdk.docx#§5.1.3" }
+
+- type: InputSource
+  id: agibot_x2.input_source.pnc
+  properties:
+    source_name: pnc
+    display_name: 智元灵犀 Planner 模块
+    priority: 40
+    timeout_ms: 1000
+    requires_registration: false
+    origin: system_builtin
+  source: { type: document, locator: "aimdk.docx#§5.1.3" }
+
+# ============================================================
+# TTS 优先级等级(§5.2.1 TtsPriorityLevel)
+# ============================================================
+- type: PriorityLevel
+  id: agibot_x2.priority.safety_l10
+  properties: { value: 10, name: SAFETY_L10,    description: 紧急安全层,    use_case: 安全警告、紧急通知, preemptable: false }
+  source: { type: document, locator: "aimdk.docx#§5.2.1" }
+
+- type: PriorityLevel
+  id: agibot_x2.priority.warning_l8
+  properties: { value: 8,  name: WARNING_L8,    description: 危险预警层,    use_case: 危险提醒、警告信息, preemptable: true }
+  source: { type: document, locator: "aimdk.docx#§5.2.1" }
+
+- type: PriorityLevel
+  id: agibot_x2.priority.system_l7
+  properties: { value: 7,  name: SYSTEM_L7,     description: 系统提示层,    use_case: 系统语音播报, preemptable: true }
+  source: { type: document, locator: "aimdk.docx#§5.2.1" }
+
+- type: PriorityLevel
+  id: agibot_x2.priority.interaction_l6
+  properties: { value: 6,  name: INTERACTION_L6, description: 交互响应层, use_case: 用户交互、对话响应, preemptable: true }
+  source: { type: document, locator: "aimdk.docx#§5.2.1" }
+
+- type: PriorityLevel
+  id: agibot_x2.priority.mission_l4
+  properties: { value: 4,  name: MISSION_L4,    description: 任务执行层,    use_case: 任务执行、状态播报, preemptable: true }
+  source: { type: document, locator: "aimdk.docx#§5.2.1" }
+
+- type: PriorityLevel
+  id: agibot_x2.priority.service_l2
+  properties: { value: 2,  name: SERVICE_L2,    description: 主动服务层,    use_case: 主动服务、提醒, preemptable: true }
+  source: { type: document, locator: "aimdk.docx#§5.2.1" }
+
+- type: PriorityLevel
+  id: agibot_x2.priority.background_l1
+  properties: { value: 1,  name: BACKGROUND_L1, description: 后台服务层,    use_case: 后台服务、日志, preemptable: true }
+  source: { type: document, locator: "aimdk.docx#§5.2.1" }
+
+# ============================================================
+# 预设动作(§5.1.4,motion + area 组合)
+# ============================================================
+- { type: PresetMotion, id: agibot_x2.motion.right_hand_wave,   properties: { name_human: 右手挥手,     motion_value: 1002, area_value: 2,  required_mode: agibot_x2.mode.stand_default }, source: { type: document, locator: "aimdk.docx#§5.1.4" } }
+- { type: PresetMotion, id: agibot_x2.motion.left_hand_wave,    properties: { name_human: 左手挥手,     motion_value: 1002, area_value: 1,  required_mode: agibot_x2.mode.stand_default }, source: { type: document, locator: "aimdk.docx#§5.1.4" } }
+- { type: PresetMotion, id: agibot_x2.motion.right_handshake,   properties: { name_human: 右手握手,     motion_value: 1003, area_value: 2,  required_mode: agibot_x2.mode.stand_default }, source: { type: document, locator: "aimdk.docx#§5.1.4" } }
+- { type: PresetMotion, id: agibot_x2.motion.left_handshake,    properties: { name_human: 左手握手,     motion_value: 1003, area_value: 1,  required_mode: agibot_x2.mode.stand_default }, source: { type: document, locator: "aimdk.docx#§5.1.4" } }
+- { type: PresetMotion, id: agibot_x2.motion.right_hand_raise,  properties: { name_human: 右手举手,     motion_value: 1001, area_value: 2,  required_mode: agibot_x2.mode.stand_default }, source: { type: document, locator: "aimdk.docx#§5.1.4" } }
+- { type: PresetMotion, id: agibot_x2.motion.left_hand_raise,   properties: { name_human: 左手举手,     motion_value: 1001, area_value: 1,  required_mode: agibot_x2.mode.stand_default }, source: { type: document, locator: "aimdk.docx#§5.1.4" } }
+- { type: PresetMotion, id: agibot_x2.motion.right_flying_kiss, properties: { name_human: 右手飞吻,     motion_value: 1004, area_value: 2,  required_mode: agibot_x2.mode.stand_default }, source: { type: document, locator: "aimdk.docx#§5.1.4" } }
+- { type: PresetMotion, id: agibot_x2.motion.left_flying_kiss,  properties: { name_human: 左手飞吻,     motion_value: 1004, area_value: 1,  required_mode: agibot_x2.mode.stand_default }, source: { type: document, locator: "aimdk.docx#§5.1.4" } }
+- { type: PresetMotion, id: agibot_x2.motion.applause,          properties: { name_human: 鼓掌,         motion_value: 3017, area_value: 11, required_mode: agibot_x2.mode.stand_default }, source: { type: document, locator: "aimdk.docx#§5.1.4" } }
+- { type: PresetMotion, id: agibot_x2.motion.right_salute,      properties: { name_human: 右手敬礼,     motion_value: 1013, area_value: 2,  required_mode: agibot_x2.mode.stand_default }, source: { type: document, locator: "aimdk.docx#§5.1.4" } }
+- { type: PresetMotion, id: agibot_x2.motion.left_salute,       properties: { name_human: 左手敬礼,     motion_value: 1013, area_value: 1,  required_mode: agibot_x2.mode.stand_default }, source: { type: document, locator: "aimdk.docx#§5.1.4" } }
+- { type: PresetMotion, id: agibot_x2.motion.heart_both,        properties: { name_human: 双手比心,     motion_value: 1007, area_value: 3,  required_mode: agibot_x2.mode.stand_default }, source: { type: document, locator: "aimdk.docx#§5.1.4" } }
+- { type: PresetMotion, id: agibot_x2.motion.heart_right,       properties: { name_human: 右手比心,     motion_value: 1007, area_value: 2,  required_mode: agibot_x2.mode.stand_default }, source: { type: document, locator: "aimdk.docx#§5.1.4" } }
+- { type: PresetMotion, id: agibot_x2.motion.heart_left,        properties: { name_human: 左手比心,     motion_value: 1007, area_value: 1,  required_mode: agibot_x2.mode.stand_default }, source: { type: document, locator: "aimdk.docx#§5.1.4" } }
+- { type: PresetMotion, id: agibot_x2.motion.hug,               properties: { name_human: 拥抱,         motion_value: 3008, area_value: 11, required_mode: agibot_x2.mode.stand_default }, source: { type: document, locator: "aimdk.docx#§5.1.4" } }
+- { type: PresetMotion, id: agibot_x2.motion.cheer_up,          properties: { name_human: 加油,         motion_value: 3011, area_value: 11, required_mode: agibot_x2.mode.stand_default }, source: { type: document, locator: "aimdk.docx#§5.1.4" } }
+- { type: PresetMotion, id: agibot_x2.motion.arms_out_both,     properties: { name_human: 双手平举,     motion_value: 1010, area_value: 3,  required_mode: agibot_x2.mode.stand_default }, source: { type: document, locator: "aimdk.docx#§5.1.4" } }
+- { type: PresetMotion, id: agibot_x2.motion.arm_out_right,     properties: { name_human: 右手平举,     motion_value: 1010, area_value: 2,  required_mode: agibot_x2.mode.stand_default }, source: { type: document, locator: "aimdk.docx#§5.1.4" } }
+- { type: PresetMotion, id: agibot_x2.motion.arm_out_left,      properties: { name_human: 左手平举,     motion_value: 1010, area_value: 1,  required_mode: agibot_x2.mode.stand_default }, source: { type: document, locator: "aimdk.docx#§5.1.4" } }
+- { type: PresetMotion, id: agibot_x2.motion.bye,               properties: { name_human: 拜拜,         motion_value: 3031, area_value: 11, required_mode: agibot_x2.mode.stand_default }, source: { type: document, locator: "aimdk.docx#§5.1.4" } }
+- { type: PresetMotion, id: agibot_x2.motion.wave_burst,        properties: { name_human: 动感光波,     motion_value: 3007, area_value: 11, required_mode: agibot_x2.mode.stand_default }, source: { type: document, locator: "aimdk.docx#§5.1.4" } }
+- { type: PresetMotion, id: agibot_x2.motion.right_high_five,   properties: { name_human: 右手击掌,     motion_value: 1008, area_value: 2,  required_mode: agibot_x2.mode.stand_default }, source: { type: document, locator: "aimdk.docx#§5.1.4" } }
+- { type: PresetMotion, id: agibot_x2.motion.left_high_five,    properties: { name_human: 左手击掌,     motion_value: 1008, area_value: 1,  required_mode: agibot_x2.mode.stand_default }, source: { type: document, locator: "aimdk.docx#§5.1.4" } }
+- { type: PresetMotion, id: agibot_x2.motion.cross_arms,        properties: { name_human: 双手打叉,     motion_value: 3009, area_value: 11, required_mode: agibot_x2.mode.stand_default }, source: { type: document, locator: "aimdk.docx#§5.1.4" } }
+- { type: PresetMotion, id: agibot_x2.motion.chest_wave_right,  properties: { name_human: 胸前右手挥手, motion_value: 1011, area_value: 2,  required_mode: agibot_x2.mode.stand_default }, source: { type: document, locator: "aimdk.docx#§5.1.4" } }
+- { type: PresetMotion, id: agibot_x2.motion.chest_wave_left,   properties: { name_human: 胸前左手挥手, motion_value: 1011, area_value: 1,  required_mode: agibot_x2.mode.stand_default }, source: { type: document, locator: "aimdk.docx#§5.1.4" } }
+- { type: PresetMotion, id: agibot_x2.motion.bow,               properties: { name_human: 鞠躬,         motion_value: 3001, area_value: 11, required_mode: agibot_x2.mode.stand_default }, source: { type: document, locator: "aimdk.docx#§5.1.4" } }
+- { type: PresetMotion, id: agibot_x2.motion.head_scratch,      properties: { name_human: 挠头,         motion_value: 3024, area_value: 11, required_mode: agibot_x2.mode.stand_default }, source: { type: document, locator: "aimdk.docx#§5.1.4" } }
+- { type: PresetMotion, id: agibot_x2.motion.butt_scratch,      properties: { name_human: 抓屁股,       motion_value: 3025, area_value: 11, required_mode: agibot_x2.mode.stand_default }, source: { type: document, locator: "aimdk.docx#§5.1.4" } }
+
+# ============================================================
+# 特殊预设动作:起身姿势(§2.1 开机指南)
+# ============================================================
+- type: PresetMotion
+  id: agibot_x2.motion.lying_stand_up
+  properties:
+    name_human: 平躺站起
+    requires_environment:
+      - "正面朝上姿态"
+      - "半径 0.5m 范围内无杂物"
+      - "无坡度的硬质地面"
+    forbidden_contexts:
+      - "末端执行器为灵巧手或夹爪时禁用"
+    safety_class: HIGH_RISK
+  source: { type: document, locator: "aimdk.docx#§2.1.2" }
+
+- type: PresetMotion
+  id: agibot_x2.motion.sitting_stand_up
+  properties:
+    name_human: 坐下站起
+    requires_environment:
+      - "坐在 35-40cm 带靠背的椅子上"
+      - "双脚完全接触地面"
+    required_pre_mode: agibot_x2.mode.joint_default
+    notes: "切换前需人工扶后把手辅助平衡"
+  source: { type: document, locator: "aimdk.docx#§2.1.3" }
+
+# ============================================================
+# Links — 模式迁移图
+# ============================================================
+links:
+
+- type: transitions_to
+  source: agibot_x2.mode.passive_default
+  target: agibot_x2.mode.joint_default
+  properties: { trigger: "遥控 L2+X", requires: "机器人已下降至地面双脚触地" }
+
+- type: transitions_to
+  source: agibot_x2.mode.joint_default
+  target: agibot_x2.mode.stand_default
+  properties: { trigger: "遥控 R2+X", requires: "机器人已下降至地面双脚触地" }
+
+- type: transitions_to
+  source: agibot_x2.mode.stand_default
+  target: agibot_x2.mode.locomotion_default
+  properties: { trigger: "v0.8+ 内部自动切换", auto: true }
+
+- type: transitions_to
+  source: agibot_x2.mode.locomotion_default
+  target: agibot_x2.mode.stand_default
+  properties: { trigger: "速度归零自动回稳", auto: true }
+
+# ============================================================
+# Links — 模式允许的动作类型(部分)
+# ============================================================
+- { type: allows, source: agibot_x2.mode.locomotion_default, target: set_forward_velocity }
+- { type: allows, source: agibot_x2.mode.locomotion_default, target: set_lateral_velocity }
+- { type: allows, source: agibot_x2.mode.locomotion_default, target: set_angular_velocity }
+- { type: allows, source: agibot_x2.mode.stand_default,      target: set_forward_velocity }
+- { type: allows, source: agibot_x2.mode.stand_default,      target: set_preset_motion }
+- { type: allows, source: agibot_x2.mode.joint_default,      target: set_joint_position }
+
+# ============================================================
+# Links — 所有预设动作都要求稳定站立模式
+# ============================================================
+- { type: forbidden_in, source: set_preset_motion, target: agibot_x2.mode.passive_default }
+- { type: forbidden_in, source: set_preset_motion, target: agibot_x2.mode.damping_default }
+- { type: forbidden_in, source: set_preset_motion, target: agibot_x2.mode.locomotion_default }
+
+# ============================================================
+# Links — 输入源参与 MC 仲裁
+# ============================================================
+- { type: participates_in, source: agibot_x2.input_source.rc,           target: agibot_x2.control_loop.mc_arbitration }
+- { type: participates_in, source: agibot_x2.input_source.vr,           target: agibot_x2.control_loop.mc_arbitration }
+- { type: participates_in, source: agibot_x2.input_source.app_proxy,    target: agibot_x2.control_loop.mc_arbitration }
+- { type: participates_in, source: agibot_x2.input_source.interaction,  target: agibot_x2.control_loop.mc_arbitration }
+- { type: participates_in, source: agibot_x2.input_source.pnc,          target: agibot_x2.control_loop.mc_arbitration }

@@ -1,0 +1,50 @@
+# Half-Cheetah — Interfaces. The "ROS2" of a sim is mjData fields.
+# We model the simulator's observation/action surfaces as interface objects
+# so the validator + agent has consistent terminology with real robots.
+
+objects:
+  - type: Topic
+    id: halfcheetah.if.topic.observation
+    properties:
+      name: "mjData/observation"
+      msg_type: "halfcheetah/Obs"
+      direction: publish_to_outside
+      array_length: 17
+      array_order: [
+        z, root_pitch, bthigh_q, bshin_q, bfoot_q, fthigh_q, fshin_q, ffoot_q,
+        x_vel, z_vel, root_pitch_vel, bthigh_qdot, bshin_qdot, bfoot_qdot,
+        fthigh_qdot, fshin_qdot, ffoot_qdot,
+      ]
+      notes: |
+        Standard gymnasium HalfCheetah-v5 observation. x_position is
+        excluded by default; we use info["x_position"] separately to compute
+        forward velocity for the goal.
+    source: {type: document, locator: "gymnasium HalfCheetah-v5"}
+
+  - type: Topic
+    id: halfcheetah.if.topic.action
+    properties:
+      name: "mjData/ctrl"
+      msg_type: "halfcheetah/Action"
+      direction: subscribe_from_outside
+      array_length: 6
+      array_order: [bthigh, bshin, bfoot, fthigh, fshin, ffoot]
+      range: [-1.0, 1.0]
+      notes: torque scales applied to each actuator at simulator frequency
+    source: {type: document, locator: "gymnasium HalfCheetah-v5"}
+
+  - type: Service
+    id: halfcheetah.if.srv.reset
+    properties:
+      name: "env.reset"
+      srv_type: "gymnasium.Env.reset"
+      notes: deterministic given seed; resets episode state
+    source: {type: document, locator: "gymnasium API"}
+
+  - type: Service
+    id: halfcheetah.if.srv.step
+    properties:
+      name: "env.step"
+      srv_type: "gymnasium.Env.step"
+      notes: applies action, advances physics, returns (obs, reward, term, trunc, info)
+    source: {type: document, locator: "gymnasium API"}
