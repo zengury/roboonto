@@ -1,68 +1,54 @@
-# MY_ROBOT — Hardware Ontology
+# Unitree G1 EDU — Hardware Ontology (perception sensors)
 # ======================================================================
-# 物理实体: Link(连杆), Joint(关节), Sensor(传感器),
-#           ComputeUnit(计算单元), PowerSubsystem(电源), EndEffector(末端)
+# Non-URDF hardware whose semantics the URDF cannot carry. The URDF only
+# gives us the mount *links* (mid360_link, d435_link); this file adds the
+# Sensor objects that say what those links actually are, and mounts them
+# back onto their links via `mounted_on`.
 #
-# 数据来源:
-#   • URDF 文件 — Link/Joint 的权威来源 (用 roboonto import urdf 自动抽取)
-#   • 产品规格文档 — Sensor/ComputeUnit/Power 参数
-#   • SDK 文档 — 传感器型号/参数
+# Compute / Power / IMU / BMS objects live alongside the URDF links in
+# kinematics.yaml (they were added there by the URDF import pass).
+#
+# Sources:
+#   • Head sensor suite (3D LiDAR + depth camera) — Unitree G1 product spec,
+#     corroborated by the URDF mount links mid360_link / d435_link.
 # ======================================================================
 
 objects:
 
-# ── 计算单元 ───────────────────────────────────────────────────
-# 从产品文档 §1.3 获取。至少声明一个开发计算单元。
+  # ── 3D LiDAR ───────────────────────────────────────────────────────
+  - type: Sensor
+    id: unitree_g1_edu.hw.sensor.lidar
+    properties:
+      name: 头部 3D 激光雷达
+      sensor_type: lidar
+      vendor: Livox
+      model: Mid-360
+      fov: 360° horizontal × 59° vertical
+      mount_link: unitree_g1_edu.hw.link.mid360_link
+      notes: 头部 3D LiDAR。URDF 中以 mid360_link 存在；配置相关（含 LiDAR 头的 EDU 版）。
+    source:
+      type: document
+      confidence: medium
+      locator: "Unitree G1 product spec; g1_23dof_rev_1_0.urdf#link[mid360_link]"
 
-# - type: ComputeUnit
-#   id: MY_ROBOT.hw.compute.main
-#   properties:
-#     role: development            # motion_control / development / interaction / perception
-#     network_address: 10.0.1.XX
-#     soc: "Jetson Orin NX"
-#     cpu: "8-core Arm Cortex-A78AE"
-#     gpu: "1024-core Ampere"
-#     memory_gb: 16
-#     storage_gb: 512
-#   source:
-#     type: document
-#     locator: "产品文档 §1.3"
+  # ── 深度相机 ───────────────────────────────────────────────────────
+  - type: Sensor
+    id: unitree_g1_edu.hw.sensor.depth_camera
+    properties:
+      name: 头部深度相机
+      sensor_type: depth_camera
+      vendor: Intel
+      model: RealSense D435
+      mount_link: unitree_g1_edu.hw.link.d435_link
+      notes: 头部前向 RGB-D 深度相机。URDF 中以 d435_link 存在。
+    source:
+      type: document
+      confidence: medium
+      locator: "Unitree G1 product spec; g1_23dof_rev_1_0.urdf#link[d435_link]"
 
-
-# ── 电源 ───────────────────────────────────────────────────────
-# 从产品文档 §1.2 获取
-
-# - type: PowerSubsystem
-#   id: MY_ROBOT.hw.power
-#   properties:
-#     battery_wh: 0
-#     battery_voltage_nominal: 0
-#     pmu_bus_voltages: ["48V", "12V", "5V"]
-#   source:
-#     type: document
-#     locator: "产品文档 §1.2"
-
-
-# ── 传感器 ─────────────────────────────────────────────────────
-# 从产品文档 §1.6 获取。每个传感器声明一个。
-
-# - type: Sensor
-#   id: MY_ROBOT.hw.sensor.imu_chest
-#   properties:
-#     sensor_kind: imu
-#     vendor: "?"
-#     model: "?"
-#     mount_link: MY_ROBOT.hw.link.chest
-#     attached_to: MY_ROBOT.hw.compute.main
-#   source:
-#     type: document
-#     locator: "产品文档 §1.6"
-
-
-# ── Link (连杆) — 由 URDF Importer 自动生成 ─────────────────
-# 不要手写。运行: roboonto import urdf <path/to/robot.urdf>
-
-
-# ── Joint (关节) — 由 URDF Importer 自动生成 ───────────────
-# 不要手写。运行: roboonto import urdf <path/to/robot.urdf>
-# 生成后人工审核: name_human, position_limit, effort_limit
+links:
+  # Mount perception sensors back onto their URDF links.
+  - {type: mounted_on, source: unitree_g1_edu.hw.sensor.lidar, target: unitree_g1_edu.hw.link.mid360_link}
+  - {type: mounted_on, source: unitree_g1_edu.hw.sensor.depth_camera, target: unitree_g1_edu.hw.link.d435_link}
+  # IMU is mounted in the pelvis link.
+  - {type: mounted_on, source: unitree_g1_edu.hw.sensor.imu, target: unitree_g1_edu.hw.link.imu_in_pelvis}

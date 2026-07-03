@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "roboonto"
-version = "0.3.0"
+version = "0.4.0"
 description = "Robot Ontology Framework — machine-readable robot specification for LLM agents"
 readme = "README.md"
 license = {text = "Apache-2.0"}
@@ -31,7 +31,7 @@ include = ["roboonto*"]
 exclude = ["tests*", "robots*", "examples*"]
 
 [tool.setuptools.package-data]
-roboonto = ["framework/profiles/*.yaml"]
+roboonto = ["framework/profiles/*.yaml", "tools/templates/*.html"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

@@ -12,10 +12,12 @@ includes:
 - capability_boundary.yaml
 robot:
   description: 宇树 G1 EDU 版 (23-DOF rev_1_0)。腿6×2 + 腰1 + 臂5×2。hip gear ratio {14.3,
-    22.5}。mode_machine=4。
+    22.5}。mode_machine=4。EDU 版含 Jetson Orin NX 二开单元 (100 TOPS) + 头部 Livox Mid-360 3D
+    LiDAR + Intel RealSense D435 深度相机。默认网段 192.168.123.x。
   firmware_version: mode_machine=4, rev_1_0
   id: unitree_g1_edu
   model: G1 EDU (23-DOF)
+  middleware: Cyclone DDS (direct, no ROS2 middleware)
   roboonto_version: '0.1'
-  ros2_version: MY_ROS2
+  ros2_version: "— (direct Cyclone DDS)"
   vendor: Unitree Robotics

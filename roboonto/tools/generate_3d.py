@@ -1,31 +1,31 @@
 """
-roboonto.tools.generate_3d — Generate 3D ontology visualization HTML.
+roboonto.tools.generate_3d — Generate the 3D ontology-atlas HTML for a pack.
 
-Single module. Uses GraphData schema. Renders via proven reference template.
+Injects GRAPH_DATA (built from the ontology) into the vendored, robot-agnostic
+atlas template and fills the robot title/id placeholders.
 
 Usage:
-  python3 roboonto/tools/generate_3d.py robots/unitree_g1_edu
-  python3 roboonto/tools/generate_3d.py robots/unitree_g1_edu -o output.html
+  python3 -m roboonto.tools.generate_3d robots/unitree_g1_edu
+  python3 -m roboonto.tools.generate_3d robots/unitree_g1_edu -o output.html
 """
 from __future__ import annotations
 import sys
 from pathlib import Path
 
 _HERE = Path(__file__).resolve().parent
-_REF_HTML = Path("/Users/ZQ/Downloads/runtime-console-package/ontology_3d.html")
+_REF_HTML = _HERE / "templates" / "ontology_atlas_3d.html"
 
 
 def generate(ontology_dir: str, output_path: str, *, verify: bool = True) -> int:
-    """Generate 3D HTML from ontology. Replaces JSON data in working reference template."""
+    """Generate the atlas HTML from an ontology by injecting GRAPH_DATA."""
     from roboonto.core.graph_data import GraphData
 
     gd = GraphData.build(ontology_dir)
 
-    # Validate before writing (warnings are logged, errors fail)
     if verify:
         issues = gd.validate()
-        errors = [i for i in issues if not i.startswith("WARNING")]
         warnings = [i for i in issues if i.startswith("WARNING")]
+        errors = [i for i in issues if not i.startswith("WARNING")]
         if warnings:
             print(f"Warnings ({len(warnings)}):", file=sys.stderr)
             for w in warnings[:10]:
@@ -36,19 +36,19 @@ def generate(ontology_dir: str, output_path: str, *, verify: bool = True) -> int
                 print(f"  {e}", file=sys.stderr)
             return 1
 
-    # Read working reference template
     if not _REF_HTML.exists():
-        print(f"Reference template not found: {_REF_HTML}", file=sys.stderr)
-        print("Expected at: ~/Downloads/runtime-console-package/ontology_3d.html", file=sys.stderr)
+        print(f"Atlas template not found: {_REF_HTML}", file=sys.stderr)
         return 1
-
     ref = _REF_HTML.read_text(encoding="utf-8")
 
-    # Find GRAPH_DATA JSON boundaries
+    # Replace the GRAPH_DATA object literal (brace-matched) with real data.
     decl = ref.find("const GRAPH_DATA = {")
+    if decl < 0:
+        print("Template missing 'const GRAPH_DATA = {'", file=sys.stderr)
+        return 1
     jstart = ref.find("{", decl)
-    # Find matching closing brace
     brace = 0
+    jend = -1
     for i in range(jstart, len(ref)):
         if ref[i] == "{":
             brace += 1
@@ -57,34 +57,35 @@ def generate(ontology_dir: str, output_path: str, *, verify: bool = True) -> int
             if brace == 0:
                 jend = i
                 break
+    if jend < 0:
+        print("Template GRAPH_DATA object not balanced", file=sys.stderr)
+        return 1
 
-    # Replace JSON content only; keep const GRAPH_DATA = {}; structure intact
-    graph_json = gd.to_json()
-    result = ref[:jstart] + graph_json + ref[jend + 1:]
+    result = ref[:jstart] + gd.to_json() + ref[jend + 1:]
 
-    # Replace title
+    # Fill robot placeholders.
     robot = gd.robot_meta
     vendor, model = robot.get("vendor", ""), robot.get("model", "")
-    result = result.replace("AgiBot X2 Ontology Atlas", f"{vendor} {model} Ontology Atlas")
-    result = result.replace("AgiBot X2", f"{vendor} {model}")
-    result = result.replace("agibot_x2", gd.robot_id)
+    title = (f"{vendor} {model}".strip()) or gd.robot_id
+    result = result.replace("__ROBOT_TITLE__", title)
+    result = result.replace("__ROBOT_ID__", gd.robot_id)
 
     Path(output_path).write_text(result, encoding="utf-8")
 
     if verify:
-        # Quick sanity: check key strings in output
-        with open(output_path) as f:
-            out = f.read()
-        checks = {
+        out = Path(output_path).read_text(encoding="utf-8")
+        for needle, name in {
             "const GRAPH_DATA = {": "declaration",
-            '"nodes"': "data",
-            '"category_colors"': "category_colors",
+            '"nodes"': "nodes",
+            '"layer"': "layer field",
             '"stats"': "stats",
-        }
-        for needle, name in checks.items():
+        }.items():
             if needle not in out:
                 print(f"VERIFY FAILED: missing {name} in output", file=sys.stderr)
                 return 1
+        if "__ROBOT_TITLE__" in out or "__ROBOT_ID__" in out:
+            print("VERIFY FAILED: unfilled placeholder remains", file=sys.stderr)
+            return 1
 
     print(f"Generated: {output_path}  ({len(gd.nodes)} nodes, {len(gd.links)} links)")
     return 0
@@ -92,7 +93,7 @@ def generate(ontology_dir: str, output_path: str, *, verify: bool = True) -> int
 
 if __name__ == "__main__":
     if len(sys.argv) < 2:
-        print("Usage: python3 roboonto/tools/generate_3d.py <ontology_dir> [-o output.html]")
+        print("Usage: python3 -m roboonto.tools.generate_3d <ontology_dir> [-o output.html]")
         sys.exit(1)
     onto_dir = sys.argv[1]
     output = sys.argv[sys.argv.index("-o") + 1] if "-o" in sys.argv else f"{onto_dir}/roboonto_pack_3d.html"

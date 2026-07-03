@@ -10,6 +10,14 @@
 
 **文档:** [快速上手](docs/zh/QUICKSTART.md) · [规范](docs/zh/SPEC.md) · [MCP 接入](docs/zh/MCP.md) · [Agent 就绪度等级](docs/zh/ARL.md) · [能力层](docs/CAPABILITY_LAYER.md) · [数据来源](SOURCES.md)
 
+<p align="center">
+  <img src="docs/assets/g1_atlas.png" alt="RoboOnto 3D 本体图谱 — 宇树 G1 EDU" width="100%">
+  <br>
+  <em>3D 本体图谱 —— 宇树 G1 EDU pack 汇成一张可检索的分层关系图
+  (硬件 → 运动学 → 计算 → 事件 → 行为 → 接口 → 动作 → 能力)。
+  打开 <a href="robots/unitree_g1_edu/roboonto_pack_3d.html"><code>robots/unitree_g1_edu/roboonto_pack_3d.html</code></a> 查看可交互版本。</em>
+</p>
+
 ```
 厂商资料 ──► [ roboonto 导入器 ] ──► YAML 本体 ──► [ api ] ──► 你的 agent / runtime
                                           ▲               ▲
@@ -26,7 +34,7 @@
 
 | | |
 |---|---|
-| 版本 | v0.3.0 能力层 |
+| 版本 | v0.4.0 — G1 感知 + 3D 图谱 |
 | 覆盖机器人 | 智元 X2 · 宇树 G1 EDU · HalfCheetah(仿真) |
 | Pack 评分 | X2 **customer-ready 100/100** · G1 **customer-ready 100/100**([ARL-3](docs/zh/ARL.md)) |
 | X2 pack 内容 | 256 对象 · 22 动作 · 403 关系 · 11 能力 |

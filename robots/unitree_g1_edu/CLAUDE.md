@@ -10,7 +10,7 @@
 
 ## 2. 已建模内容
 
-- [x] 硬件: Link / Joint / Sensor / ComputeUnit / Power (23 关节, IMU, BMS)
+- [x] 硬件: Link / Joint / Sensor / ComputeUnit / Power (23 关节, IMU, BMS, Livox Mid-360 LiDAR, RealSense D435 深度相机)
 - [x] 接口: DDS Service (sport/arm/audio) · Topic (low_state, imu_state, bms_state, sport_mode_state)
 - [x] 行为: Mode (PASSIVE / WALKRUN / user_ctrl) + transitions
 - [x] 事件: StatusBit ×108 / FaultCode ×12
@@ -21,7 +21,7 @@
 ## 3. 未覆盖内容 (诚实声明)
 
 - 无 cause-effect 关系 (agent 无法诊断根因)
-- 无 perception 建模 (Mid-360 / D435 仅作为 Link 存在, 未建 Sensor 语义)
+- perception 传感器已建 Sensor 语义 (Mid-360 LiDAR / D435 深度相机, mounted_on 链接), 但仍无点云/图像数据流或环境语义建模
 - 无环境建模
 - 关节历史不落 mcap — 需运行时实时采集 (见 capability_boundary.yaml)
 

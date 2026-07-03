@@ -10,6 +10,14 @@ A toolchain that turns robot vendor materials (URDF, SDK, manuals) into a querya
 
 **Docs:** [Quickstart](docs/QUICKSTART.md) · [Specification](docs/SPEC.md) · [MCP integration](docs/MCP.md) · [Agent-Readiness Levels](docs/ARL.md) · [Capability layer](docs/CAPABILITY_LAYER.md) · [Data sources](SOURCES.md) · [中文文档](docs/zh/)
 
+<p align="center">
+  <img src="docs/assets/g1_atlas.png" alt="RoboOnto 3D Ontology Atlas — Unitree G1 EDU" width="100%">
+  <br>
+  <em>3D Ontology Atlas — the Unitree G1 EDU pack as one searchable, layered graph
+  (hardware → kinematics → compute → events → behaviors → interfaces → actions → capabilities).
+  Open <a href="robots/unitree_g1_edu/roboonto_pack_3d.html"><code>robots/unitree_g1_edu/roboonto_pack_3d.html</code></a> for the interactive version.</em>
+</p>
+
 ```
 vendor materials ──► [ roboonto importers ] ──► YAML ontology ──► [ api ] ──► your agent / runtime
                                                        ▲                ▲
@@ -26,10 +34,11 @@ vendor materials ──► [ roboonto importers ] ──► YAML ontology ──
 
 | | |
 |---|---|
-| Version | v0.3.0 capability layer |
+| Version | v0.4.0 — G1 perception + 3D atlas |
 | Robots covered | AgiBot X2 · Unitree G1 EDU · HalfCheetah (sim) |
 | Pack grades | X2 **customer-ready 100/100** · G1 **customer-ready 100/100** ([ARL-3](docs/ARL.md)) |
 | X2 pack contents | 256 objects · 22 actions · 403 links · 11 capabilities |
+| G1 pack contents | 210 objects · 17 actions · 120 links · 7 capabilities · Mid-360 LiDAR + D435 |
 | X2 3D atlas | `robots/agibot_x2/roboonto_pack_3d.html` |
 | Tests | 107 |
 | Python | 3.10+ |
@@ -109,7 +118,7 @@ These mappings live in each pack's `standard_mappings.yaml` and in object-level 
 
 ### 3D ontology atlas
 
-Open `robots/agibot_x2/roboonto_pack_3d.html` in a browser to inspect the X2 ontology interactively. The atlas version is synced with the package version (`v0.3.0`) and supports:
+Open `robots/agibot_x2/roboonto_pack_3d.html` in a browser to inspect the X2 ontology interactively. The atlas version is synced with the package version (`v0.4.0`) and supports:
 
 - `Graph` mode for the whole relation network.
 - `Layered` mode for hardware / compute / interface / action / capability / requirement paths.

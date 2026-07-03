@@ -845,8 +845,10 @@ objects:
   type: Link
 - id: unitree_g1_edu.hw.compute.main
   properties:
+    name: 主控 (运控)
     role: motion_control
     soc: ARM Cortex-A + GPU
+    notes: 内置运控计算单元，跑 loco 低层实时环。G1 标准版即含此单元。
   source:
     locator: unitree_ros/robots/g1_description/README.md
     type: document
@@ -854,16 +856,24 @@ objects:
 - id: unitree_g1_edu.hw.power.battery
   properties:
     name: 电池
-    voltage_nominal: 48
+    capacity_mah: 9000
+    cell_config: 6S Li-ion
+    charge_voltage_max_v: 25.2
+    voltage_nominal: 22.2
+    runtime_hours_approx: 2
+    quick_release: true
   source:
     confidence: medium
+    locator: unitree.com/g1; community spec (9000mAh, 25.2V max, quick-release)
     type: document
   type: PowerSubsystem
 - id: unitree_g1_edu.hw.sensor.imu
   properties:
     name: 骨盆IMU
-    rate_hz: 500
     sensor_type: IMU
+    mount_link: unitree_g1_edu.hw.link.imu_in_pelvis
+    rate_hz: 500
+    outputs: quaternion + gyroscope + accelerometer + rpy
   source:
     locator: unitree_sdk2/idl/hg/IMUState_.hpp
     type: sdk_code
@@ -881,11 +891,13 @@ objects:
     ai_tops: 100
     cpu: 8-core Arm Cortex-A78AE
     gpu: 1024-core NVIDIA Ampere GPU with 32 Tensor Cores
-    notes: EDU版二开计算单元。G1标准版无此配置。
+    memory_gb: 16
+    network_address: 192.168.123.164
+    notes: EDU版二开计算单元。G1标准版无此配置。默认网段 192.168.123.x。
     role: development
     soc: NVIDIA Jetson Orin NX
   source:
     confidence: high
-    locator: unitree.com/g1
+    locator: unitree.com/g1; unitree_sdk2 network config (192.168.123.x)
     type: document
   type: ComputeUnit
