@@ -4,11 +4,8 @@ roboonto.importers.sdk_code — SDK 代码抽取
 从 SDK 源代码（.msg / .srv 接口定义 + Python 示例代码）抽取 ontology 分片。
 
 输入: SDK 源码目录 (lx2501_3-v0.9.0.4/src/)
-输出: 
-  - msg_schemas.yaml    MsgSchema 对象（字段名 + 类型 + 约束）
-  - srv_schemas.yaml    SrvSchema 对象  
-  - topic_defaults.yaml 从代码中推断的 topic→msg_type 默认映射 + QoS 默认值
-  - DIFF_vs_doc.yaml    与 aimdk_doc 抽取结果的差异
+输出:
+  - PackModule AST；Canonical YAML/JSON 由 roboonto.pack.dump_pack 序列化
 
 抽取策略:
   1. .msg 文件 → 字段逐行解析 (field_type field_name = default)
@@ -21,10 +18,27 @@ roboonto.importers.sdk_code — SDK 代码抽取
 
 from __future__ import annotations
 import re
-import json
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Any
+
+from ..pack.builder import attributes_from_mapping
+from ..pack.io import dump_pack, pack_digest
+from ..pack.model import (
+    Binding,
+    Entity,
+    EntityType,
+    ModuleHeader,
+    ObservationSource,
+    PackModule,
+    Provenance,
+    Relation,
+    RelationType,
+    TypeRef,
+)
+
+
+def _id_slug(value: str) -> str:
+    return re.sub(r"[^a-z0-9_]+", "_", value.lower()).strip("_")
 
 
 @dataclass
@@ -259,12 +273,196 @@ class PyExampleParser:
 class SdkCodeImporter:
     """从 SDK 源码抽取 msg/srv schema + topic 使用信息"""
 
-    def __init__(self, robot_id: str = "agibot_x2"):
+    def __init__(
+        self,
+        robot_id: str = "agibot_x2",
+        *,
+        version: str = "0.9.0",
+    ):
         self.robot_id = robot_id
+        self.version = version
         self.msg_parser = MsgSrvParser()
         self.py_parser = PyExampleParser()
 
-    def run(self, sdk_src_dir: Path) -> SdkCodeResult:
+    def run(self, sdk_src_dir: Path) -> PackModule:
+        """Extract the SDK directly into a canonical PackModule AST."""
+
+        result = self.extract(sdk_src_dir)
+        provenance: dict[str, Provenance] = {}
+
+        def provenance_id(source_file: str) -> str:
+            slug = _id_slug(source_file or "sdk")
+            identity = f"prov:sdk:{slug}"
+            provenance.setdefault(
+                identity,
+                Provenance(
+                    id=identity,
+                    kind="sdk_code",
+                    locator=source_file or str(sdk_src_dir),
+                    extractor="sdk_code@0.9",
+                ),
+            )
+            return identity
+
+        entities: list[Entity] = []
+        msg_ids: dict[str, str] = {}
+        for schema in sorted(result.msg_schemas, key=lambda item: (item.package, item.name)):
+            entity_id = f"{self.robot_id}.schema.msg.{_id_slug(schema.name)}"
+            msg_ids[schema.name] = entity_id
+            msg_ids[f"{schema.package}/msg/{schema.name}"] = entity_id
+            entities.append(
+                Entity(
+                    id=entity_id,
+                    type="MsgSchema",
+                    attributes=attributes_from_mapping(
+                        {
+                            "name": schema.name,
+                            "package": schema.package,
+                            "fields": [
+                                {
+                                    "name": field.name,
+                                    "type": field.type,
+                                    "default": field.default,
+                                    "comment": field.comment,
+                                }
+                                for field in schema.fields
+                            ],
+                        }
+                    ),
+                    provenance=(provenance_id(schema.source_file),),
+                )
+            )
+        for schema in sorted(result.srv_schemas, key=lambda item: (item.package, item.name)):
+            entity_id = f"{self.robot_id}.schema.srv.{_id_slug(schema.name)}"
+            entities.append(
+                Entity(
+                    id=entity_id,
+                    type="SrvSchema",
+                    attributes=attributes_from_mapping(
+                        {
+                            "name": schema.name,
+                            "package": schema.package,
+                            "request_fields": [
+                                {
+                                    "name": field.name,
+                                    "type": field.type,
+                                    "default": field.default,
+                                    "comment": field.comment,
+                                }
+                                for field in schema.request_fields
+                            ],
+                            "response_fields": [
+                                {
+                                    "name": field.name,
+                                    "type": field.type,
+                                    "default": field.default,
+                                    "comment": field.comment,
+                                }
+                                for field in schema.response_fields
+                            ],
+                        }
+                    ),
+                    provenance=(provenance_id(schema.source_file),),
+                )
+            )
+
+        bindings: list[Binding] = []
+        sources: list[ObservationSource] = []
+        relations: list[Relation] = []
+        for index, inference in enumerate(
+            sorted(
+                result.topic_inferences,
+                key=lambda item: (item.topic_name, item.msg_type, item.example_file),
+            ),
+            start=1,
+        ):
+            slug = _id_slug(inference.topic_name)
+            topic_id = f"{self.robot_id}.interface.topic.{slug}"
+            if not any(item.id == topic_id for item in entities):
+                entities.append(
+                    Entity(
+                        id=topic_id,
+                        type="Topic",
+                        attributes=attributes_from_mapping(
+                            {
+                                "name": inference.topic_name,
+                                "msg_type": inference.msg_type,
+                                "qos_reliability": inference.qos_reliability,
+                                "qos_durability": inference.qos_durability,
+                            }
+                        ),
+                        provenance=(provenance_id(inference.example_file),),
+                    )
+                )
+            binding_id = f"{self.robot_id}.binding.observe.{slug}"
+            if not any(item.id == binding_id for item in bindings):
+                bindings.append(
+                    Binding(
+                        id=binding_id,
+                        provider=self.robot_id,
+                        protocol="ros2_topic",
+                        endpoint=inference.topic_name,
+                        message_type=inference.msg_type,
+                        delivery_semantics="observation_stream",
+                        attributes=attributes_from_mapping(
+                            {
+                                "qos_reliability": inference.qos_reliability,
+                                "qos_durability": inference.qos_durability,
+                            }
+                        ),
+                        provenance=(provenance_id(inference.example_file),),
+                    )
+                )
+                sources.append(
+                    ObservationSource(
+                        id=f"{self.robot_id}.observation_source.{slug}",
+                        binding=binding_id,
+                        value_type=TypeRef("record", name=inference.msg_type),
+                        realtime_available=True,
+                        qualification="source_only",
+                        provenance=(provenance_id(inference.example_file),),
+                    )
+                )
+            schema_id = msg_ids.get(inference.msg_type)
+            if schema_id:
+                relations.append(
+                    Relation(
+                        id=f"{self.robot_id}.relation.uses_schema.{index:04d}",
+                        predicate="uses_schema",
+                        source=topic_id,
+                        target=schema_id,
+                        provenance=(provenance_id(inference.example_file),),
+                    )
+                )
+
+        pack = PackModule(
+            module=ModuleHeader(
+                id=self.robot_id,
+                version=self.version,
+                target=self.robot_id,
+                description="Target pack generated directly from SDK code",
+            ),
+            types=(
+                EntityType("MsgSchema", "interface"),
+                EntityType("SrvSchema", "interface"),
+                EntityType("Topic", "interface"),
+            ),
+            relation_types=(
+                RelationType("uses_schema", ("Topic",), ("MsgSchema",)),
+            ),
+            entities=tuple(sorted(entities, key=lambda item: item.id)),
+            relations=tuple(sorted(relations, key=lambda item: item.id)),
+            observation_sources=tuple(sorted(sources, key=lambda item: item.id)),
+            bindings=tuple(sorted(bindings, key=lambda item: item.id)),
+            provenance=tuple(sorted(provenance.values(), key=lambda item: item.id)),
+            exports={"types": ("MsgSchema", "SrvSchema", "Topic")},
+        )
+        pack.validate()
+        return pack.with_digest(pack_digest(pack))
+
+    def extract(self, sdk_src_dir: Path) -> SdkCodeResult:
+        """Compatibility extraction result for legacy diff tooling."""
+
         result = SdkCodeResult(robot_id=self.robot_id)
 
         # 1. 解析 .msg 文件
@@ -332,78 +530,35 @@ def main():
     importer = SdkCodeImporter(robot_id=args.robot_id)
     result = importer.run(args.sdk_src)
 
-    output = {
-        "robot_id": result.robot_id,
-        "msg_schemas_count": len(result.msg_schemas),
-        "srv_schemas_count": len(result.srv_schemas),
-        "topic_inferences_count": len(result.topic_inferences),
-    }
-
     if args.output:
-        # 完整输出
-        full = {
-            "msg_schemas": [
-                {"name": s.name, "package": s.package, 
-                 "fields": [{"name": f.name, "type": f.type} for f in s.fields]}
-                for s in result.msg_schemas
-            ],
-            "srv_schemas": [
-                {"name": s.name, "package": s.package,
-                 "request_fields": [{"name": f.name, "type": f.type} for f in s.request_fields],
-                 "response_fields": [{"name": f.name, "type": f.type} for f in s.response_fields]}
-                for s in result.srv_schemas
-            ],
-            "topic_inferences": [
-                {"topic": i.topic_name, "msg_type": i.msg_type,
-                 "qos": f"{i.qos_reliability}/{i.qos_durability}",
-                 "from": i.example_file}
-                for i in result.topic_inferences
-            ],
-        }
-        args.output.write_text(json.dumps(full, ensure_ascii=False, indent=2))
+        dump_pack(result, args.output)
         print(f"Wrote {args.output}")
 
-    print(f"\nSDK Code Extraction Complete:")
-    print(f"  .msg schemas: {len(result.msg_schemas)}")
-    print(f"  .srv schemas: {len(result.srv_schemas)}")
-    print(f"  Topic inferences (from code examples): {len(result.topic_inferences)}")
-    print(f"  Warnings: {len(result.warnings)}")
+    print("\nSDK PackModule Extraction Complete:")
+    for key, value in result.count().items():
+        print(f"  {key}: {value}")
 
 
-def import_sdk_code(sdk_dir: str, output_dir: str, *, robot_id: str = "imported_robot") -> dict:
-    """Public API: extract msg/srv schemas from SDK source into output_dir."""
-    import json
+def import_sdk_code(
+    sdk_dir: str,
+    output: str,
+    *,
+    robot_id: str = "imported_robot",
+    version: str = "0.9.0",
+) -> PackModule:
+    """Public API: compile SDK source directly into a canonical PackModule."""
+
     from pathlib import Path
 
     sdk_p = Path(sdk_dir)
-    out_p = Path(output_dir)
-    out_p.mkdir(parents=True, exist_ok=True)
-
-    importer = SdkCodeImporter(robot_id=robot_id)
+    importer = SdkCodeImporter(robot_id=robot_id, version=version)
     result = importer.run(sdk_p)
-
-    output = {
-        "msg_schemas": [
-            {"name": s.name, "package": s.package,
-             "fields": [{"name": f.name, "type": f.type} for f in s.fields]}
-            for s in result.msg_schemas
-        ],
-        "srv_schemas": [
-            {"name": s.name, "package": s.package,
-             "request_fields": [{"name": f.name, "type": f.type} for f in s.request_fields],
-             "response_fields": [{"name": f.name, "type": f.type} for f in s.response_fields]}
-            for s in result.srv_schemas
-        ],
-        "topic_inferences": [
-            {"topic": i.topic_name, "msg_type": i.msg_type, "from": i.example_file}
-            for i in result.topic_inferences
-        ],
-    }
-
-    (out_p / "sdk_extraction.json").write_text(
-        json.dumps(output, ensure_ascii=False, indent=2), encoding="utf-8"
-    )
-    return output
+    out_path = Path(output)
+    if out_path.suffix.lower() not in {".json", ".yaml", ".yml"}:
+        out_path.mkdir(parents=True, exist_ok=True)
+        out_path = out_path / f"{robot_id}.pack.yaml"
+    dump_pack(result, out_path)
+    return result
 
 
 if __name__ == "__main__":

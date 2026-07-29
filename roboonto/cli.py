@@ -3,6 +3,9 @@ roboonto CLI
 ============
 
 用法:
+  roboonto pack migrate <legacy_dir> -o <robot.pack.yaml>
+  roboonto pack validate <robot.pack.yaml>
+  roboonto pack inspect <robot.pack.yaml> [--json]
   roboonto validate <ontology_dir>
   roboonto query   <ontology_dir> <query_kind> [args...]
   roboonto check-action <ontology_dir> <action_id> --params '{}' --state '{}'
@@ -30,6 +33,7 @@ from .framework.readiness import Readiness, GRADE_ORDER
 
 
 def cmd_validate(args):
+    _legacy_notice("validate")
     loader = OntologyLoader(Path(args.dir))
     loader.load()
     issues = loader.validate()
@@ -44,6 +48,7 @@ def cmd_validate(args):
 
 
 def cmd_query(args):
+    _legacy_notice("query")
     loader = OntologyLoader(Path(args.dir))
     ontology = loader.load()
     q = Query(ontology)
@@ -105,6 +110,7 @@ def cmd_query(args):
 
 
 def cmd_check_action(args):
+    _legacy_notice("check-action")
     loader = OntologyLoader(Path(args.dir))
     ontology = loader.load()
     v = ActionValidator(ontology)
@@ -116,6 +122,7 @@ def cmd_check_action(args):
 
 
 def cmd_demo(args):
+    _legacy_notice("demo")
     loader = OntologyLoader(Path(args.dir))
     ontology = loader.load()
     loader.validate()
@@ -142,6 +149,7 @@ def cmd_readiness(args):
 
 
 def cmd_infer_capabilities(args):
+    _legacy_notice("infer-capabilities")
     loader = OntologyLoader(Path(args.dir))
     ontology = loader.load()
     draft = infer_capability_drafts(ontology)
@@ -162,39 +170,129 @@ def cmd_import(args):
 
 def _cmd_import_urdf(args):
     from .importers.urdf import URDFImporter
-    robot_id = Path(args.output).name if args.output else Path(args.urdf_file).parent.name
-    importer = URDFImporter(robot_id=robot_id)
-    result = importer.run(Path(args.urdf_file))
-    output_dir = Path(args.output) if args.output else Path(args.urdf_file).parent
-    output_dir.mkdir(parents=True, exist_ok=True)
-    
-    # kinematics.yaml: Link objects + parent_of relations
-    (output_dir / "kinematics.yaml").write_text(
-        yaml.dump({"objects": result.links, "links": result.parent_of_links},
-                  allow_unicode=True, default_flow_style=False)
+    from .pack import dump_pack
+
+    robot_id = args.robot_id or Path(args.urdf_file).stem
+    importer = URDFImporter(robot_id=robot_id, version=args.version)
+    pack = importer.run(Path(args.urdf_file))
+    output = _pack_output_path(args.output, robot_id, Path(args.urdf_file).parent)
+    finalized = dump_pack(pack, output)
+    counts = finalized.count()
+    print(
+        f"PackModule: {finalized.module.id}@{finalized.module.version}  "
+        f"entities={counts['entities']}  relations={counts['relations']}"
     )
-    # joints_patch.yaml: joint details (position_limit, etc.)
-    (output_dir / "joints_patch.yaml").write_text(
-        yaml.dump({"objects": result.joints}, allow_unicode=True, default_flow_style=False)
-    )
-    print(f"Links: {len(result.links)}  Joints: {len(result.joints)}")
-    print(f"  → {output_dir / 'kinematics.yaml'}")
-    print(f"  → {output_dir / 'joints_patch.yaml'}")
-    if result.warnings:
-        for w in result.warnings:
-            print(f"  ⚠️  {w}")
+    print(f"  → {output}")
     return 0
 
 
 def _cmd_import_sdk(args):
     from .importers.sdk_code import import_sdk_code
     sdk_dir = Path(args.sdk_dir)
-    output_dir = Path(args.output) if args.output else Path("robots/new_robot")
+    robot_id = args.robot_id or sdk_dir.name
+    output = _pack_output_path(args.output, robot_id, Path.cwd())
     print(f"Importing SDK: {sdk_dir}")
-    result = import_sdk_code(str(sdk_dir), str(output_dir))
-    print(f"Messages: {len(result.msg_schemas)}  Services: {len(result.srv_schemas)}")
-    print(f"  → {output_dir / 'interfaces.yaml'}")
+    result = import_sdk_code(
+        str(sdk_dir),
+        str(output),
+        robot_id=robot_id,
+        version=args.version,
+    )
+    counts = result.count()
+    print(
+        f"PackModule: {result.module.id}@{result.module.version}  "
+        f"entities={counts['entities']}  bindings={counts['bindings']}"
+    )
+    print(f"  → {output}")
     return 0
+
+
+def cmd_pack(args):
+    from .pack import load_pack
+
+    if args.pack_cmd == "migrate":
+        from .compat import LegacyPackMigrator
+        from .pack import dump_pack
+
+        result = LegacyPackMigrator(output_version=args.version).migrate(args.legacy_dir)
+        output = Path(args.output)
+        finalized = dump_pack(result.pack, output)
+        blocking = [
+            issue for issue in finalized.migration_issues if issue.blocks_execution
+        ]
+        print(
+            f"已生成 {finalized.module.id}@{finalized.module.version}: "
+            f"{output}"
+        )
+        print(
+            f"源对象={result.source_counts['objects']} "
+            f"源关系={result.source_counts['relations']} "
+            f"源动作={result.source_counts['actions']}"
+        )
+        print(
+            f"规范实体={len(finalized.entities)} "
+            f"规范关系={len(finalized.relations)} "
+            f"TargetAction={len(finalized.target_actions)} "
+            f"阻塞项={len(blocking)}"
+        )
+        print(f"digest={finalized.module.content_digest}")
+        if args.strict and blocking:
+            for issue in blocking:
+                print(f"  {issue.id}: {issue.message}", file=sys.stderr)
+            return 1
+        return 0
+
+    pack = load_pack(args.path)
+    if args.pack_cmd == "validate":
+        print(
+            f"有效 PackModule: {pack.module.id}@{pack.module.version} "
+            f"{pack.module.content_digest}"
+        )
+        return 0
+    if args.pack_cmd == "inspect":
+        payload = {
+            "module": pack.module.to_data(),
+            "counts": pack.count(),
+            "exports": {
+                key: list(values) for key, values in sorted(pack.exports.items())
+            },
+            "migration": {
+                "issues": len(pack.migration_issues),
+                "blocking": sum(
+                    1 for issue in pack.migration_issues if issue.blocks_execution
+                ),
+            },
+        }
+        if args.json:
+            print(json.dumps(payload, ensure_ascii=False, indent=2))
+        else:
+            print(f"{pack.module.id}@{pack.module.version}")
+            for key, value in payload["counts"].items():
+                print(f"  {key}: {value}")
+            print(f"  digest: {pack.module.content_digest}")
+            print(
+                f"  migration: {payload['migration']['issues']} issues, "
+                f"{payload['migration']['blocking']} blocking"
+            )
+        return 0
+    return 2
+
+
+def _pack_output_path(raw: str, robot_id: str, default_dir: Path) -> Path:
+    if not raw:
+        return default_dir / f"{robot_id}.pack.yaml"
+    path = Path(raw)
+    if path.suffix.lower() in {".json", ".yaml", ".yml"}:
+        return path
+    return path / f"{robot_id}.pack.yaml"
+
+
+def _legacy_notice(command: str) -> None:
+    print(
+        f"提示：`roboonto {command}` 使用 0.9 compatibility 层；"
+        "生产链路请使用 `roboonto pack ...`。",
+        file=sys.stderr,
+    )
 
 
 def cmd_build(args):
@@ -240,6 +338,26 @@ def build_parser():
     p = argparse.ArgumentParser(prog="roboonto")
     sub = p.add_subparsers(dest="cmd", required=True)
 
+    p_pack = sub.add_parser("pack", help="编译、验证和检查规范 PackModule")
+    pack_sub = p_pack.add_subparsers(dest="pack_cmd", required=True)
+    p_pm = pack_sub.add_parser("migrate", help="一次性迁移旧 RoboOnto 目录")
+    p_pm.add_argument("legacy_dir")
+    p_pm.add_argument("--output", "-o", required=True)
+    p_pm.add_argument("--version", default="0.9.0")
+    p_pm.add_argument(
+        "--strict",
+        action="store_true",
+        help="存在阻塞执行的迁移项时返回非零状态",
+    )
+    p_pm.set_defaults(func=cmd_pack)
+    p_pv = pack_sub.add_parser("validate", help="验证 Schema、静态语义和摘要")
+    p_pv.add_argument("path")
+    p_pv.set_defaults(func=cmd_pack)
+    p_pi = pack_sub.add_parser("inspect", help="检查 PackModule 摘要")
+    p_pi.add_argument("path")
+    p_pi.add_argument("--json", action="store_true")
+    p_pi.set_defaults(func=cmd_pack)
+
     p_v = sub.add_parser("validate", help="Load + validate an ontology directory")
     p_v.add_argument("dir")
     p_v.set_defaults(func=cmd_validate)
@@ -268,14 +386,18 @@ def build_parser():
     # Import
     p_import = sub.add_parser("import", help="Import data into ontology")
     import_sub = p_import.add_subparsers(dest="import_cmd", required=True)
-    p_urdf = import_sub.add_parser("urdf", help="Import URDF → kinematics + joints")
+    p_urdf = import_sub.add_parser("urdf", help="URDF → PackModule")
     p_urdf.add_argument("urdf_file")
     p_urdf.add_argument("--output", "-o", default="")
+    p_urdf.add_argument("--robot-id", default="")
+    p_urdf.add_argument("--version", default="0.9.0")
     p_urdf.add_argument("--mesh-root", default="")
     p_urdf.set_defaults(func=cmd_import)
-    p_sdk = import_sub.add_parser("sdk-code", help="Import SDK .msg/.srv → interfaces")
+    p_sdk = import_sub.add_parser("sdk-code", help="SDK .msg/.srv → PackModule")
     p_sdk.add_argument("sdk_dir")
     p_sdk.add_argument("--output", "-o", default="")
+    p_sdk.add_argument("--robot-id", default="")
+    p_sdk.add_argument("--version", default="0.9.0")
     p_sdk.set_defaults(func=cmd_import)
 
     # Readiness

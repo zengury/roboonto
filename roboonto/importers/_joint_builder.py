@@ -1,9 +1,16 @@
 #!/usr/bin/env python3
-"""批量生成灵犀 X2 的 30 DOF 关节 YAML 片段。
-这既是 importer 雏形,也是 Sprint 0 产出的一部分。"""
+"""批量生成灵犀 X2 的 30 DOF 关节 PackModule。
+
+``build_all_joints`` 保留旧内存结构供迁移对照；命令行只写规范
+PackModule，不再生成旧 ontology 分片。
+"""
 import math
-import yaml
+import argparse
 from pathlib import Path
+
+from ..pack import dump_pack, pack_digest
+from ..pack.builder import attributes_from_mapping
+from ..pack.model import Entity, EntityType, ModuleHeader, PackModule, Provenance
 
 # ------- 关节限位(来自 AimDK §1.7,单位:度) -------
 ARM_LIMITS_DEG = {
@@ -155,9 +162,39 @@ def build_all_joints():
 
 
 if __name__ == "__main__":
-    joints = build_all_joints()
-    print(yaml.safe_dump(
-        {"objects": joints},
-        allow_unicode=True, sort_keys=False, width=120,
-    ))
-    print(f"# Total: {len(joints)} joints", flush=True)
+    parser = argparse.ArgumentParser(description="生成 X2 关节 PackModule")
+    parser.add_argument(
+        "--output",
+        "-o",
+        type=Path,
+        default=Path("agibot_x2.joints.pack.yaml"),
+    )
+    args = parser.parse_args()
+    provenance = Provenance(
+        id="prov:aimdk:joints",
+        kind="document",
+        locator="aimdk.docx#§1.7",
+        extractor="joint_builder@0.9",
+    )
+    pack = PackModule(
+        module=ModuleHeader(
+            id="agibot_x2_joints",
+            version="0.9.0",
+            target="agibot_x2",
+            description="AgiBot X2 30 DOF 关节事实模块",
+        ),
+        types=(EntityType("Joint", "hardware"),),
+        entities=tuple(
+            Entity(
+                id=item["id"],
+                type="Joint",
+                attributes=attributes_from_mapping(item["properties"]),
+                provenance=(provenance.id,),
+            )
+            for item in build_all_joints()
+        ),
+        provenance=(provenance,),
+        exports={"types": ("Joint",)},
+    )
+    dump_pack(pack.with_digest(pack_digest(pack)), args.output)
+    print(f"已写入 {len(pack.entities)} 个关节: {args.output}")

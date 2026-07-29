@@ -1,16 +1,15 @@
-# URDF ↔ Ontology Diff Report
+# URDF ↔ 旧 Ontology 差异报告
 
-- URDF:      `x2_ultra.urdf` (robot name: `x2t2.5`)
-- Ontology:  `robots/agibot_x2/hardware.yaml` (pre-patch)
-- Total diffs: **53** joint conflicts, **3** sensor suggestions
+- URDF：`x2_ultra.urdf`（机器人名称：`x2t2.5`）
+- 旧 Ontology：`robots/agibot_x2/hardware.yaml`（修订前）
+- 差异总数：**53** 个关节冲突，**3** 个传感器补充建议
 
-In every conflict the **URDF wins** — URDF is the kinematics/dynamics
-source of truth. The AimDK document often gives documentation-level
-approximations (typos, direction conventions, ''peak 120 Nm'' headline spec).
+所有冲突均以 **URDF 为准**。URDF 是运动学与动力学的权威来源；AimDK 文档中的
+部分数值是文档级近似，可能受到笔误、方向约定或“峰值 120 Nm”汇总规格影响。
 
-## Position limit conflicts
+## 位置限位冲突
 
-| joint | old | new | urdf_name |
+| 关节 | 旧值 | 新值 | URDF 名称 |
 |---|---|---|---|
 | agibot_x2.hw.left_leg.hip_pitch | [-2.5569, 2.5569] rad | [-2.704, 2.556] rad | left_hip_pitch_joint |
 | agibot_x2.hw.left_leg.hip_roll | [-0.2356, 2.906] rad | [-0.235, 2.906] rad | left_hip_roll_joint |
@@ -44,9 +43,9 @@ approximations (typos, direction conventions, ''peak 120 Nm'' headline spec).
 | agibot_x2.hw.head.head_yaw | [-0.3491, 0.3491] rad | [-0.366, 0.366] rad | head_yaw_joint |
 | agibot_x2.hw.head.head_pitch | [0.0, 0.0] rad | [-0.3838, 0.3838] rad | head_pitch_joint |
 
-## Effort / torque conflicts (⚠ ontology had one-size-fits-all 120 Nm)
+## 力矩冲突（旧 Ontology 对所有关节统一填写 120 Nm）
 
-| joint | old | new | urdf_name |
+| 关节 | 旧值 | 新值 | URDF 名称 |
 |---|---|---|---|
 | agibot_x2.hw.left_leg.ankle_pitch | torque_peak=120 Nm (ontology) | effort_limit=36.0 Nm (URDF) | left_ankle_pitch_joint |
 | agibot_x2.hw.left_leg.ankle_roll | torque_peak=120 Nm (ontology) | effort_limit=24.0 Nm (URDF) | left_ankle_roll_joint |
@@ -71,14 +70,14 @@ approximations (typos, direction conventions, ''peak 120 Nm'' headline spec).
 | agibot_x2.hw.head.head_yaw | torque_peak=120 Nm (ontology) | effort_limit=2.6 Nm (URDF) | head_yaw_joint |
 | agibot_x2.hw.head.head_pitch | torque_peak=120 Nm (ontology) | effort_limit=0.6 Nm (URDF) | head_pitch_joint |
 
-## Suggested new ontology objects
+## 建议补充的实体
 
-- **missing_sensor**: URDF `imu_in_torso_joint` — URDF declares this sensor link but no ontology Sensor object matches
-  - parent: `agibot_x2.hw.link.torso_link`
-  - child:  `agibot_x2.hw.link.imu_in_torso_link`
-- **missing_sensor**: URDF `imu_in_head_joint` — URDF declares this sensor link but no ontology Sensor object matches
-  - parent: `agibot_x2.hw.link.head_pitch_link`
-  - child:  `agibot_x2.hw.link.imu_in_head_link`
-- **missing_sensor**: URDF `stereo_head_front` — URDF declares this sensor link but no ontology Sensor object matches
-  - parent: `agibot_x2.hw.link.head_pitch_link`
-  - child:  `agibot_x2.hw.link.stereo_head_front`
+- **缺失传感器**：URDF `imu_in_torso_joint` 声明了传感器 Link，但旧 Ontology 中没有匹配的 Sensor。
+  - 父级：`agibot_x2.hw.link.torso_link`
+  - 子级：`agibot_x2.hw.link.imu_in_torso_link`
+- **缺失传感器**：URDF `imu_in_head_joint` 声明了传感器 Link，但旧 Ontology 中没有匹配的 Sensor。
+  - 父级：`agibot_x2.hw.link.head_pitch_link`
+  - 子级：`agibot_x2.hw.link.imu_in_head_link`
+- **缺失传感器**：URDF `stereo_head_front` 声明了传感器 Link，但旧 Ontology 中没有匹配的 Sensor。
+  - 父级：`agibot_x2.hw.link.head_pitch_link`
+  - 子级：`agibot_x2.hw.link.stereo_head_front`

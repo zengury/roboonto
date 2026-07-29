@@ -7,22 +7,30 @@ roboonto.importers.urdf
 输入:
     URDF 文件路径 + mesh 目录根路径
 输出:
-    - kinematics.yaml    Link 对象 + parent_of 关系 + fixed 挂载
-    - joints_patch.yaml  覆盖/补全 hardware.yaml 里的 Joint 对象(用 URDF 权威数据)
-    - diff_report.md     URDF vs 现有 ontology 的冲突报告
+    - PackModule AST；Canonical YAML/JSON 由 roboonto.pack.dump_pack 序列化
 
 设计纪律:
     1. URDF 是运动学/动力学权威。文档里的数字若冲突,URDF 赢。
     2. 但文档给了中文 name_human、业务语义(如 safety_note),这些保留。
-    3. Importer 不"合并",而是"patch"—— 产出可审阅的 YAML 片段。
+    3. V0.9 Importer 直接构造 PackModule，不再产出旧 ontology 分片。
 """
 
 from __future__ import annotations
 import xml.etree.ElementTree as ET
-import math
 from dataclasses import dataclass, field
 from pathlib import Path
-import yaml
+
+from ..pack.builder import attributes_from_mapping
+from ..pack.io import dump_pack, pack_digest
+from ..pack.model import (
+    Entity,
+    EntityType,
+    ModuleHeader,
+    PackModule,
+    Provenance,
+    Relation,
+    RelationType,
+)
 
 
 # ============================================================
@@ -64,10 +72,99 @@ class URDFImportResult:
 
 
 class URDFImporter:
-    def __init__(self, robot_id: str = "agibot_x2"):
+    def __init__(
+        self,
+        robot_id: str = "agibot_x2",
+        *,
+        version: str = "0.9.0",
+    ):
         self.robot_id = robot_id
+        self.version = version
 
-    def run(self, urdf_path: Path) -> URDFImportResult:
+    def run(self, urdf_path: Path) -> PackModule:
+        """Parse URDF directly into the canonical PackModule AST."""
+
+        result = self.extract(urdf_path)
+        provenance = Provenance(
+            id="prov:urdf",
+            kind="urdf",
+            locator=urdf_path.name,
+            extractor="urdf_importer@0.9",
+        )
+        links = tuple(
+            Entity(
+                id=str(item["id"]),
+                type="Link",
+                attributes=attributes_from_mapping(item.get("properties")),
+                provenance=(provenance.id,),
+            )
+            for item in result.links
+        )
+        joints = []
+        for item in result.joints:
+            urdf_name = str(item["id_by_urdf_name"])
+            joint_id = (
+                _URDF_TO_ONTO.get(urdf_name)
+                if self.robot_id == "agibot_x2"
+                else None
+            ) or f"{self.robot_id}.hw.joint.{urdf_name.removesuffix('_joint')}"
+            joints.append(
+                Entity(
+                    id=joint_id,
+                    type="Joint",
+                    attributes=attributes_from_mapping(item.get("properties")),
+                    provenance=(provenance.id,),
+                )
+            )
+        relations = tuple(
+            Relation(
+                id=f"{self.robot_id}.relation.parent_of.{index:04d}",
+                predicate="parent_of",
+                source=str(item["source"]),
+                target=str(item["target"]),
+                attributes=attributes_from_mapping(
+                    {
+                        key: value
+                        for key, value in item.items()
+                        if key not in {"type", "source", "target"}
+                    }
+                ),
+                provenance=(provenance.id,),
+            )
+            for index, item in enumerate(
+                sorted(
+                    result.parent_of_links,
+                    key=lambda value: (str(value["source"]), str(value["target"])),
+                ),
+                start=1,
+            )
+        )
+        pack = PackModule(
+            module=ModuleHeader(
+                id=self.robot_id,
+                version=self.version,
+                target=self.robot_id,
+                model=result.urdf_name,
+                description="Target pack generated directly from URDF",
+            ),
+            types=(
+                EntityType("Joint", "hardware"),
+                EntityType("Link", "hardware"),
+            ),
+            relation_types=(
+                RelationType("parent_of", ("Link",), ("Link",)),
+            ),
+            entities=tuple(sorted((*links, *joints), key=lambda value: value.id)),
+            relations=relations,
+            provenance=(provenance,),
+            exports={"types": ("Joint", "Link")},
+        )
+        pack.validate()
+        return pack.with_digest(pack_digest(pack))
+
+    def extract(self, urdf_path: Path) -> URDFImportResult:
+        """Compatibility extraction object used only by the old diff tooling."""
+
         tree = ET.parse(urdf_path)
         root = tree.getroot()
         result = URDFImportResult(
@@ -448,82 +545,17 @@ def write_diff_report(
 
 def main():
     import argparse
-    ap = argparse.ArgumentParser()
+    ap = argparse.ArgumentParser(description="URDF → RoboOnto PackModule 0.9")
     ap.add_argument("urdf_path", type=Path)
-    ap.add_argument("--robot-dir", type=Path, required=True,
-                    help="robots/<id>/ directory (reads hardware.yaml, writes patch)")
-    ap.add_argument("--write-patch", action="store_true")
+    ap.add_argument("--output", "-o", type=Path, required=True)
+    ap.add_argument("--robot-id", default="")
+    ap.add_argument("--version", default="0.9.0")
     args = ap.parse_args()
 
-    # 1. import URDF
-    imp = URDFImporter(robot_id="agibot_x2")
-    result = imp.run(args.urdf_path)
-    print(f"[urdf] links={len(result.links)} revolute={len(result.joints)} fixed={len(result.fixed_mounts)}")
-
-    # 2. load existing ontology
-    hw_path = args.robot_dir / "hardware.yaml"
-    hw = yaml.safe_load(hw_path.read_text())
-    existing_joints = [o for o in hw["objects"] if o.get("type") == "Joint"]
-
-    # 3. patch joints
-    patched_joints, joint_diffs = patch_joints(result, existing_joints)
-    print(f"[patch] joints={len(patched_joints)} diffs={len(joint_diffs)}")
-
-    # 4. sensor mounts
-    mount_links, mount_suggestions = mount_relations(result)
-    print(f"[mount] mount_links={len(mount_links)} suggestions={len(mount_suggestions)}")
-
-    # 5. emit kinematics.yaml (new file)
-    kinematics_doc = {
-        "# __header__": "Generated by roboonto.importers.urdf from x2_ultra.urdf",
-        "objects": result.links,
-        "links": result.parent_of_links + mount_links,
-    }
-    # drop the comment header key before dumping (YAML doesn't preserve)
-    kinematics_doc.pop("# __header__")
-    kin_path = args.robot_dir / "kinematics.yaml"
-    kin_path.write_text(
-        "# Generated by roboonto.importers.urdf from x2_ultra.urdf\n"
-        "# Contains Link objects + parent_of tree + sensor mount relations\n\n" +
-        yaml.safe_dump(kinematics_doc, allow_unicode=True, sort_keys=False, width=120),
-        encoding="utf-8",
-    )
-    print(f"[write] {kin_path}")
-
-    # 6. emit joints_patch.yaml (replaces the joint portion of hardware.yaml on apply)
-    patch_doc = {
-        "# __header__": "URDF-authoritative joint data + ontology business semantics",
-        "objects": patched_joints,
-    }
-    patch_doc.pop("# __header__")
-    patch_path = args.robot_dir / "joints_patch.yaml"
-    patch_path.write_text(
-        "# Generated by roboonto.importers.urdf — URDF-authoritative joint data.\n"
-        "# To apply: replace the Joint objects in hardware.yaml with these.\n\n" +
-        yaml.safe_dump(patch_doc, allow_unicode=True, sort_keys=False, width=120),
-        encoding="utf-8",
-    )
-    print(f"[write] {patch_path}")
-
-    # 7. diff report
-    report_path = args.robot_dir / "DIFF_REPORT.md"
-    write_diff_report(
-        joint_diffs, mount_suggestions, result.warnings,
-        result.urdf_name, report_path,
-    )
-    print(f"[write] {report_path}")
-
-    # 8. (optional) apply patch to hardware.yaml
-    if args.write_patch:
-        # Replace joints in hardware.yaml
-        new_objects = [o for o in hw["objects"] if o.get("type") != "Joint"] + patched_joints
-        hw["objects"] = new_objects
-        hw_path.write_text(
-            "# AgiBot X2 — Hardware Ontology (URDF-patched by roboonto/importers/urdf.py)\n\n" +
-            yaml.safe_dump(hw, allow_unicode=True, sort_keys=False, width=120),
-            encoding="utf-8",
-        )
-        print(f"[apply] patched {hw_path}")
+    robot_id = args.robot_id or args.urdf_path.stem
+    pack = URDFImporter(robot_id=robot_id, version=args.version).run(args.urdf_path)
+    dump_pack(pack, args.output)
+    print(f"已写入 PackModule: {args.output}；{pack.count()}")
 
 
 if __name__ == "__main__":

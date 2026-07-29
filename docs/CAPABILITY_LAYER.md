@@ -1,75 +1,25 @@
-# Capability Layer
+# Capability 层
 
-RoboOnto now models robot affordances as a first-class layer:
-
-```text
-SoftwareComponent / Sensor
-  -> provides_capability -> Capability
-  -> exposed_via -> Topic / Service / Action
-  -> satisfies_requirement -> ServiceRequirement
-```
-
-This follows the practical lesson from IEEE/RoSO-style robotics ontologies:
-APIs explain how to call a robot; capabilities explain what the robot can do.
-
-## What Changed
-
-- `Capability`: semantic ability such as locomotion velocity control, power diagnostics, visual/depth sensing.
-- `SoftwareComponent`: provider boundary for capabilities.
-- `CapabilityParameter`: semantic parameters like velocity axes, thresholds, confidence, ranges.
-- `ServiceRequirement`: task or service need that can be matched against capabilities.
-- `standard_mappings.yaml`: registry for IEEE 1872.2/AuR, CORA, and RoSO terms.
-
-## Agent Effect
-
-Before this layer, an agent had to scan actions and infer intent:
+RoboOnto 0.9 把旧普通对象中的 `Capability` 与 `ServiceRequirement` 提升为
+PackModule 一等声明：
 
 ```text
-list_actions -> inspect 22 actions -> guess which ones form "safe base motion"
+Provider Entity
+  → Capability
+  → TargetAction / Interface
+  → ServiceRequirement
 ```
 
-Now it can ask for an affordance menu:
+Capability 描述机器人提供什么，TargetAction/Binding 描述具身执行编译器如何选择
+目标入口。二者不能合并：同一能力可能有多个目标动作或接口，同一 TargetAction 也
+不能直接承诺 Duty Action 的世界效果。
 
-```sh
-python3 -m roboonto.cli query robots/agibot_x2 agent-affordances navigation
-```
+静态要求：
 
-The result is already grouped:
+- Provider、Interface、TargetAction 和 Requirement 引用必须存在；
+- Capability 必须带 `qualification`；
+- 自然语言安全边界形成 MigrationIssue；
+- 只有 `exports.capabilities` 中的符号可被 Duty 依赖；
+- `review_required` 默认不能满足生产 Duty 链接。
 
-- capability: `agibot_x2.cap.locomotion_velocity_control`
-- provider: `agibot_x2.sw.motion_controller`
-- actions: `set_forward_velocity`, `set_lateral_velocity`, `set_angular_velocity`
-- interface: `/aima/mc/locomotion/velocity`
-- constraints: mode, input source, static-start thresholds
-- safety: all action safety classes and preconditions
-
-This reduces tool-selection work from action enumeration to capability selection.
-
-## Efficiency Gains
-
-- Fewer tool calls: one `agent_affordances` call replaces several `list_actions`, `get_action`, and `query_objects` calls.
-- Less prompt reasoning: safety boundaries and providers are returned in structured fields.
-- Better recall: ServiceRequirement matching reveals all capabilities needed for a task, including observation dependencies.
-- Lower hallucination risk: standard mappings and source fields anchor claims to ontology evidence.
-
-## Completeness Gates
-
-`customer_v1` now checks:
-
-- at least one Capability exists;
-- every Capability has a `provides_capability` provider;
-- every Capability has `exposed_via` Topic/Service/Action;
-- all high-risk actions are reachable from a Capability;
-- standard mappings include at least two external vocabularies.
-
-X2 now grades `customer-ready` with these checks enabled.
-
-## Migration
-
-For an existing robot pack:
-
-```sh
-python3 -m roboonto.cli infer-capabilities robots/<robot> --yaml
-```
-
-Use the draft as a starting point, then add providers, boundaries, standard mappings, and ServiceRequirement links by hand.
+具体语义见 [PackModule 0.9 规范](PACKMODULE_0.9_SPEC.md)。

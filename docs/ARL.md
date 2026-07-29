@@ -1,49 +1,16 @@
-# ARL — Agent-Readiness Levels
+# 旧 Agent-Readiness Level 说明
 
-*How ready is this robot to be driven by an AI agent?*
+ARL 是 RoboOnto 0.4 旧 Ontology 的描述完整度评分，只能说明旧 Loader 能否读取
+对象、动作、来源和关系。它不是安全认证，也不能证明机器人可以无人值守运行。
 
-> 中文版: [zh/ARL.md](zh/ARL.md)
+RoboOnto 0.9 不把旧 `customer-ready` 或 `ARL-3` 直接映射为可部署 Duty。生产准入
+至少还必须满足：
 
-ARL is a four-level index computed from a pack's reproducible readiness
-checks. The scoring rules are open (`roboonto/framework/profiles/`), the
-tooling is open (`roboonto readiness`), and anyone can recompute a level
-locally — a level is a claim you can verify, not a badge you have to trust.
+- PackModule Schema、静态语义和 digest 有效；
+- 所需 Capability 已 `qualified`；
+- critical Observation 具有 freshness、sentinel 和 evidence contract；
+- TargetAction 可执行；
+- 具身端实时 Safety、Authority、Lease、Window、Drift 和 Budget 门禁通过；
+- 物理效果具有独立 Evidence。
 
-| Level | Name | Meaning | Verifiable gate (customer_v1) |
-|---|---|---|---|
-| **ARL-0** | Observable | The robot is described; read-only queries work. | pack loads; `robot` meta present |
-| **ARL-1** | Checkable | Agents can *dry-run* calls: actions carry preconditions and safety classes. | grade ≥ `alpha` (all `must` rules: zero loader errors, every action has `safety_class` + standard invoker, ≥1 Mode, compute + power modeled) |
-| **ARL-2** | Safely drivable | Agents can plan against *capabilities*, and every dangerous action is reachable through one. | grade ≥ `beta` **and** all capability rules pass: each Capability has a provider and an exposed interface; every MOTION/POWER/IRREVERSIBLE action maps to a Capability; ≥2 external standard vocabularies anchored |
-| **ARL-3** | Operable | Audit-grade grounding; fault semantics modeled; ready for unattended agent operation under a runtime gate. | grade = `customer-ready` (100% `should`), ≥90% source coverage, FaultCode/StatusBit depth, dense relation graph |
-
-Current shipped packs (recompute with
-`roboonto readiness robots/<r> --profile customer_v1`):
-
-| Pack | Grade | Score | ARL |
-|---|---|---|---|
-| `agibot_x2` | customer-ready | 100.0 | **ARL-3** |
-| `unitree_g1_edu` | customer-ready | 100.0 | **ARL-3** |
-| `halfcheetah` (simulated) | — | — | evaluated against a sim profile, not customer_v1 |
-
-## What ARL is not
-
-- **Not a safety certification.** ARL measures the *description* of the
-  robot — whether an agent has the facts and constraints it needs. It says
-  nothing about the correctness of firmware or the safety of a deployment.
-- **Not a conformance claim** to IEEE 1872.x / RoSO. Packs anchor their terms
-  to those vocabularies (`standard_mappings.yaml`) as an informative
-  alignment.
-- **Not about the agent.** ARL grades the robot side. Whether an *agent*
-  behaves well against a robot (validates before acting, respects rejections,
-  escalates instead of retrying blindly) is a separate, behavioral
-  measurement that requires a runtime harness — planned as a companion
-  index (ACL, Agent Compliance Level).
-
-## Versioning
-
-Rulers evolve: a pack graded 100 under one profile version may lose points
-under a stricter successor (this happened to our own G1 pack when the
-capability rules landed). Therefore any published level must pin
-**(profile version, pack version)** — e.g. `ARL-3 @ customer_v1 / g1-pack 0.3.0`.
-Profiles are versioned files in-repo; old versions remain retrievable
-forever via git.
+旧评分器保留在 compatibility 层，供迁移对照，不作为 RoboOnto 3.0 的运行保证。
