@@ -478,7 +478,7 @@ def serve_mcp(robots_dir: Path):
                 _send_result(msg_id, {
                     "protocolVersion": "2024-11-05",
                     "capabilities": {"tools": {}},
-                    "serverInfo": {"name": "roboonto", "version": "0.3.0"},
+                    "serverInfo": {"name": "roboonto", "version": "0.9.0"},
                 })
             elif method == "tools/list":
                 _send_result(msg_id, {"tools": TOOLS})

@@ -2,10 +2,10 @@
 roboonto.importers.aimdk_doc
 ============================
 
-从 AgiBot AimDK 文档(.docx)抽取 ontology 分片。
+从 AgiBot AimDK 文档(.docx)直接编译 Target PackModule。
 
 输入:aimdk.docx
-输出:ontology YAML 分片(hardware.yaml, interfaces.yaml, actions.yaml, events.yaml)
+输出:PackModule AST；Canonical YAML/JSON 由 roboonto.pack.dump_pack 序列化
 
 抽取策略
 --------
@@ -38,8 +38,26 @@ AimDK 文档结构化程度高,分三类信息:
 from __future__ import annotations
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Iterable
 import re
+
+from ..pack import dump_pack, pack_digest
+from ..pack.builder import attributes_from_mapping, type_ref_from_legacy, typed_value
+from ..pack.formula import LegacyFormulaError, parse_legacy_formula
+from ..pack.model import (
+    Binding,
+    Entity,
+    EntityType,
+    Guard,
+    MigrationIssue,
+    ModuleHeader,
+    PackModule,
+    Parameter,
+    Provenance,
+    Relation,
+    RelationType,
+    ResourceSet,
+    TargetAction,
+)
 
 
 # ==================================================================
@@ -98,13 +116,19 @@ class ImportResult:
 # ==================================================================
 
 class AimDKImporter:
-    """从 AimDK.docx 产出 roboonto ontology 分片。"""
+    """从 AimDK.docx 直接产出 PackModule AST。"""
 
-    def __init__(self, robot_id: str = "agibot_x2"):
+    def __init__(self, robot_id: str = "agibot_x2", *, version: str = "0.9.0"):
         self.robot_id = robot_id
+        self.version = version
 
     # ------------- 顶层 -------------
-    def run(self, docx_path: Path) -> ImportResult:
+    def run(self, docx_path: Path) -> PackModule:
+        """抽取文档并直接构造规范 PackModule。"""
+
+        return self._to_pack(self.extract(docx_path), docx_path)
+
+    def extract(self, docx_path: Path) -> ImportResult:
         """主流程:
            1. 解压 .docx 得到原生 XML / 用 pandoc 转 markdown
            2. 按章节切分
@@ -128,6 +152,235 @@ class AimDKImporter:
         # self._extract_safety_constraints_with_llm(sections, result)
 
         return result
+
+    def _to_pack(self, result: ImportResult, docx_path: Path) -> PackModule:
+        provenance: dict[str, Provenance] = {}
+
+        def provenance_for(source: Source | None) -> tuple[str, ...]:
+            locator = source.locator if source else docx_path.name
+            identity = f"prov:aimdk:{_slug(locator)}"
+            provenance.setdefault(
+                identity,
+                Provenance(
+                    id=identity,
+                    kind=source.type if source else "document",
+                    locator=locator,
+                    extractor=source.extractor if source else "aimdk_doc@0.9",
+                    extracted_at=source.extracted_at if source else "",
+                    confidence=source.confidence if source else None,
+                ),
+            )
+            return (identity,)
+
+        entities = tuple(
+            Entity(
+                id=item.id,
+                type=item.type,
+                attributes=attributes_from_mapping(item.properties),
+                provenance=provenance_for(item.source),
+            )
+            for item in sorted(result.objects, key=lambda value: value.id)
+        )
+        entity_types = tuple(
+            EntityType(type_id, _category(type_id))
+            for type_id in sorted({item.type for item in result.objects})
+        )
+        entity_index = {item.id: item for item in entities}
+        action_ids = {
+            item.type_id: f"{self.robot_id}.action.{item.type_id}"
+            for item in result.actions
+        }
+
+        bindings: list[Binding] = []
+        resource_sets: list[ResourceSet] = []
+        target_actions: list[TargetAction] = []
+        issues: list[MigrationIssue] = []
+        for action in sorted(result.actions, key=lambda value: value.type_id):
+            canonical_id = action_ids[action.type_id]
+            binding_id = f"{self.robot_id}.binding.{action.type_id}"
+            invoker = action.invoker or {}
+            parameters = tuple(
+                Parameter(
+                    name=str(item["name"]),
+                    type=type_ref_from_legacy(item),
+                    required=bool(item.get("required", True)),
+                    default=(
+                        typed_value(item["default"], item)
+                        if "default" in item
+                        else None
+                    ),
+                    constraints=tuple(
+                        typed_value(value)
+                        for value in item.get("constraints") or ()
+                    ),
+                )
+                for item in action.parameters
+            )
+            bindings.append(
+                Binding(
+                    id=binding_id,
+                    provider=self.robot_id,
+                    protocol=str(invoker.get("type") or "unbound"),
+                    endpoint=str(
+                        invoker.get("name")
+                        or invoker.get("name_template")
+                        or invoker.get("command")
+                        or f"{self.robot_id}.unbound"
+                    ),
+                    message_type=str(invoker.get("msg_type", "")),
+                    request_type=str(invoker.get("srv_type", "")),
+                    argument_mapping=tuple(
+                        (
+                            parameter.name,
+                            f"$arguments.{parameter.name}",
+                        )
+                        for parameter in parameters
+                    ),
+                    provenance=provenance_for(action.source),
+                )
+            )
+
+            blocked: list[str] = []
+            guards: list[Guard] = []
+            for index, raw_guard in enumerate(action.preconditions):
+                try:
+                    guards.append(
+                        Guard(
+                            formula=parse_legacy_formula(str(raw_guard["expr"])),
+                            code=f"PACK-GUARD-{action.type_id.upper()}-{index + 1}",
+                            message=str(raw_guard.get("error", "guard failed")),
+                            severity=_severity(str(raw_guard.get("severity", "error"))),
+                        )
+                    )
+                except (KeyError, LegacyFormulaError) as exc:
+                    issue_id = f"migration:aimdk:{_slug(action.type_id)}:guard:{index + 1}"
+                    issues.append(
+                        MigrationIssue(
+                            id=issue_id,
+                            path=f"target_actions.{canonical_id}.guards[{index}]",
+                            kind="untyped_guard",
+                            severity="error",
+                            message=str(exc),
+                            blocks_execution=True,
+                            legacy_text=str(raw_guard),
+                        )
+                    )
+                    blocked.append(issue_id)
+
+            members = tuple(sorted(set(action.affects) & set(entity_index)))
+            missing = sorted(set(action.affects) - set(entity_index))
+            resource_ids: tuple[str, ...] = ()
+            if members:
+                resource_id = f"{self.robot_id}.resource_set.{action.type_id}"
+                resource_sets.append(
+                    ResourceSet(resource_id, members, purpose=action.description)
+                )
+                resource_ids = (resource_id,)
+            if missing:
+                issue_id = f"migration:aimdk:{_slug(action.type_id)}:resource"
+                issues.append(
+                    MigrationIssue(
+                        id=issue_id,
+                        path=f"target_actions.{canonical_id}.resources",
+                        kind="unresolved_resource",
+                        severity="error",
+                        message=f"unknown affected resources: {missing!r}",
+                        blocks_execution=True,
+                    )
+                )
+                blocked.append(issue_id)
+            if action.param_constraints:
+                issue_id = f"migration:aimdk:{_slug(action.type_id)}:constraints"
+                issues.append(
+                    MigrationIssue(
+                        id=issue_id,
+                        path=f"target_actions.{canonical_id}.parameter_constraints",
+                        kind="untyped_constraint",
+                        severity="error",
+                        message="document constraint requires typed Parameter constraints",
+                        blocks_execution=True,
+                        legacy_text=str(action.param_constraints),
+                    )
+                )
+                blocked.append(issue_id)
+            target_actions.append(
+                TargetAction(
+                    id=canonical_id,
+                    legacy_id=action.type_id,
+                    description=action.description,
+                    binding=binding_id,
+                    parameters=parameters,
+                    guards=tuple(guards),
+                    resource_sets=resource_ids,
+                    safety_class=action.safety_class,
+                    executable=not blocked,
+                    blocked_reasons=tuple(blocked),
+                    provenance=provenance_for(action.source),
+                )
+            )
+
+        symbol_types = {item.id: item.type for item in entities}
+        symbol_types.update({value: "TargetAction" for value in action_ids.values()})
+        relation_rows = []
+        for link in result.links:
+            source = action_ids.get(link.source_id, link.source_id)
+            target = action_ids.get(link.target_id, link.target_id)
+            relation_rows.append((link, source, target))
+        relation_types = []
+        for predicate in sorted({item.type for item in result.links}):
+            matching = [
+                row for row in relation_rows if row[0].type == predicate
+            ]
+            relation_types.append(
+                RelationType(
+                    predicate,
+                    tuple(
+                        sorted({symbol_types[row[1]] for row in matching})
+                    ),
+                    tuple(
+                        sorted({symbol_types[row[2]] for row in matching})
+                    ),
+                )
+            )
+        relations = tuple(
+            Relation(
+                id=f"{self.robot_id}.relation.{link.type}.{index:04d}",
+                predicate=link.type,
+                source=source,
+                target=target,
+                attributes=attributes_from_mapping(link.properties),
+            )
+            for index, (link, source, target) in enumerate(
+                sorted(
+                    relation_rows,
+                    key=lambda row: (row[0].type, row[1], row[2]),
+                ),
+                start=1,
+            )
+        )
+        pack = PackModule(
+            module=ModuleHeader(
+                id=self.robot_id,
+                version=self.version,
+                target=self.robot_id,
+                description=f"由 {docx_path.name} 直接生成的 Target PackModule",
+            ),
+            types=entity_types,
+            relation_types=tuple(relation_types),
+            entities=entities,
+            relations=relations,
+            target_actions=tuple(target_actions),
+            resource_sets=tuple(resource_sets),
+            bindings=tuple(bindings),
+            provenance=tuple(sorted(provenance.values(), key=lambda item: item.id)),
+            exports={
+                "types": tuple(item.id for item in entity_types),
+                "target_actions": tuple(item.id for item in target_actions),
+            },
+            migration_issues=tuple(issues),
+        )
+        pack.validate()
+        return pack.with_digest(pack_digest(pack))
 
     # ------------- 文档加载 -------------
     def _load_and_split(self, docx_path: Path) -> dict[str, str]:
@@ -258,6 +511,24 @@ def parse_markdown_table(text: str) -> list[dict]:
 # CLI 入口(roboonto import aimdk ... 的实现基础)
 # ==================================================================
 
+def _slug(value: str) -> str:
+    return re.sub(r"[^a-z0-9_]+", "_", value.lower()).strip("_")
+
+
+def _severity(value: str) -> str:
+    return {"warn": "warning", "fatal": "error"}.get(value.lower(), value.lower())
+
+
+def _category(type_id: str) -> str:
+    if type_id in {"Topic", "Service", "MsgSchema", "SrvSchema"}:
+        return "interface"
+    if type_id in {"Mode", "PresetMotion"}:
+        return "behavior"
+    if type_id in {"StatusBit", "TouchEvent", "FaultCode"}:
+        return "event"
+    return "hardware"
+
+
 def main():
     """CLI 入口:`python -m roboonto.importers.aimdk_doc <docx> --out <dir>`"""
     import argparse
@@ -268,12 +539,9 @@ def main():
     args = parser.parse_args()
 
     importer = AimDKImporter(robot_id=args.robot_id)
-    result = importer.run(args.docx)
-
-    # TODO: 分片写出到 hardware.yaml / interfaces.yaml / actions.yaml / events.yaml
-    # 每个对象/action 带 source,方便后续 review。
-    print(f"Extracted {len(result.objects)} objects, {len(result.actions)} actions, "
-          f"{len(result.links)} links, {len(result.warnings)} warnings.")
+    pack = importer.run(args.docx)
+    dump_pack(pack, args.out)
+    print(f"已写入 PackModule: {args.out}；{pack.count()}")
 
 
 if __name__ == "__main__":

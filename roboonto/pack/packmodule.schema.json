@@ -1,0 +1,449 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://roboonto.dev/schema/packmodule-0.9.json",
+  "title": "RoboOnto Target PackModule 0.9",
+  "description": "RoboOnto 3.0 Code-as-Object 的规范目标模块。",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "$schema",
+    "pack_version",
+    "module",
+    "types",
+    "relation_types",
+    "entities",
+    "relations",
+    "capabilities",
+    "requirements",
+    "observations",
+    "observation_sources",
+    "target_actions",
+    "resource_sets",
+    "bindings",
+    "evidence_boundaries",
+    "provenance",
+    "exports",
+    "migration"
+  ],
+  "properties": {
+    "$schema": {"const": "https://roboonto.dev/schema/packmodule-0.9.json"},
+    "pack_version": {"const": "0.9"},
+    "module": {"$ref": "#/$defs/module"},
+    "types": {"type": "array", "items": {"$ref": "#/$defs/entityType"}},
+    "relation_types": {"type": "array", "items": {"$ref": "#/$defs/relationType"}},
+    "entities": {"type": "array", "items": {"$ref": "#/$defs/entity"}},
+    "relations": {"type": "array", "items": {"$ref": "#/$defs/relation"}},
+    "capabilities": {"type": "array", "items": {"$ref": "#/$defs/capability"}},
+    "requirements": {"type": "array", "items": {"$ref": "#/$defs/requirement"}},
+    "observations": {"type": "array", "items": {"$ref": "#/$defs/observation"}},
+    "observation_sources": {"type": "array", "items": {"$ref": "#/$defs/observationSource"}},
+    "target_actions": {"type": "array", "items": {"$ref": "#/$defs/targetAction"}},
+    "resource_sets": {"type": "array", "items": {"$ref": "#/$defs/resourceSet"}},
+    "bindings": {"type": "array", "items": {"$ref": "#/$defs/binding"}},
+    "evidence_boundaries": {"type": "array", "items": {"$ref": "#/$defs/evidenceBoundary"}},
+    "provenance": {"type": "array", "items": {"$ref": "#/$defs/provenance"}},
+    "exports": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "types": {"$ref": "#/$defs/idArray"},
+        "capabilities": {"$ref": "#/$defs/idArray"},
+        "observations": {"$ref": "#/$defs/idArray"},
+        "target_actions": {"$ref": "#/$defs/idArray"}
+      }
+    },
+    "migration": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["issues"],
+      "properties": {
+        "issues": {"type": "array", "items": {"$ref": "#/$defs/migrationIssue"}}
+      }
+    }
+  },
+  "$defs": {
+    "id": {"type": "string", "minLength": 1, "pattern": "^[A-Za-z0-9_.:/-]+$"},
+    "idArray": {"type": "array", "items": {"$ref": "#/$defs/id"}, "uniqueItems": true},
+    "stringArray": {"type": "array", "items": {"type": "string"}, "uniqueItems": true},
+    "typeRef": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["kind"],
+      "properties": {
+        "kind": {
+          "enum": ["opaque", "bool", "int", "float", "string", "enum", "entity", "quantity", "range", "list", "record"]
+        },
+        "name": {"type": "string"},
+        "dimension": {"type": "string"},
+        "unit": {"type": "string"},
+        "frame": {"type": "string"},
+        "values": {"$ref": "#/$defs/stringArray"},
+        "item": {"$ref": "#/$defs/typeRef"}
+      }
+    },
+    "typedValue": {
+      "oneOf": [
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["kind"],
+          "properties": {"kind": {"const": "null"}}
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["kind", "value"],
+          "properties": {
+            "kind": {"enum": ["bool", "int", "float", "string", "quantity", "ref"]},
+            "value": {},
+            "unit": {"type": "string"},
+            "frame": {"type": "string"},
+            "target_type": {"type": "string"}
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["kind", "min", "max"],
+          "properties": {
+            "kind": {"const": "range"},
+            "min": {"type": ["number", "null"]},
+            "max": {"type": ["number", "null"]},
+            "unit": {"type": "string"},
+            "frame": {"type": "string"},
+            "target_type": {"type": "string"}
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["kind", "items"],
+          "properties": {
+            "kind": {"const": "list"},
+            "items": {"type": "array", "items": {"$ref": "#/$defs/typedValue"}}
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["kind", "fields"],
+          "properties": {
+            "kind": {"const": "record"},
+            "fields": {"type": "array", "items": {"$ref": "#/$defs/attribute"}}
+          }
+        }
+      ]
+    },
+    "attribute": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["name", "value"],
+      "properties": {
+        "name": {"type": "string", "minLength": 1},
+        "value": {"$ref": "#/$defs/typedValue"}
+      }
+    },
+    "attributes": {"type": "array", "items": {"$ref": "#/$defs/attribute"}},
+    "module": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["kind", "id", "version", "target"],
+      "properties": {
+        "kind": {"const": "target_pack"},
+        "id": {"$ref": "#/$defs/id"},
+        "version": {"type": "string", "minLength": 1},
+        "target": {"$ref": "#/$defs/id"},
+        "firmware": {"type": "string"},
+        "vendor": {"type": "string"},
+        "model": {"type": "string"},
+        "description": {"type": "string"},
+        "content_digest": {"type": "string", "pattern": "^sha256:[0-9a-f]{64}$"},
+        "attributes": {"$ref": "#/$defs/attributes"}
+      }
+    },
+    "entityType": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "category"],
+      "properties": {
+        "id": {"$ref": "#/$defs/id"},
+        "category": {"type": "string", "minLength": 1},
+        "extends": {"$ref": "#/$defs/id"},
+        "description": {"type": "string"},
+        "attributes": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["name", "type", "required"],
+            "properties": {
+              "name": {"type": "string", "minLength": 1},
+              "type": {"$ref": "#/$defs/typeRef"},
+              "required": {"type": "boolean"}
+            }
+          }
+        }
+      }
+    },
+    "entity": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "type"],
+      "properties": {
+        "id": {"$ref": "#/$defs/id"},
+        "type": {"$ref": "#/$defs/id"},
+        "attributes": {"$ref": "#/$defs/attributes"},
+        "provenance": {"$ref": "#/$defs/idArray"}
+      }
+    },
+    "relationType": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "source_types", "target_types"],
+      "properties": {
+        "id": {"$ref": "#/$defs/id"},
+        "source_types": {"$ref": "#/$defs/idArray"},
+        "target_types": {"$ref": "#/$defs/idArray"},
+        "description": {"type": "string"}
+      }
+    },
+    "relation": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "predicate", "source", "target"],
+      "properties": {
+        "id": {"$ref": "#/$defs/id"},
+        "predicate": {"$ref": "#/$defs/id"},
+        "source": {"$ref": "#/$defs/id"},
+        "target": {"$ref": "#/$defs/id"},
+        "attributes": {"$ref": "#/$defs/attributes"},
+        "provenance": {"$ref": "#/$defs/idArray"}
+      }
+    },
+    "formula": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["kind"],
+      "properties": {
+        "kind": {"enum": ["literal", "list", "symbol", "ref", "boolean", "not", "compare", "call"]},
+        "value": {},
+        "path": {"type": "string"},
+        "scope": {"enum": ["parameter", "observation"]},
+        "operator": {"type": "string"},
+        "left": {"$ref": "#/$defs/formula"},
+        "right": {"$ref": "#/$defs/formula"},
+        "term": {"$ref": "#/$defs/formula"},
+        "terms": {"type": "array", "items": {"$ref": "#/$defs/formula"}},
+        "items": {"type": "array", "items": {"$ref": "#/$defs/formula"}},
+        "namespace": {"enum": ["intrinsic", "ontology_query", "observation_query", "pack_query"]},
+        "name": {"type": "string"},
+        "arguments": {"type": "array", "items": {"$ref": "#/$defs/formula"}}
+      }
+    },
+    "guard": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["formula", "code", "message", "severity"],
+      "properties": {
+        "formula": {"$ref": "#/$defs/formula"},
+        "code": {"type": "string", "minLength": 1},
+        "message": {"type": "string", "minLength": 1},
+        "severity": {"enum": ["info", "warning", "error"]}
+      }
+    },
+    "parameter": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["name", "type", "required"],
+      "properties": {
+        "name": {"type": "string", "minLength": 1},
+        "type": {"$ref": "#/$defs/typeRef"},
+        "required": {"type": "boolean"},
+        "default": {"$ref": "#/$defs/typedValue"},
+        "constraints": {"type": "array", "items": {"$ref": "#/$defs/typedValue"}}
+      }
+    },
+    "binding": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "provider", "protocol", "endpoint", "delivery_semantics"],
+      "properties": {
+        "id": {"$ref": "#/$defs/id"},
+        "provider": {"$ref": "#/$defs/id"},
+        "protocol": {"type": "string", "minLength": 1},
+        "endpoint": {"type": "string", "minLength": 1},
+        "message_type": {"type": "string"},
+        "request_type": {"type": "string"},
+        "response_type": {"type": "string"},
+        "delivery_semantics": {"type": "string", "minLength": 1},
+        "acceptance_source": {"type": "string"},
+        "argument_mapping": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["argument", "target"],
+            "properties": {
+              "argument": {"type": "string", "minLength": 1},
+              "target": {"type": "string", "minLength": 1}
+            }
+          }
+        },
+        "attributes": {"$ref": "#/$defs/attributes"},
+        "provenance": {"$ref": "#/$defs/idArray"}
+      }
+    },
+    "resourceSet": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "members"],
+      "properties": {
+        "id": {"$ref": "#/$defs/id"},
+        "members": {"$ref": "#/$defs/idArray"},
+        "purpose": {"type": "string"}
+      }
+    },
+    "targetAction": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "visibility",
+        "parameters",
+        "binding",
+        "resource_sets",
+        "guards",
+        "safety_class",
+        "world_effect",
+        "executable"
+      ],
+      "properties": {
+        "id": {"$ref": "#/$defs/id"},
+        "legacy_id": {"type": "string"},
+        "description": {"type": "string"},
+        "visibility": {"const": "executor"},
+        "parameters": {"type": "array", "items": {"$ref": "#/$defs/parameter"}},
+        "binding": {"$ref": "#/$defs/id"},
+        "resource_sets": {"$ref": "#/$defs/idArray"},
+        "guards": {"type": "array", "items": {"$ref": "#/$defs/guard"}},
+        "safety_class": {"type": "string", "minLength": 1},
+        "world_effect": {"type": "null"},
+        "executable": {"type": "boolean"},
+        "blocked_reasons": {"$ref": "#/$defs/stringArray"},
+        "attributes": {"$ref": "#/$defs/attributes"},
+        "provenance": {"$ref": "#/$defs/idArray"}
+      }
+    },
+    "capability": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id", "kind", "providers", "target_actions", "interfaces", "consumes",
+        "produces", "detects", "requirements", "qualification"
+      ],
+      "properties": {
+        "id": {"$ref": "#/$defs/id"},
+        "kind": {"type": "string", "minLength": 1},
+        "description": {"type": "string"},
+        "providers": {"$ref": "#/$defs/idArray"},
+        "target_actions": {"$ref": "#/$defs/idArray"},
+        "interfaces": {"$ref": "#/$defs/idArray"},
+        "consumes": {"$ref": "#/$defs/idArray"},
+        "produces": {"$ref": "#/$defs/idArray"},
+        "detects": {"$ref": "#/$defs/idArray"},
+        "requirements": {"$ref": "#/$defs/idArray"},
+        "qualification": {"type": "string", "minLength": 1},
+        "constraint_refs": {"$ref": "#/$defs/idArray"},
+        "attributes": {"$ref": "#/$defs/attributes"},
+        "provenance": {"$ref": "#/$defs/idArray"}
+      }
+    },
+    "requirement": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "capability_kinds", "outputs"],
+      "properties": {
+        "id": {"$ref": "#/$defs/id"},
+        "capability_kinds": {"$ref": "#/$defs/stringArray"},
+        "outputs": {"$ref": "#/$defs/stringArray"},
+        "attributes": {"$ref": "#/$defs/attributes"},
+        "provenance": {"$ref": "#/$defs/idArray"}
+      }
+    },
+    "observation": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "value_type", "sources", "qualification"],
+      "properties": {
+        "id": {"$ref": "#/$defs/id"},
+        "value_type": {"$ref": "#/$defs/typeRef"},
+        "sources": {"$ref": "#/$defs/idArray"},
+        "qualification": {"type": "string", "minLength": 1},
+        "attributes": {"$ref": "#/$defs/attributes"}
+      }
+    },
+    "observationSource": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "binding", "value_type", "qualification"],
+      "properties": {
+        "id": {"$ref": "#/$defs/id"},
+        "binding": {"$ref": "#/$defs/id"},
+        "value_type": {"$ref": "#/$defs/typeRef"},
+        "frame": {"type": "string"},
+        "nominal_rate_hz": {"type": "number", "exclusiveMinimum": 0},
+        "realtime_available": {"type": "boolean"},
+        "durable_replay_available": {"type": "boolean"},
+        "qualification": {"type": "string", "minLength": 1},
+        "attributes": {"$ref": "#/$defs/attributes"},
+        "provenance": {"$ref": "#/$defs/idArray"}
+      }
+    },
+    "evidenceBoundary": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "subject", "status", "kind"],
+      "properties": {
+        "id": {"$ref": "#/$defs/id"},
+        "subject": {"type": "string", "minLength": 1},
+        "status": {"type": "string", "minLength": 1},
+        "kind": {"type": "string", "minLength": 1},
+        "provider_receipt_is_effect_evidence": {"type": "boolean"},
+        "required_verification_sources": {"$ref": "#/$defs/idArray"},
+        "realtime_available": {"type": "boolean"},
+        "durable_replay_available": {"type": "boolean"},
+        "attributes": {"$ref": "#/$defs/attributes"},
+        "provenance": {"$ref": "#/$defs/idArray"}
+      }
+    },
+    "provenance": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "kind", "locator"],
+      "properties": {
+        "id": {"$ref": "#/$defs/id"},
+        "kind": {"type": "string", "minLength": 1},
+        "locator": {"type": "string", "minLength": 1},
+        "extractor": {"type": "string"},
+        "extracted_at": {"type": "string"},
+        "confidence": {"type": "number", "minimum": 0, "maximum": 1},
+        "notes": {"type": "string"},
+        "attributes": {"$ref": "#/$defs/attributes"}
+      }
+    },
+    "migrationIssue": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "path", "kind", "severity", "message", "blocks_execution"],
+      "properties": {
+        "id": {"$ref": "#/$defs/id"},
+        "path": {"type": "string", "minLength": 1},
+        "kind": {"type": "string", "minLength": 1},
+        "severity": {"enum": ["info", "warning", "error"]},
+        "message": {"type": "string", "minLength": 1},
+        "blocks_execution": {"type": "boolean"},
+        "legacy_text": {"type": "string"}
+      }
+    }
+  }
+}

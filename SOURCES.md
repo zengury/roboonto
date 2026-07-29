@@ -1,44 +1,35 @@
-# Data Sources & Provenance
+# 数据来源与溯源
 
-The robot packs under `robots/` contain **factual engineering specifications**
-(joint limits, torque ratings, topic names, API ids, fault codes) extracted
-from publicly available vendor materials. Copyright in the original documents
-and SDKs remains with their respective vendors. Every extracted assertion
-carries a `source` field (type + locator) pointing back to its origin — see
-`roboonto/core/meta-schema.yaml` §5 for the grounding schema.
+`robots/` 中的旧 Pack 包含从公开厂商资料提取的事实性工程规格，例如关节限位、
+扭矩、Topic、API ID 和故障码。原始文档与 SDK 的版权属于各自厂商。
 
-The RoboOnto code and schema are licensed under Apache-2.0 (see `LICENSE`).
-The standard-vocabulary mappings in `standard_mappings.yaml` files are an
-**informative alignment** with IEEE 1872.1 (CORA), IEEE 1872.2 (AuR), and
-RoSO terminology — not a conformance or certification claim.
+RoboOnto 0.9 迁移器把旧 `source` 转换为 PackModule `Provenance`。每条事实仍可追溯
+到 kind、locator 和 extractor。标准词表映射只是与 IEEE 1872.1、IEEE 1872.2 和
+RoSO 的参考性术语对齐，不构成合规或认证声明。
 
-## Per-pack sources
+## AgiBot X2
 
-### robots/agibot_x2 — AgiBot X2
-
-| Source | Type | Notes |
+| 来源 | 类型 | 用途 |
 |---|---|---|
-| AimDK documentation (`aimdk.docx` locators) | vendor docs, publicly released | actions, interfaces, PMU/power, fault codes |
-| X2 URDF | vendor release | kinematics, joint/link parameters |
-| On-robot verification | first-party measurements | capability boundaries, probe results |
+| AimDK 文档（`aimdk.docx` locator） | 公开厂商文档 | 动作、接口、PMU/电源、故障码 |
+| X2 URDF | 厂商发布 | 运动学、关节和 Link 参数 |
+| 真机验证 | 第一方测量 | Capability 边界与 probe 结果 |
 
-### robots/unitree_g1_edu — Unitree G1 EDU
+## Unitree G1 EDU
 
-| Source | Type | Notes |
+| 来源 | 类型 | 用途 |
 |---|---|---|
-| [`unitree_sdk2`](https://github.com/unitreerobotics/unitree_sdk2) | public GitHub, BSD-3-Clause | loco/arm/audio APIs, DDS IDL (LowState/IMUState/BmsState) |
-| [`unitree_ros`](https://github.com/unitreerobotics/unitree_ros) G1 description | public GitHub | URDF, joint limits, STL meshes (23-DOF rev_1_0) |
-| Unitree public documentation | vendor docs | mode machine, FSM ids |
+| [`unitree_sdk2`](https://github.com/unitreerobotics/unitree_sdk2) | 公开 GitHub，BSD-3-Clause | 运动、机械臂、音频 API 和 DDS IDL |
+| [`unitree_ros`](https://github.com/unitreerobotics/unitree_ros) | 公开 GitHub | URDF、关节限位和 STL Mesh |
+| Unitree 公开文档 | 厂商文档 | 模式机和 FSM ID |
 
-### robots/halfcheetah — MuJoCo HalfCheetah
+## MuJoCo HalfCheetah
 
-| Source | Type | Notes |
+| 来源 | 类型 | 用途 |
 |---|---|---|
-| [Gymnasium / MuJoCo](https://github.com/Farama-Foundation/Gymnasium) HalfCheetah model | open source | simulated robot; no physical hardware |
+| [Gymnasium / MuJoCo](https://github.com/Farama-Foundation/Gymnasium) | 开源项目 | 仿真机器人模型，不代表物理硬件 |
 
-## Takedown / corrections
+## 更正与删除
 
-If you are a rights holder and believe any extracted data exceeds fair use of
-factual specifications, or you spot an incorrect assertion, please open an
-issue — every assertion is traceable to its locator, so corrections are
-surgical and auditable.
+如果权利人认为某项提取超出事实规格的合理使用，或发现事实错误，请提交 Issue。
+Provenance locator 使更正可以精确定位并接受审计。
